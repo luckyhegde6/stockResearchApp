@@ -1,6 +1,6 @@
 # Stock Research Pipeline CLI & Environment Reference
 
-This document provides a comprehensive reference of all **CLI commands**, **`npm run` scripts**, **CLI flags**, and **environment variables** for the **Stock Research Pipeline** (v1.49.5).
+This document provides a comprehensive reference of all **CLI commands**, **`npm run` scripts**, **CLI flags**, and **environment variables** for the **Stock Research Pipeline** (v1.50.0).
 
 ---
 
@@ -74,3 +74,12 @@ The primary CLI entrypoint is `src/index.ts`, invoked via `npm run <command> -- 
 | `CONCALL_LIMIT` | `3` | `research` | Maximum earnings concall PDF transcripts to download. |
 | `ANNUAL_REPORT_LIMIT` | `3` | `research` | Maximum annual report PDFs to download. |
 | `BSE_SCRIPTS_JSON` | `./config/bse-scripts.json` | BSE | JSON mapping file for BSE scrip codes. |
+
+
+## TradingView public UI surfaces
+
+The standalone surface command is `npm run tradingview:ui -- RELIANCE`.
+
+It captures the configured public symbol-page surfaces: `forecast,news,documents,seasonals,community`.
+
+Surface navigation is direct Playwright page navigation. The adapter verifies the exact TradingView host/path and surface-specific visible content before marking the visual evidence `ok`.
