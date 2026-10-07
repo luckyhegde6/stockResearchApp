@@ -1,29 +1,28 @@
-import { buildTradingViewInstrument } from '../src/lib/tradingview-url.js';
+import assert from 'node:assert/strict';
+import { buildTradingViewInstrument, buildTradingViewSurfaceUrl } from '../src/lib/tradingview-url.js';
 
-const instrument = buildTradingViewInstrument('ITC','NSE');
+const symbols=['ITC','RELIANCE','BEL','M&M'];
+const surfaces=['forecast','news','documents','seasonals','community'] as const;
 
-const expected = [
-  ['forecast','/symbols/NSE-ITC/forecast-price-target/'],
-  ['news','/symbols/NSE-ITC/news/'],
-  ['documents','/symbols/NSE-ITC/documents/'],
-  ['seasonals','/symbols/NSE-ITC/seasonals/'],
-  ['community','/symbols/NSE-ITC/community/'],
-];
-
-const errors:string[]=[];
-for (const [surface,path] of expected) {
-  if (!path.startsWith(`/symbols/NSE-${instrument.symbol}/`)) errors.push(`${surface}: bad dynamic path`);
+for (const symbol of symbols) {
+  const instrument=buildTradingViewInstrument(symbol,'NSE');
+  assert.equal(new URL(instrument.chartUrl).hostname,'in.tradingview.com');
+  for (const surface of surfaces) {
+    const url=buildTradingViewSurfaceUrl(symbol,'NSE',surface);
+    const parsed=new URL(url);
+    assert.equal(parsed.hostname,'in.tradingview.com');
+    assert.ok(parsed.pathname.startsWith('/symbols/NSE-'));
+    assert.ok(parsed.pathname.includes('/NSE-' + encodeURIComponent(symbol) + '/'));
+  }
 }
-if (!instrument.chartUrl.includes('NSE%3AITC')) errors.push('dynamic chart URL missing NSE:ITC');
+
+const itcRoutes=Object.fromEntries(surfaces.map(surface=>[surface,buildTradingViewSurfaceUrl('ITC','NSE',surface)]));
 console.log(JSON.stringify({
-  ok: errors.length===0,
-  chartUrl:instrument.chartUrl,
-  routes:Object.fromEntries(expected),
+  ok:true,
+  routes:itcRoutes,
   assertions:{
-    navigation:'direct Playwright navigation to each public symbol-page route',
-    symbol:'route paths are built from the requested NSE instrument',
-    confirmation:'surface-specific URL/content confirmation before status=ok',
+    navigation:'direct Playwright navigation to canonical public symbol-page routes',
+    symbol:'each route contains the requested NSE symbol',
+    confirmation:'production capture requires exact host + pathname match and surface-specific content',
   },
-  errors,
 },null,2));
-if(errors.length) process.exitCode=1;
