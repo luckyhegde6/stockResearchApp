@@ -1,6 +1,6 @@
 # Stock Research Pipeline Testing & Quality Assurance Guide
 
-This guide details the **Testing & Quality Assurance Framework** of the **Stock Research Pipeline** (v1.49.5), outlining test execution, diagnostic CLIs, data quality validation, and scan metrics scoring.
+This guide details the **Testing & Quality Assurance Framework** of the **Stock Research Pipeline** (v1.50.0), outlining test execution, diagnostic CLIs, data quality validation, and scan metrics scoring.
 
 ---
 
@@ -21,7 +21,7 @@ npx tsx scripts/test-all.ts
 | Test Script | Tested Subsystem | Key Verifications |
 | :--- | :--- | :--- |
 | `test-nse-nextapi.ts` | NSE NextAPI Client | Cookie acquisition, endpoints, historical chunking. |
-| `test-tradingview-ui-surfaces.ts` | TradingView Adapter | Symbol URL routing, 1D chart capture, technical summaries. |
+| `test-tradingview-ui-surfaces.ts` | TradingView Adapter | Direct public surface routing, exact-route confirmation, screenshot contract, and evidence-pack wiring. |
 | `test-individual-stock-evidence.ts` | Evidence Engine | Canonical facts extraction, metric precedence, research score. |
 | `test-evidence-completeness.ts` | Evidence Contract | Mandatory pack presence, data gap taxonomy, readiness gate. |
 | `test-market-scan-quality.ts` | Scan Quality Engine | Chartink scan output completeness, row counts, null metrics. |
