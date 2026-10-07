@@ -192,14 +192,13 @@ async function waitForUiSurfaceConfirmation(page:any, surface:TradingViewUiSurfa
     forecast:/Price target|Analyst rating|Actuals and estimates|Analysts offering 1-year price forecasts/i,
     news:/Why .*share price|Latest news|Earnings|Dividends|Share buybacks|Mergers and acquisitions|Insider trading|Analysts/i,
     documents:/Documents|Earnings, Q\d|Corporate events|Interim report|Annual report/i,
-    seasonals:/Historical seasonal performance|Seasonals|Seasonality|Average\s+(Percent|Return)/i,
+    seasonals:/Historical seasonal performance|Seasonals|Seasonality|Average\\s+(Percent|Return)/i,
     community:/Community|Ideas|Published|Popular ideas|Related ideas/i,
     financials:/Fundamentals and stats|Income statement|Balance sheet|Cash flow|EPS and revenue snapshot/i,
     options:/Options|Calls|Puts|Expiration/i,
     etfs:/ETFs|ETF/i,
     bonds:/Bonds|Bond/i,
   };
-  const chartTokens=/Supercharts|Full chart|Vol\s+\d|1 day\s+5 days\s+1 month/i;
   let last:any={url:beforeUrl,bodyText:''};
   while(Date.now()<deadline){
     last=await dumpState(page).catch(()=>({url:beforeUrl,bodyText:''}));
@@ -210,9 +209,10 @@ async function waitForUiSurfaceConfirmation(page:any, surface:TradingViewUiSurfa
     try {
       const current = new URL(url);
       const expected = new URL(targetUrl);
+      const normalizePath = (value:string) => value.replace(/\\/+$/, '/') || '/';
       routeMatches =
         current.hostname === expected.hostname &&
-        current.pathname.replace(/\\/+$/, '/') === expected.pathname.replace(/\\/+$/, '/');
+        normalizePath(current.pathname) === normalizePath(expected.pathname);
     } catch {}
 
     if (routeMatches && contentMatches) {
@@ -227,7 +227,14 @@ async function waitForUiSurfaceConfirmation(page:any, surface:TradingViewUiSurfa
     }
     await page.waitForTimeout(400);
   }
-  return {confirmed:false,routeChanged:String(last.url||'')!==beforeUrl,routeMatched:false,surfaceContent:false,url:String(last.url||beforeUrl),bodyTextSample:String(last.bodyText||'').slice(0,12000)};
+  return {
+    confirmed:false,
+    routeChanged:String(last.url||'')!==beforeUrl,
+    routeMatched:false,
+    surfaceContent:false,
+    url:String(last.url||beforeUrl),
+    bodyTextSample:String(last.bodyText||'').slice(0,12000),
+  };
 }
 
 async function captureUiSurface(
