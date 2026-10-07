@@ -10,6 +10,36 @@ It combines official NSE data, Screener, Tijori, TradingView, optional news/Char
 
 > **Important:** This project produces research evidence and analysis inputs. It is not investment advice.
 
+
+## Google Sheets export
+
+The pipeline can export compact deterministic research, analysis, scan, news, and decision datasets into dated Google Sheets tabs through the optional Apps Script sink under `integrations/google-sheets/`.
+
+Example:
+
+```powershell
+npm run sheets:export -- research ITC
+npm run sheets:export -- analysis ITC
+npm run sheets:export -- fullscan ITC --file research/ITC/fullscan.json
+npm run sheets:export -- chartinkScan --file scans/chartink-market-scans.json
+```
+
+Expected tab naming:
+
+```text
+ITC-YYYY-MM-DD-research
+ITC-YYYY-MM-DD-analysis
+ITC-YYYY-MM-DD-fullscan
+chartinkScan-YYYY-MM-DD
+nse52wScan-YYYY-MM-DD
+screenerScan-YYYY-MM-DD
+tijoriScan-YYYY-MM-DD
+ITC-YYYY-MM-DD-news
+ITC-YYYY-MM-DD-laya
+```
+
+The export is intentionally outside the core pipeline boundary. A Sheet outage must never invalidate deterministic research. See [Google Sheets Export](integrations/google-sheets/README.md).
+
 ## Developer & Agent Operating System
 
 This repository is designed to be usable by both humans and model-driven coding agents without binding the project to one AI vendor.
