@@ -13,7 +13,7 @@ export const RESEARCH_CONFIG = Object.freeze({
   debugConsoleEnabled: !/^(0|false|no|off)$/i.test(process.env.DEBUG_CONSOLE ?? 'true'),
   defaultExchange: 'NSE' as const,
   tradingViewUiSurfaces: String(process.env.TRADINGVIEW_UI_SURFACES || 'forecast,news,documents,seasonals,community').split(',').map(v => v.trim().toLowerCase()).filter(Boolean),
-  productVersion: '1.49.5',
+  productVersion: '1.50.0',
 });
 
 export function featureSummary() {
@@ -30,7 +30,7 @@ export function featureSummary() {
     },
     tradingViewUi: {
       surfaces: RESEARCH_CONFIG.tradingViewUiSurfaces,
-      method: 'playwright_more_menu_screenshots'
+      method: 'playwright-direct-public-symbol-pages'
     },
     sources: {
       required: ['NSE', 'Screener', 'Tijori', 'TradingView'],
