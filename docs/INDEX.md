@@ -1,65 +1,50 @@
-# Stock Research Pipeline Documentation Index
+# Documentation Index
 
-Welcome to the documentation hub for the **Stock Research Pipeline** (v1.50.0).
+v1.50.0 is the current documented release.
 
-This repository contains a symbol-agnostic, NSE-first Indian equity research pipeline designed for deterministic evidence collection, schema validation, and optional LLM-driven financial analysis.
+## Start here
 
----
+| Document | Purpose |
+|---|---|
+| [README](../README.md) | Complete system overview, setup, pipeline, dashboard, commands |
+| [AGENT_GUIDE](AGENT_GUIDE.md) | Context-efficient workflow for coding/research agents |
+| [PIPELINE_OPERATING_GUIDE](PIPELINE_OPERATING_GUIDE.md) | Day-to-day operating instructions |
+| [CLI_REFERENCE](CLI_REFERENCE.md) | Commands, flags, environment variables |
+| [ONBOARDING](ONBOARDING.md) | First-run setup |
+| [TESTING_AND_QUALITY](TESTING_AND_QUALITY.md) | Test and quality framework |
 
-## 📚 Documentation Directory
+## Architecture & contracts
 
-| Document | Description |
-| :--- | :--- |
-| 🚀 **[Onboarding](ONBOARDING.md)** | Local prerequisites, first research run, optional LLM setup, and verification commands. |
-| 🏗️ **[Architecture Guide](ARCHITECTURE.md)** | Technical design, data flow, pipeline lifecycle, multi-source fallback hierarchy, and schema contracts. |
-| 📖 **[Pipeline Operating Guide](PIPELINE_OPERATING_GUIDE.md)** | Step-by-step instructions for running individual research, market scans, top-20 momentum screens, 52-week highs, and news sentiment analysis. |
-| 📜 **[Evidence Contract Specification](EVIDENCE_CONTRACT.md)** | Detailed specification of the 6 core evidence packs, quality scoring metrics, canonical fact reconciliation, and data gap taxonomy. |
-| 🔌 **[Adapters Catalog](ADAPTERS_CATALOG.md)** | Comprehensive developer reference for all 12 source adapters (`NSE`, `Screener`, `Tijori`, `TradingView`, `Chartink`, `BSE`, `News Sentiment`, etc.). |
-| 🌐 **[NSE NextAPI Guide](NSE_NEXTAPI_GUIDE.md)** | API catalog, session/cookie handling, historical data chunking, security master resolution (`EQUITY_L`), and rate-limiting rules. |
-| 🧪 **[Testing & Quality Assurance](TESTING_AND_QUALITY.md)** | Test runner execution guide, diagnostic tools (`cli-doctor`, `markitdown-doctor`), evidence completeness gates, and scan quality scoring. |
-| 💻 **[CLI & Environment Reference](CLI_REFERENCE.md)** | Complete reference for all CLI subcommands, `npm run` scripts, flags, environment variables (`.env`), and installation prerequisites. |
-| 📜 **[Releases & Changelog](RELEASES_AND_CHANGELOG.md)** | Consolidated version history and detailed changelogs from v1.0 up to v1.50.0. |
+| Document | Purpose |
+|---|---|
+| [ARCHITECTURE](ARCHITECTURE.md) | System design and data flow |
+| [EVIDENCE_CONTRACT](EVIDENCE_CONTRACT.md) | Evidence contract |
+| [ADAPTERS_CATALOG](ADAPTERS_CATALOG.md) | Source adapter reference |
+| [SCAN_DATA_CONTRACT](SCAN_DATA_CONTRACT.md) | Market scan contracts |
+| [LAYA_DECISION_ENGINE](LAYA_DECISION_ENGINE.md) | Laya decision engine |
 
----
+## Source/provider guides
 
-## 🚀 Quick Start Summary
+- [NSE NextAPI Guide](NSE_NEXTAPI_GUIDE.md)
+- [NSE NextAPI API Catalog](NSE_NEXTAPI_API_CATALOG.md)
+- [TradingView UI Surfaces](TRADINGVIEW_UI_SURFACES.md)
+- [TradingView UI Surface Guide](TRADINGVIEW_UI_SURFACES_GUIDE.md)
+- [TradingView Surface Debug](TRADINGVIEW_UI_SURFACE_DEBUG.md)
+- [News Sentiment Guide](NEWS_SENTIMENT_GUIDE.md)
 
-```bash
-# 1. Install Node dependencies
-npm install
+## Product & project management
 
-# 2. Setup environment variables
-cp .env.example .env
+- [PRD index](PRD.md)
+- [PRD-001 Core Research](prd/001-core-research.md)
+- [PRD-002 Dashboard](prd/002-dashboard.md)
+- [PRD-003 Agentic Context](prd/003-agentic-context.md)
+- [Documentation Policy](DOCUMENTATION_POLICY.md)
 
-# 3. Execute individual stock research (e.g. RELIANCE)
-npm run research -- RELIANCE
+## Release history
 
-# 4. Perform LLM analysis (requires LLM_* in .env)
-npm run analyze -- RELIANCE
+- [CHANGELOG](../CHANGELOG.md) — canonical release log
+- [Detailed release history](RELEASES_AND_CHANGELOG.md)
 
-# 5. Run full test suite
-npm run test:all
-```
+## Archive
 
----
-
-## 📁 Repository Directory Overview
-
-```text
-stock-research-app/
-├── config/              # Scan registries, BSE scrip maps, and NSE series notes
-├── data/                # NSE security master cache (EQUITY_L.json)
-├── docs/                # Comprehensive documentation hub (this folder)
-├── outputs/             # Final validated analysis JSON files (<SYMBOL>-analysis.json)
-├── research/            # Per-symbol raw artifacts, screenshots, derived markdown, and prompts
-├── scans/               # Long-lived market scan outputs and Chartink criteria configs
-├── scripts/             # Diagnostic scripts, test suites, and maintenance CLIs
-├── src/
-│   ├── adapters/        # 12 data source adapters (NSE, Screener, Tijori, TradingView, etc.)
-│   ├── lib/             # Core pipeline logic, normalizers, evidence reconcilers & CLI helpers
-│   ├── index.ts         # Main CLI entrypoint
-│   ├── schema.ts        # Ajv JSON schema contract for LLM stock analysis output
-│   └── types/           # TypeScript interface definitions
-├── package.json         # Package configuration & script definitions
-└── tsconfig.json        # TypeScript compiler options
-```
+Older version-specific guides and walkthroughs are historical references only. Prefer current docs above. Superseded material lives under [docs/archive/](archive/).
