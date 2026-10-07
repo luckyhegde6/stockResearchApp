@@ -7,6 +7,8 @@ Canonical release history for repository behavior. Older detail remains in docs/
 ### Developer experience
 - Added an agent-neutral repository operating contract.
 - Added stable memory, current handoff, prioritized TODOs, architecture decisions, contributing guidance, product requirements, and GitHub templates.
+- Added machine-readable agent-manifest.json.
+- Added lightweight GitHub CI for version:check and test:all.
 - Corrected documentation drift around deterministic research and research:full.
 
 ## [1.50.0] - 2026-10-08
