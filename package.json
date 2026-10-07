@@ -103,7 +103,8 @@
     "test:tradingview-ui-direct-pages": "tsx scripts/test-tradingview-ui-direct-pages.ts",
     "laya:decisions": "tsx scripts/laya-decision-run.ts",
     "laya": "tsx scripts/laya-decision-run.ts",
-    "test:laya": "tsx scripts/test-laya-decisions.ts"
+    "test:laya": "tsx scripts/test-laya-decisions.ts",
+    "sheets:export": "tsx scripts/export-to-google-sheets.ts"
   },
   "engines": {
     "node": ">=20"
