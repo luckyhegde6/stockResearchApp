@@ -1,216 +1,117 @@
-# Stock Research Pipeline Operating Guide
+# Pipeline Operating Guide
 
-This guide provides step-by-step instructions for operating the **Stock Research Pipeline** (v1.50.0), running individual stock research, triggering market scans, executing momentum screens, analyzing news sentiment, and generating AI analysis outputs.
+Current for v1.50.0. Source code and package.json are authoritative.
 
----
+## Install
 
-## ⚙️ Prerequisites & Setup
+~~~powershell
+npm install
+npx playwright install chromium
+Copy-Item .env.example .env
 
-### 1. Environment Setup
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install "markitdown[all]"
+~~~
 
-Copy `.env.example` to `.env` and configure optional LLM credentials:
+LLM credentials are only required for final analysis.
 
-```dotenv
-# LLM Endpoint Configuration (Optional for acquisition, required for 'analyze')
-LLM_ENDPOINT=https://api.openai.com/v1/chat/completions
-LLM_API_KEY=your_api_key_here
-LLM_MODEL=gpt-4o
-LLM_TIMEOUT_MS=120000
+## Deterministic research
 
-# Pipeline Settings
-RESEARCH_INCLUDE_CHARTINK=false
-NSE_TIMEOUT_MS=30000
-SOURCE_TIMEOUT_MS=45000
-```
+~~~powershell
+npm run research -- ITC
+~~~
 
-### 2. Dependency Verification
+Flow:
 
-Ensure Python environment and Microsoft MarkItDown are available:
+~~~text
+NSE master
+→ NSE / Screener / Tijori / TradingView
+→ TradingView snapshot + News
+→ optional Chartink
+→ normalization
+→ canonical evidence
+→ reconciliation
+→ source health / quality
+→ evidence contract
+→ analysis inputs + evidence pack
+→ readiness
+~~~
 
-```powershell
-# Verify Node.js and TypeScript environment
-node --version # >= 20.0.0
+Key outputs:
 
-# Verify Playwright CLI
-npx playwright-cli --version
+~~~text
+research/ITC/
+├── manifest.json
+├── acquisition-report.json
+├── analysis-readiness.json
+├── evidence-contract.json
+├── source-health.json
+├── evidence-quality.json
+├── analysis-prompt.txt
+├── normalized/
+├── markdown/
+├── screenshots/
+└── debug/
+~~~
 
-# Verify MarkItDown tool
-markitdown --version
-```
+## Final analysis
 
----
+~~~powershell
+npm run analyze -- ITC
+npm run validate -- ITC
+~~~
 
-## 🔍 Workflow 1: Individual Stock Research
+The analyze path performs a fresh deterministic acquisition, prepares the reasoning handoff, checks readiness, calls the configured OpenAI-compatible endpoint, and validates the result with Ajv.
 
-To execute deterministic data acquisition, document normalization, and evidence assembly for a single stock:
+Important: research:full is currently an alias of research; it is not a combined research+analysis command.
 
-### Basic Research Command
-```powershell
-npm run research -- RELIANCE
-```
+## Targeted commands
 
-### Accepted Symbol Inputs
-The pipeline automatically resolves symbols via the NSE `EQUITY_L` security master:
-- Pure ticker: `RELIANCE`, `TCS`, `INFY`, `ITC`
-- Exchange prefix: `NSE:RELIANCE`
-- Yahoo suffix: `RELIANCE.NS`
-- TradingView URL: `https://in.tradingview.com/chart/?symbol=NSE%3ARELIANCE`
+~~~powershell
+npm run ingest -- ITC
+npm run prompt -- ITC
+npm run evidence:quality -- ITC
+npm run source:health -- ITC
+npm run test:analysis-readiness -- ITC
+npm run research:tradingview -- ITC
+npm run research:news -- ITC
+~~~
 
-### Expected Outputs
-Outputs are saved under `research/<SYMBOL>/`:
-- `manifest.json`: Full manifest of acquired artifacts, warnings, and data gaps.
-- `markdown/ALL_EVIDENCE.md`: Consolidated evidence normalized into Markdown.
-- `derived/analysis-readiness.json`: Readiness gate evaluation result.
-- `analysis-prompt.txt`: Full context prompt assembled for LLM analysis.
+Market datasets:
 
----
-
-## 🤖 Workflow 2: AI Analysis Execution
-
-Once research is completed, run the LLM analysis stage:
-
-```powershell
-npm run analyze -- RELIANCE
-```
-
-### Single-Step Combined Pipeline
-To run research and LLM analysis together in a single step:
-```powershell
-npm run research:full -- RELIANCE
-```
-
-### Output File
-Generates `outputs/RELIANCE-analysis.json`:
-```json
-{
-  "symbol": "RELIANCE",
-  "companyName": "Reliance Industries Limited",
-  "analysisDate": "2026-09-22",
-  "investmentVerdict": "BULLISH",
-  "valuationScore": 82,
-  "growthScore": 88,
-  "moatScore": 90,
-  "riskScore": 25,
-  "targetPriceRange": { "low": 3100, "base": 3400, "high": 3800 },
-  "status": "ok"
-}
-```
-
----
-
-## 📊 Workflow 3: Market Scans & Momentum Screens
-
-### 1. Chartink Market Scans
-Execute configured Chartink screening criteria across the market universe:
-```powershell
+~~~powershell
 npm run market:scans
-# or
-npm run chartink:scans
-```
-Outputs are written to `scans/chartink-market-scans.json`.
-
-### 2. Chartink Top 20 Momentum Screen
-Run the top 20 volume & price momentum scan:
-```powershell
-npm run chartink:top20
-```
-
-### 3. NSE 52-Week High Breakout Scan
-Fetch all NSE equities touching or near 52-week highs:
-```powershell
-npm run nse:52week-high
-```
-
-### 4. Screener Fundamental Market Screens
-Run Screener fundamental filter presets across market sectors:
-```powershell
 npm run screener-screens
-```
-
-### 5. Tijori Market & Sector Overview
-Extract sector breakdown and industry performance dashboards:
-```powershell
 npm run tijori-market
-```
+npm run nse:52week-high
+npm run chartink:top20
+~~~
 
----
+## Dashboard
 
-## 📰 Workflow 4: News & Sentiment Research
-
-To pull recent news headlines, press releases, and market sentiment:
-
-```powershell
-npm run research:news -- RELIANCE
-```
-
-This aggregates:
-- Financial media headlines (Economic Times, Moneycontrol, Livemint).
-- Regulatory announcements from NSE NextAPI.
-- Evaluates overall sentiment polarity (positive, neutral, negative).
-
----
-
-## 🛠️ Debugging & Diagnostics
-
-### Run System Doctor Checks
-```powershell
-# Check Playwright CLI setup
-npm run playwright:doctor
-
-# Check MarkItDown tool setup
-npm run markitdown:doctor
-
-# Check TradingView browser capture readiness
-npm run tradingview-doctor
-```
-
-### Inspect Acquisition Debug Log
-```powershell
-npm run debug:show -- RELIANCE
-```
-This displays detailed request timelines, response status codes, and latency breakdowns stored in `research/<SYMBOL>/debug/acquisition-timeline.txt`.
-
----
-
-## 🖥️ Workflow 5: Web Dashboard Control Center
-
-To launch the web dashboard server for visual pipeline management, settings configuration, and results inspection:
-
-```powershell
+~~~powershell
 npm run dashboard
-```
-Open **`http://localhost:3000`** in your browser.
+~~~
 
----
+Open http://localhost:3000.
 
-## 🔄 Workflow 6: Batch Research Runner
+The dashboard is a thin local API/UI over the existing CLI and filesystem. GitHub Pages is static only.
 
-To run research sequentially over a batch list of symbols (e.g. `ITC`, `HDFCBANK`, `IOC`, `HPCL`):
+## Diagnostics
 
-```powershell
-# Run configured watchlist in config/config.json
-npm run research:batch
+~~~powershell
+npm run version:check
+npm run playwright:doctor
+npm run markitdown:doctor
+npm run tradingview-doctor
+npm run source:doctor
+npm run test:all
+~~~
 
-# Or specify custom list of symbols
-npm run research:batch -- ITC HDFCBANK IOC HPCL RELIANCE TCS
-```
+## Failure interpretation
 
----
-
-## ⏰ Workflow 7: Cron Job Setup & Scheduling
-
-### Option 1: Cross-Platform Node Daemon
-```powershell
-npm run cron
-```
-
-### Option 2: Windows Task Scheduler Registration
-```powershell
-.\scripts\setup-cron-windows.ps1
-```
-
-### Option 3: POSIX Crontab
-```bash
-./scripts/setup-cron-posix.sh
-```
-
+- Provider failure should become a warning/gap, not an unhandled adapter crash.
+- A readiness block means deterministic evidence is insufficient.
+- Advisory gaps do not necessarily block analysis.
+- Do not bypass readiness by copying screenshot values into structured evidence.
