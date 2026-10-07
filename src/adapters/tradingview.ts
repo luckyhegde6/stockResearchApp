@@ -192,7 +192,7 @@ async function waitForUiSurfaceConfirmation(page:any, surface:TradingViewUiSurfa
     forecast:/Price target|Analyst rating|Actuals and estimates|Analysts offering 1-year price forecasts/i,
     news:/Why .*share price|Latest news|Earnings|Dividends|Share buybacks|Mergers and acquisitions|Insider trading|Analysts/i,
     documents:/Documents|Earnings, Q\d|Corporate events|Interim report|Annual report/i,
-    seasonals:/Historical seasonal performance|Seasonals|Seasonality|Average\\s+(Percent|Return)/i,
+    seasonals:/Historical seasonal performance|Seasonals|Seasonality|Average\s+(Percent|Return)/i,
     community:/Community|Ideas|Published|Popular ideas|Related ideas/i,
     financials:/Fundamentals and stats|Income statement|Balance sheet|Cash flow|EPS and revenue snapshot/i,
     options:/Options|Calls|Puts|Expiration/i,
@@ -209,7 +209,7 @@ async function waitForUiSurfaceConfirmation(page:any, surface:TradingViewUiSurfa
     try {
       const current = new URL(url);
       const expected = new URL(targetUrl);
-      const normalizePath = (value:string) => value.replace(/\\/+$/, '/') || '/';
+      const normalizePath = (value:string) => value.endsWith('/') ? value : value + '/';
       routeMatches =
         current.hostname === expected.hostname &&
         normalizePath(current.pathname) === normalizePath(expected.pathname);
