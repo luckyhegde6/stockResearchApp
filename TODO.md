@@ -1,18 +1,18 @@
 # TODO
 
-Planning backlog. Items are not claims of existing functionality.
+Prioritized backlog. Items are not claims of existing functionality.
 
 ## P0 — correctness
 
-- [ ] Add CI for version:check and test:all.
+- [x] Add CI for version:check and test:all.
 - [ ] Keep CLI/operating docs synchronized with package.json.
 - [ ] Expand regression coverage for readiness edge cases.
 - [ ] Keep TradingView route tests synchronized with configured surfaces.
 
 ## P1 — developer experience
 
+- [x] Add a machine-readable repository manifest for agents.
 - [ ] Add a lightweight local health command for runtime, Playwright, MarkItDown, config, and test readiness.
-- [ ] Add a compact machine-readable repository manifest for agents.
 - [ ] Move superseded historical root docs into docs/archive/ where safe.
 - [ ] Add dashboard API contract tests.
 
