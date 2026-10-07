@@ -1,4 +1,4 @@
-# Onboarding
+# Onboarding — Stock Research Pipeline v1.50.0
 
 ## What this project does
 
