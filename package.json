@@ -1,6 +1,6 @@
 {
   "name": "stock-research-pipeline",
-  "version": "1.49.5",
+  "version": "1.50.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -98,8 +98,6 @@
     "test:news-sentiment": "tsx scripts/test-news-sentiment.ts",
     "test:tradingview-ui-surfaces": "tsx scripts/test-tradingview-ui-surfaces.ts",
     "tradingview:ui": "tsx src/index.ts tradingview-ui",
-    "test:tradingview-ui-launcher": "tsx scripts/test-tradingview-ui-launcher.ts",
-    "test:tradingview-ui-metrics": "tsx scripts/test-tradingview-ui-metrics.ts",
     "test:tradingview-ui-confirmation": "tsx scripts/test-tradingview-ui-confirmation.ts",
     "test:tradingview-ui-surface-routing": "tsx scripts/test-tradingview-ui-surface-routing.ts",
     "test:tradingview-ui-direct-pages": "tsx scripts/test-tradingview-ui-direct-pages.ts",
@@ -124,5 +122,5 @@
   "devDependencies": {
     "@types/node": "latest"
   },
-  "description": "Deterministic symbol-agnostic NSE-first stock research pipeline with direct TradingView public symbol-page evidence capture v1.49.5"
+  "description": "Deterministic symbol-agnostic NSE-first stock research pipeline with direct TradingView public symbol-page evidence capture v1.50.0"
 }
