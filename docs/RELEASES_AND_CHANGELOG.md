@@ -1,12 +1,18 @@
 # Stock Research Pipeline Release History & Changelog
 
-This document consolidates the complete release history and major feature milestones of the **Stock Research Pipeline** from **v1.0** up to **v1.49.5**.
+This document consolidates the complete release history and major feature milestones of the **Stock Research Pipeline** from **v1.0** up to **v1.50.0**.
 
 ---
 
-## 🚀 Recent Releases (v1.40 – v1.49.5)
+## 🚀 Recent Releases (v1.40 – v1.50.0)
 
-### v1.49.5 (Current Release)
+### v1.50.0 (Current Release)
+- **TradingView direct-only surface capture**: Forecast, News, Documents, Seasonals, and Community are captured through canonical public symbol-page URLs with Playwright; the legacy Metrics/More launcher path was removed from the production adapter.
+- **Canonical TradingView URL builder**: Chart, technical, and public surface URL construction is centralized in `src/lib/tradingview-url.ts`.
+- **Route/content verification hardened**: A surface is marked `ok` only after exact host/path and surface-specific visible-content confirmation plus a valid screenshot.
+- **Evidence contract preserved**: Existing `tradingViewUiSurfaces` and downstream analysis-evidence-pack fields remain unchanged.
+
+### v1.49.5
 - **Direct TradingView Public Symbol-Page Surfaces**: Restructured TradingView capture to navigate directly to public symbol pages (`https://in.tradingview.com/chart/?symbol=NSE%3A<SYMBOL>`), extracting technical summaries and full 1D chart screenshots without authentication requirements.
 - **Ajv Schema Alignment**: Fixed strict validation rules for 22 required top-level financial analysis fields.
 
