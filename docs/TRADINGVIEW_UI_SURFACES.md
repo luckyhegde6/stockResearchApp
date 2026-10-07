@@ -1,19 +1,31 @@
-# TradingView UI Surface Capture
+# TradingView Public UI Surface Capture
 
-Current Supercharts layout used by the adapter:
+The production adapter captures supplementary TradingView surfaces by navigating directly to stable public symbol-page routes with Playwright.
 
-`chart → right stock details card → four-square/grid launcher → surface`
+## Active surfaces
 
-The launcher opens categories including Fundamentals, Analysis and Assets. The requested surfaces are selected from that menu.
+- `forecast` → `/symbols/NSE-<SYMBOL>/forecast-price-target/`
+- `news` → `/symbols/NSE-<SYMBOL>/news/`
+- `documents` → `/symbols/NSE-<SYMBOL>/documents/`
+- `seasonals` → `/symbols/NSE-<SYMBOL>/seasonals/`
+- `community` → `/symbols/NSE-<SYMBOL>/community/`
 
-## Debug files
+The symbol and exchange are generated dynamically through `src/lib/tradingview-url.ts`. The production surface path does not depend on TradingView's Metrics/More launcher DOM.
 
-For each requested surface the adapter creates:
+## Capture contract
 
-- `raw/tradingview/debug-ui-<surface>-launcher.json` — launcher detection strategy and candidate details.
-- `raw/tradingview/ui-<surface>.json` — before/after state, selection state, route/content confirmation and screenshot metadata.
-- `screenshots/tradingview-<surface>.png` — visual evidence.
+1. Open the requested NSE chart page first to establish a clean Playwright session.
+2. Navigate to the canonical public symbol-page URL with `page.goto()`.
+3. Wait for the configured direct-surface settle period.
+4. Confirm the exact TradingView host and symbol/surface pathname.
+5. Confirm surface-specific visible content.
+6. Capture a full-page screenshot.
+7. Write `raw/tradingview/ui-<surface>.json` and `screenshots/tradingview-<surface>.png`.
 
-## Important
+The resulting evidence is supplementary visual/audit evidence. Numeric investment facts must continue to come from structured sources.
 
-UI screenshots are visual/audit evidence. Numeric facts must continue to come from structured NSE/TradingView data rather than pixel interpretation.
+## Failure handling
+
+A screenshot may be retained as `partial` evidence when the route/content confirmation fails. A surface must be marked `ok` only when navigation, exact-route confirmation, content confirmation, and a non-empty screenshot all succeed.
+
+Historical Metrics-menu implementation details belong in the archived release notes, not the active adapter documentation.
