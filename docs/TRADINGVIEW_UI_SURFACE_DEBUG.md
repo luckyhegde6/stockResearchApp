@@ -1,43 +1,32 @@
-# TradingView UI Surface Debugging
+# TradingView Public UI Surface Debugging
 
-## Current UI model
+## Current capture model
 
-TradingView Supercharts uses a four-square/grid control on the right-hand instrument card. Hovering the control shows the tooltip `Metrics`.
+The production path is:
 
-Do not rely on a text `More` button being present.
+`chart page → canonical public symbol page → route/content confirmation → full-page screenshot`
 
-## Launcher order
+It does not depend on the Metrics/More launcher.
 
-1. `aria-label="Metrics"`
-2. `title="Metrics"`
-3. `data-tooltip="Metrics"`
-4. `data-tooltip-content="Metrics"`
-5. TradingView semantic/data-name metrics selectors
-6. Instrument-card geometry + SVG/grid scoring
+## Debug fields
 
-## News
+Each `raw/tradingview/ui-<surface>.json` records:
 
-The News surface has an alternate direct right-panel route. The adapter tries exact accessible News controls before falling back to Metrics.
-
-## Required debug fields
-
-- launcher strategy
-- semantic attributes
-- stock card bounds
-- candidate controls
-- selected candidate
-- click result
-- post-launch controls
-- surface click result
-- final URL/title
-- route hint
-- content hint
-- screenshot bytes
+- target URL and final URL
+- navigation success/error
+- exact route confirmation
+- surface-specific content confirmation
+- surface name/label
+- visible body-text sample
+- screenshot existence and byte size
+- capture strategy
 
 ## Failure interpretation
 
-- `ok`: launcher + surface click + confirmation + screenshot
-- `partial`: screenshot exists but selection/confirmation failed
-- `error`: screenshot unavailable or capture failed
+- `ok`: navigation + exact route + surface content + screenshot succeeded
+- `partial`: screenshot exists but one or more confirmation checks failed
+- `error`: screenshot could not be created
 
-A partial surface must not poison the core TradingView source health because UI surfaces are supplementary evidence.
+A partial surface remains supplementary evidence and must not replace structured numeric sources.
+
+For historical Metrics-menu troubleshooting, see the archived v1.49 release documentation.
