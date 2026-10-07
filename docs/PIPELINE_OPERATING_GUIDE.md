@@ -1,6 +1,6 @@
 # Stock Research Pipeline Operating Guide
 
-This guide provides step-by-step instructions for operating the **Stock Research Pipeline** (v1.49.5), running individual stock research, triggering market scans, executing momentum screens, analyzing news sentiment, and generating AI analysis outputs.
+This guide provides step-by-step instructions for operating the **Stock Research Pipeline** (v1.50.0), running individual stock research, triggering market scans, executing momentum screens, analyzing news sentiment, and generating AI analysis outputs.
 
 ---
 
