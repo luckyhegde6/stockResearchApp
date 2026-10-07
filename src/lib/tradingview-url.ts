@@ -25,3 +25,27 @@ export function buildTradingViewInstrument(symbol: string, exchange: TradingView
     technicalsUrl: `https://in.tradingview.com/symbols/${exchange}-${encodeURIComponent(clean)}/technicals/?exchange=${exchange}&interval=1D`,
   };
 }
+
+export const TRADINGVIEW_SURFACE_PATHS = {
+  forecast: 'forecast-price-target',
+  news: 'news',
+  documents: 'documents',
+  seasonals: 'seasonals',
+  community: 'community',
+  financials: 'financials-earnings',
+  options: 'options',
+  etfs: 'etfs',
+  bonds: 'bonds',
+} as const;
+
+export type TradingViewUiSurface = keyof typeof TRADINGVIEW_SURFACE_PATHS;
+
+export function buildTradingViewSurfaceUrl(
+  symbol: string,
+  exchange: TradingViewExchange = 'NSE',
+  surface: TradingViewUiSurface,
+): string {
+  const clean = normalizeTvSymbol(symbol);
+  const pathPart = TRADINGVIEW_SURFACE_PATHS[surface];
+  return 'https://in.tradingview.com/symbols/' + exchange + '-' + encodeURIComponent(clean) + '/' + pathPart + '/';
+}
