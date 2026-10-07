@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "individual_stock_research": {
+    "core": [
+      "NSE",
+      "Screener",
+      "Tijori",
+      "TradingView"
+    ],
+    "supplementary": [
+      "News"
+    ],
+    "optional": [
+      "Chartink"
+    ],
+    "excluded": [
+      "BSE"
+    ],
+    "chartinkFlag": "RESEARCH_INCLUDE_CHARTINK",
+    "chartinkDefault": false
+  },
+  "market_research": {
+    "longLived": [
+      "Chartink",
+      "NSE"
+    ],
+    "root": "scans/"
+  }
+}

@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Research Pipeline — Control Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0e17;
+      --bg-card: rgba(18, 26, 41, 0.75);
+      --bg-card-hover: rgba(28, 40, 62, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(99, 102, 241, 0.3);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --font-heading: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --glass-blur: blur(16px);
+      --radius: 12px;
+      --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.12) 0px, transparent 50%);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: rgba(10, 14, 23, 0.8);
+      backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--accent-cyan));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: white;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+    .brand-title h1 {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #ffffff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-title p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    nav {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.25rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .nav-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Live Progress Stepper Banner */
+    .progress-banner {
+      background: rgba(18, 26, 41, 0.9);
+      border-bottom: 1px solid var(--border-accent);
+      padding: 1rem 2rem;
+      backdrop-filter: var(--glass-blur);
+    }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+      font-size: 0.85rem;
+    }
+    .progress-title {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--accent-cyan));
+      border-radius: 9999px;
+      transition: width 0.4s ease;
+    }
+
+    .stepper-steps {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .step-pill {
+      flex: 1;
+      padding: 0.4rem 0.6rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      text-align: center;
+      color: var(--text-dim);
+      transition: all 0.2s;
+    }
+    .step-pill.active {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--primary);
+      color: var(--text-main);
+      font-weight: 600;
+    }
+    .step-pill.done {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    main {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      transition: all 0.2s ease;
+    }
+    .card:hover {
+      border-color: var(--border-accent);
+    }
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #ffffff;
+    }
+
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .stat-val {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .pill-green { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .pill-blue { background: rgba(99, 102, 241, 0.15); color: var(--primary); border: 1px solid rgba(99, 102, 241, 0.3); }
+    .pill-amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .pill-rose { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .suggestions-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #111827;
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 50;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+      display: none;
+    }
+    .suggestion-item {
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.85rem;
+    }
+    .suggestion-item:hover {
+      background: rgba(99, 102, 241, 0.2);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+    }
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      box-shadow: none;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .btn-emerald {
+      background: var(--accent-emerald);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    }
+    .btn-emerald:hover {
+      background: #059669;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+    th {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    pre {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #38bdf8;
+      overflow-x: auto;
+      max-height: 450px;
+    }
+
+    .badge-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .chip-remove {
+      color: var(--accent-rose);
+      cursor: pointer;
+      font-weight: bold;
+      border: none;
+      background: transparent;
+      font-size: 0.9rem;
+    }
+    .chip-remove:hover {
+      color: #ff4d4d;
+    }
+
+    /* Toast Notification Banner */
+    .toast-banner {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #1e1b4b;
+      border: 1px solid var(--primary);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      display: none;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">📈</div>
+      <div class="brand-title">
+        <h1>Stock Research Control Center</h1>
+        <p>v1.49.5 — Symbol-Agnostic Deterministic Pipeline</p>
+      </div>
+    </div>
+    <nav>
+      <button class="nav-btn active" onclick="switchTab('dashboard')">Overview</button>
+      <button class="nav-btn" onclick="switchTab('launcher')">Launch Runs</button>
+      <button class="nav-btn" onclick="switchTab('results')">Results Inspector</button>
+      <button class="nav-btn" onclick="switchTab('scans')">Market Scans</button>
+      <button class="nav-btn" onclick="switchTab('tracking')">Performance Tracker</button>
+      <button class="nav-btn" onclick="switchTab('history')">Run History</button>
+      <button class="nav-btn" onclick="switchTab('laya')">Laya Decisions</button>
+      <button class="nav-btn" onclick="switchTab('config')">Settings Config</button>
+    </nav>
+  </header>
+
+  <!-- LIVE PROGRESS STEPPER BANNER -->
+  <div class="progress-banner">
+    <div class="progress-header">
+      <div class="progress-title">
+        <span id="prog-spinner">⚙️</span>
+        <span id="prog-stage-name">Pipeline Status: Ready</span>
+        <span class="pill pill-blue" id="prog-target-pill" style="cursor: pointer; transition: transform 0.2s;" title="Click to view results for this target" onclick="onTargetPillClick()">IDLE</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div id="prog-action-links" style="display: none; align-items: center; gap: 0.5rem;">
+          <button class="btn btn-emerald" style="padding: 0.3rem 0.75rem; font-size: 0.8rem; font-weight: 700; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);" onclick="navigateToCompletedResults()">
+            📊 View Results (<span id="prog-results-target"></span>)
+          </button>
+          <button class="btn btn-secondary" style="padding: 0.3rem 0.75rem; font-size: 0.8rem; font-weight: 700; background: rgba(99,102,241,0.25); border-color: var(--primary);" onclick="navigateToCompletedLaya()">
+            🧠 Laya Decisions
+          </button>
+        </div>
+        <div style="color: var(--text-muted); font-weight: 700;" id="prog-percent-text">0%</div>
+      </div>
+    </div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" id="prog-bar-fill"></div>
+    </div>
+    <div class="stepper-steps">
+      <div class="step-pill" id="step-1">1. Master Resolution</div>
+      <div class="step-pill" id="step-2">2. Core Acquisition</div>
+      <div class="step-pill" id="step-3">3. Normalization</div>
+      <div class="step-pill" id="step-4">4. Reconciliation</div>
+      <div class="step-pill" id="step-5">5. Readiness Gate</div>
+    </div>
+  </div>
+
+  <main>
+    <!-- TAB 1: OVERVIEW & WATCHLIST MANAGEMENT -->
+    <div id="tab-dashboard" class="tab-content active">
+      <div class="grid" style="margin-bottom: 1.5rem;">
+        <div class="card" style="grid-column: span 2;">
+          <div class="card-title">
+            <span>Configured Watchlist Management</span>
+            <span class="pill pill-blue" id="stat-symbol-count">7 Symbols</span>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem;">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <input type="text" id="picker-symbol-input" placeholder="Type NSE Symbol or Company Name (e.g. TATAMOTORS, INFY, ITC)..." autocomplete="off" oninput="onSymbolSearchInput(this.value)">
+              <div class="suggestions-list" id="picker-suggestions"></div>
+            </div>
+            <button class="btn" onclick="addSymbolToWatchlist()">+ Add to Watchlist</button>
+          </div>
+          <div id="add-error-msg" style="color: var(--accent-rose); font-size: 0.8rem; margin-bottom: 0.75rem; display: none;"></div>
+
+          <div style="margin-top: 0.5rem;" id="watchlist-chips">
+            <!-- Chips rendered dynamically -->
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Active Core Sources</span>
+            <span class="stat-val" style="color: var(--accent-emerald);">4 Core</span>
+          </div>
+          <div style="margin-top: 1rem;">
+            <span class="pill pill-green">NSE Official</span>
+            <span class="pill pill-green">Screener.in</span>
+            <span class="pill pill-green">Tijori</span>
+            <span class="pill pill-green">TradingView</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Recent Research Executions</span>
+          <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="loadRecentRuns()">Refresh</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Status</th>
+              <th>Readiness Score</th>
+              <th>Acquired Sources</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="recent-runs-body">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: LAUNCHER & RUN BUTTONS -->
+    <div id="tab-launcher" class="tab-content">
+      <div class="grid">
+        <div class="card">
+          <div class="card-title">Single Stock Research Launcher</div>
+          <div class="form-group">
+            <label for="launch-symbol-input">Select or Type NSE Equity Symbol</label>
+            <input type="text" id="launch-symbol-input" placeholder="e.g. ITC, HDFCBANK, IOC, HPCL, RELIANCE" value="ITC">
+          </div>
+          <div class="form-group">
+            <label>Include Supplementary Options</label>
+            <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+              <label><input type="checkbox" id="chk-news" checked> Include News Sentiment</label>
+              <label><input type="checkbox" id="chk-chartink"> Include Chartink Scan</label>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap;">
+            <button class="btn btn-emerald" onclick="triggerResearchRun()">▶ Run Research Now</button>
+            <button class="btn btn-secondary" onclick="viewResultsForSymbol(document.getElementById('launch-symbol-input').value.trim().toUpperCase() || 'ITC')">📊 View Existing Results</button>
+            <button class="btn btn-secondary" style="background: rgba(99,102,241,0.25); border-color: var(--primary);" onclick="viewLayaForSymbol(document.getElementById('launch-symbol-input').value.trim().toUpperCase() || 'ITC')">🧠 Laya Decisions</button>
+          </div>
+          <div style="margin-top: 1.5rem;">
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">CLI Equivalent String:</p>
+            <pre id="cmd-preview">npm run research -- ITC</pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Batch Research Runner</div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Run research sequentially over multiple symbols:
+          </p>
+          <div class="form-group">
+            <label for="batch-list">Symbol Batch List (Space separated)</label>
+            <input type="text" id="batch-list" value="ITC HDFCBANK IOC HPCL RELIANCE TCS INFY">
+          </div>
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <button class="btn btn-emerald" onclick="triggerBatchRun()">▶ Run Batch Research Now</button>
+          </div>
+          <div style="margin-top: 1.5rem;">
+            <pre id="batch-cmd-preview">npm run research:batch -- ITC HDFCBANK IOC HPCL RELIANCE TCS INFY</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: RESULTS INSPECTOR -->
+    <div id="tab-results" class="tab-content">
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <label style="margin: 0; min-width: 140px;">Select Research Symbol:</label>
+            <select id="inspect-select" style="width: auto; min-width: 200px;" onchange="loadSymbolDetails(this.value)">
+              <option value="ITC">ITC Limited</option>
+              <option value="HDFCBANK">HDFC Bank Limited</option>
+              <option value="IOC">Indian Oil Corporation</option>
+              <option value="HPCL">Hindustan Petroleum Corporation</option>
+              <option value="RELIANCE">Reliance Industries</option>
+            </select>
+            <button class="btn btn-secondary" onclick="loadSymbolDetails(document.getElementById('inspect-select').value)">🔄 Refresh</button>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-emerald" onclick="triggerLlmAnalysis()">▶ Run AI Analysis (LLM)</button>
+            <button class="btn btn-secondary" style="background: rgba(99,102,241,0.25); border-color: var(--primary);" onclick="viewLayaForSymbol(document.getElementById('inspect-select').value)">🧠 Open in Laya Decisions</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-title">Canonical Facts & Valuation</div>
+          <div id="canonical-facts-container">
+            <pre id="canonical-json-display">Loading canonical facts...</pre>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Analysis Readiness Gate</div>
+          <div id="readiness-container">
+            <pre id="readiness-json-display">Loading readiness evaluation...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: MARKET SCANS DROPDOWN & TRIGGER BUTTONS -->
+    <div id="tab-scans" class="tab-content">
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-title">
+          <span>Market Scans & Breakouts</span>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <label style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Select Market Scan Criteria:</label>
+            <select id="scan-dropdown" style="width: auto; min-width: 240px;" onchange="loadScanType(this.value)">
+              <option value="top20">Chartink Top 20 Momentum Scan</option>
+              <option value="52w">NSE 52-Week High Breakouts</option>
+              <option value="chartink">All Chartink Scans Dataset</option>
+              <option value="screener">Screener Fundamental Sector Screens</option>
+              <option value="tijori">Tijori Industry Dashboards</option>
+            </select>
+            <button class="btn btn-emerald" onclick="triggerMarketScan()">▶ Run Selected Scan Now</button>
+          </div>
+        </div>
+        <pre id="scan-data-display">Select scan type above to view output dataset...</pre>
+      </div>
+    </div>
+
+    <!-- TAB 5: PERFORMANCE TRACKER -->
+    <div id="tab-tracking" class="tab-content">
+      <div class="grid" style="margin-bottom: 1.5rem;">
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Total Tracked Scanned Stocks</span>
+            <span class="stat-val" id="track-total">0</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Gain Ratio %</span>
+            <span class="stat-val" style="color: var(--accent-emerald);" id="track-gain-ratio">0%</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Average Return %</span>
+            <span class="stat-val" style="color: var(--accent-cyan);" id="track-avg-return">0%</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Best Performer</span>
+            <span class="stat-val" style="color: var(--accent-amber);" id="track-best">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Scanned Stocks Performance Log</span>
+          <button class="btn btn-secondary" onclick="fetchTrackingData()">Refresh Tracker</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Scan Date</th>
+              <th>Symbol</th>
+              <th>Company Name</th>
+              <th>Scan Criteria</th>
+              <th>Scan Price</th>
+              <th>Current Price</th>
+              <th>Return %</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tracking-table-body">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 6: RUN HISTORY & ACTIVITY LOG -->
+    <div id="tab-history" class="tab-content">
+      <div class="grid" style="margin-bottom: 1.5rem;">
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Total Executions Logged</span>
+            <span class="stat-val" id="hist-total">0</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Execution Success Rate</span>
+            <span class="stat-val" style="color: var(--accent-emerald);" id="hist-rate">100%</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Average Duration</span>
+            <span class="stat-val" style="color: var(--accent-cyan);" id="hist-avg-time">0s</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Execution Run History Log (research/history/run-history.json)</span>
+          <button class="btn btn-secondary" onclick="fetchHistoryData()">Refresh Log</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Run ID</th>
+              <th>Target Symbol / Scan</th>
+              <th>Type</th>
+              <th>Start Time</th>
+              <th>Duration</th>
+              <th>Readiness Score</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="history-table-body">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 7: CONFIG -->
+    <div id="tab-config" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <span>Pipeline Configuration Editor (config/config.json)</span>
+          <button class="btn btn-emerald" onclick="saveConfigFromUI()">💾 Save Configuration Settings</button>
+        </div>
+        <pre id="config-json-editor" contenteditable="true" style="min-height: 400px; color: #a5f3fc; border-color: var(--primary);">Loading configuration...</pre>
+      </div>
+    <!-- TAB 8: LAYA DECISION ENGINE -->
+    <div id="tab-laya" class="tab-content">
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <label style="margin: 0; font-weight: 600;">Select Researched Symbol:</label>
+            <select id="laya-ticker-select" style="width: auto; min-width: 220px;" onchange="loadLayaDecisions(this.value)">
+              <option value="ITC">ITC Limited</option>
+              <option value="HDFCBANK">HDFC Bank Limited</option>
+              <option value="IOC">Indian Oil Corporation</option>
+              <option value="HPCL">Hindustan Petroleum Corporation</option>
+              <option value="RELIANCE">Reliance Industries</option>
+            </select>
+            <button class="btn btn-emerald" onclick="loadLayaDecisions(document.getElementById('laya-ticker-select').value)">⚡ Run Laya Decisions</button>
+            <button class="btn btn-secondary" onclick="viewResultsForSymbol(document.getElementById('laya-ticker-select').value)">📊 View Canonical Facts</button>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" id="btn-toggle-laya-md" onclick="toggleLayaView('markdown')">View Markdown</button>
+            <button class="btn btn-secondary" id="btn-toggle-laya-json" onclick="toggleLayaView('json')">View Raw JSON</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Decision Summary Cards -->
+      <div class="grid" style="margin-bottom: 1.5rem;" id="laya-summary-grid">
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Action Recommendation</span>
+            <span class="stat-val" id="laya-action-rec" style="color: var(--accent-emerald);">--</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);" id="laya-action-conf">Confidence: --</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Trend Direction</span>
+            <span class="stat-val" id="laya-trend-dir" style="color: var(--accent-cyan);">--</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);" id="laya-trend-conf">Technical Price Action</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Fundamental Quality</span>
+            <span class="stat-val" id="laya-fund-score" style="color: var(--accent-amber);">--</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);" id="laya-fund-label">Scale 0 - 4</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat-box">
+            <span class="stat-label">Valuation Stance</span>
+            <span class="stat-val" id="laya-val-stance" style="color: var(--primary);">--</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);" id="laya-val-conf">P/E, P/B & Peers</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Secondary Metrics Row -->
+      <div class="grid" style="margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));" id="laya-secondary-grid">
+        <div class="card" style="padding: 1rem;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Momentum Strength</div>
+          <div id="laya-momentum" style="font-size: 1.1rem; font-weight: 700; margin-top: 0.25rem;">--</div>
+        </div>
+        <div class="card" style="padding: 1rem;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">News Risk Event</div>
+          <div id="laya-news-risk" style="font-size: 1.1rem; font-weight: 700; margin-top: 0.25rem;">--</div>
+        </div>
+        <div class="card" style="padding: 1rem;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Scan Conviction (≥2)</div>
+          <div id="laya-scan-conviction" style="font-size: 1.1rem; font-weight: 700; margin-top: 0.25rem;">--</div>
+        </div>
+        <div class="card" style="padding: 1rem;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Data Quality Gate</div>
+          <div id="laya-data-quality" style="font-size: 1.1rem; font-weight: 700; margin-top: 0.25rem;">--</div>
+        </div>
+      </div>
+
+      <!-- Detailed Decisions Container -->
+      <div class="card" id="laya-details-card">
+        <div class="card-title">
+          <span>8 Typed Decision Questions (Non-Autoregressive System 1 Evaluators)</span>
+          <span class="pill pill-green" id="laya-model-pill">Deterministic Rules Engine</span>
+        </div>
+        <div id="laya-decisions-list" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+          <div style="color: var(--text-muted); padding: 2rem; text-align: center;">Click "Run Laya Decisions" or select a symbol above.</div>
+        </div>
+      </div>
+
+      <!-- Raw Markdown / JSON Preview -->
+      <div class="card" id="laya-raw-card" style="display: none; margin-top: 1.5rem;">
+        <div class="card-title">
+          <span id="laya-raw-title">Laya Decision Report</span>
+          <button class="btn btn-secondary" onclick="document.getElementById('laya-raw-card').style.display='none'">✕ Close Preview</button>
+        </div>
+        <pre id="laya-raw-display" style="max-height: 500px; overflow-y: auto;">Loading report...</pre>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-banner" id="toast">Task Triggered</div>
+
+  <footer>
+    <p>Stock Research Pipeline v1.49.5 | Symbol-Agnostic Indian Equity Pipeline | Open Source Architecture</p>
+  </footer>
+
+  <script>
+    let currentConfigSymbols = ['ITC', 'HDFCBANK', 'IOC', 'HPCL', 'RELIANCE', 'TCS', 'INFY'];
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 4000);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      
+      const activeBtn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const target = document.getElementById('tab-' + tabId);
+      if (target) target.classList.add('active');
+
+      if (tabId === 'dashboard') fetchWatchlist();
+      if (tabId === 'config') fetchConfig();
+      if (tabId === 'results') loadSymbolDetails(document.getElementById('inspect-select').value);
+      if (tabId === 'tracking') fetchTrackingData();
+      if (tabId === 'history') fetchHistoryData();
+      if (tabId === 'scans') loadScanType(document.getElementById('scan-dropdown').value);
+      if (tabId === 'laya') loadLayaDecisions(document.getElementById('laya-ticker-select').value);
+    }
+
+    let lastCompletedTarget = null;
+
+    async function pollProgress() {
+      try {
+        const res = await fetch('/api/runs/progress');
+        const prog = await res.json();
+        
+        document.getElementById('prog-stage-name').textContent = 'Pipeline Status: ' + prog.stageName;
+        const targetPill = document.getElementById('prog-target-pill');
+        targetPill.textContent = prog.target ? prog.target : 'IDLE';
+        document.getElementById('prog-percent-text').textContent = prog.progressPercent + '%';
+        document.getElementById('prog-bar-fill').style.width = prog.progressPercent + '%';
+
+        for (let i = 1; i <= 5; i++) {
+          const pill = document.getElementById('step-' + i);
+          pill.classList.remove('active', 'done');
+          if (i < prog.step) pill.classList.add('done');
+          else if (i === prog.step) pill.classList.add('active');
+        }
+
+        const actionLinks = document.getElementById('prog-action-links');
+        const resultsTarget = document.getElementById('prog-results-target');
+
+        // Check if run completed (100% or step 5 or status completed)
+        const isComplete = (prog.progressPercent === 100 || prog.step === 5 || prog.status === 'completed') && prog.target;
+        if (isComplete) {
+          actionLinks.style.display = 'flex';
+          resultsTarget.textContent = prog.target;
+          targetPill.style.background = 'rgba(16, 185, 129, 0.25)';
+          targetPill.style.color = 'var(--accent-emerald)';
+          targetPill.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+          targetPill.style.fontWeight = 'bold';
+
+          if (lastCompletedTarget !== prog.target) {
+            lastCompletedTarget = prog.target;
+            showCompletionToast(prog.target);
+            populateResearchedDropdowns();
+            loadRecentRuns();
+          }
+        } else if (prog.status === 'running') {
+          actionLinks.style.display = 'none';
+          targetPill.style.background = 'rgba(99, 102, 241, 0.15)';
+          targetPill.style.color = 'var(--primary)';
+        }
+      } catch (e) {}
+    }
+
+    setInterval(pollProgress, 2000);
+
+    /* TRIGGER BUTTON ACTIONS */
+    async function triggerResearchRun() {
+      const symbol = document.getElementById('launch-symbol-input').value.trim().toUpperCase() || 'ITC';
+      const chkNews = document.getElementById('chk-news').checked;
+      const chkChartink = document.getElementById('chk-chartink').checked;
+
+      showToast(`Triggering Research Run for ${symbol}...`);
+      try {
+        const res = await fetch('/api/trigger/research', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbol, includeNews: chkNews, includeChartink: chkChartink })
+        });
+        const data = await res.json();
+        showToast(data.message || `Started research for ${symbol}`);
+        pollProgress();
+      } catch (err) {
+        showToast('Trigger failed: ' + err.message);
+      }
+    }
+
+    async function triggerBatchRun() {
+      const listStr = document.getElementById('batch-list').value.trim();
+      const symbols = listStr ? listStr.split(/\s+/).filter(Boolean) : currentConfigSymbols;
+
+      showToast(`Triggering Batch Research for ${symbols.length} symbols...`);
+      try {
+        const res = await fetch('/api/trigger/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbols })
+        });
+        const data = await res.json();
+        showToast(data.message || `Started batch research`);
+        pollProgress();
+      } catch (err) {
+        showToast('Batch trigger failed: ' + err.message);
+      }
+    }
+
+    async function triggerMarketScan() {
+      const scanType = document.getElementById('scan-dropdown').value;
+      showToast(`Triggering Market Scan (${scanType})...`);
+      try {
+        const res = await fetch('/api/trigger/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scanType })
+        });
+        const data = await res.json();
+        showToast(data.message || `Started scan ${scanType}`);
+        pollProgress();
+      } catch (err) {
+        showToast('Scan trigger failed: ' + err.message);
+      }
+    }
+
+    async function triggerLlmAnalysis() {
+      const symbol = document.getElementById('inspect-select').value;
+      showToast(`Triggering LLM AI Analysis for ${symbol}...`);
+      try {
+        const res = await fetch('/api/trigger/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbol })
+        });
+        const data = await res.json();
+        showToast(data.message || `Started AI analysis for ${symbol}`);
+        pollProgress();
+      } catch (err) {
+        showToast('Analysis trigger failed: ' + err.message);
+      }
+    }
+
+    async function fetchWatchlist() {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        currentConfigSymbols = data.symbols || currentConfigSymbols;
+        renderWatchlistChips();
+      } catch (e) { renderWatchlistChips(); }
+    }
+
+    function renderWatchlistChips() {
+      const container = document.getElementById('watchlist-chips');
+      document.getElementById('stat-symbol-count').textContent = `${currentConfigSymbols.length} Symbols`;
+      container.innerHTML = currentConfigSymbols.map(sym => `
+        <span class="badge-chip" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.65rem;">
+          <span style="cursor: pointer; font-weight: 700; color: #a5f3fc; text-decoration: underline dotted;" onclick="viewResultsForSymbol('${sym}')" title="Inspect ${sym} Results">${sym}</span>
+          <button style="border:none; background:transparent; cursor:pointer; font-size: 0.85rem; padding: 0;" onclick="viewResultsForSymbol('${sym}')" title="View Results Inspector">📊</button>
+          <button style="border:none; background:transparent; cursor:pointer; font-size: 0.85rem; padding: 0;" onclick="viewLayaForSymbol('${sym}')" title="View Laya Decisions">🧠</button>
+          <button class="chip-remove" onclick="removeSymbolFromWatchlist('${sym}')" title="Remove from Watchlist" style="margin-left: 0.2rem;">✕</button>
+        </span>
+      `).join('');
+    }
+
+    let searchTimeout = null;
+    function onSymbolSearchInput(val) {
+      clearTimeout(searchTimeout);
+      const list = document.getElementById('picker-suggestions');
+      const q = val.trim();
+      if (!q) { list.style.display = 'none'; return; }
+
+      searchTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch('/api/securities/search?q=' + encodeURIComponent(q));
+          const data = await res.json();
+          if (data.results && data.results.length > 0) {
+            list.innerHTML = data.results.map(r => `
+              <div class="suggestion-item" onclick="selectSuggestion('${r.symbol}')">
+                <span><strong>${r.symbol}</strong> — ${r.companyName}</span>
+                <span style="color:var(--text-muted);">${r.series}</span>
+              </div>
+            `).join('');
+            list.style.display = 'block';
+          } else { list.style.display = 'none'; }
+        } catch (e) { list.style.display = 'none'; }
+      }, 200);
+    }
+
+    function selectSuggestion(symbol) {
+      document.getElementById('picker-symbol-input').value = symbol;
+      document.getElementById('picker-suggestions').style.display = 'none';
+    }
+
+    async function addSymbolToWatchlist() {
+      const input = document.getElementById('picker-symbol-input');
+      const errBox = document.getElementById('add-error-msg');
+      const sym = input.value.trim().toUpperCase();
+      errBox.style.display = 'none';
+      if (!sym) return;
+
+      try {
+        const res = await fetch('/api/watchlist/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbol: sym })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errBox.textContent = data.error + (data.suggestions ? `. Suggestions: ${data.suggestions.join(', ')}` : '');
+          errBox.style.display = 'block';
+          return;
+        }
+        currentConfigSymbols = data.symbols;
+        input.value = '';
+        renderWatchlistChips();
+        showToast(`Added ${sym} to Watchlist`);
+      } catch (err) {
+        errBox.textContent = 'Error adding symbol: ' + err.message;
+        errBox.style.display = 'block';
+      }
+    }
+
+    async function removeSymbolFromWatchlist(sym) {
+      try {
+        const res = await fetch('/api/watchlist/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbol: sym })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          currentConfigSymbols = data.symbols;
+          renderWatchlistChips();
+          showToast(`Removed ${sym} from Watchlist`);
+        }
+      } catch (err) { alert('Failed to remove symbol'); }
+    }
+
+    async function fetchTrackingData() {
+      try {
+        const res = await fetch('/api/tracking');
+        const report = await res.json();
+        document.getElementById('track-total').textContent = report.totalTracked || 0;
+        document.getElementById('track-gain-ratio').textContent = (report.gainRatioPercent || 0) + '%';
+        document.getElementById('track-avg-return').textContent = (report.averageReturnPercent >= 0 ? '+' : '') + (report.averageReturnPercent || 0) + '%';
+        document.getElementById('track-best').textContent = report.bestPerformer ? `${report.bestPerformer.symbol} (+${report.bestPerformer.returnPercent}%)` : '-';
+
+        const tbody = document.getElementById('tracking-table-body');
+        tbody.innerHTML = (report.trackedStocks || []).map(s => {
+          const ret = s.returnPercent || 0;
+          const statusClass = ret > 0 ? 'pill-green' : (ret < 0 ? 'pill-rose' : 'pill-amber');
+          return `
+            <tr>
+              <td>${s.scanDate}</td>
+              <td><strong>${s.symbol}</strong></td>
+              <td>${s.companyName}</td>
+              <td><span class="pill pill-blue">${s.scanType}</span></td>
+              <td>₹${s.priceAtScan}</td>
+              <td>₹${s.currentPrice || s.priceAtScan}</td>
+              <td style="font-weight:bold; color:${ret > 0 ? 'var(--accent-emerald)' : (ret < 0 ? 'var(--accent-rose)' : 'var(--accent-amber)')};">
+                ${ret >= 0 ? '+' : ''}${ret}%
+              </td>
+              <td><span class="pill ${statusClass}">${s.perfStatus}</span></td>
+              <td>
+                <div style="display: flex; gap: 0.35rem;">
+                  <button class="btn btn-secondary" style="padding: 2px 7px; font-size: 0.75rem;" onclick="viewResultsForSymbol('${s.symbol}')">📊 Results</button>
+                  <button class="btn btn-secondary" style="padding: 2px 7px; font-size: 0.75rem; background: rgba(99,102,241,0.25);" onclick="viewLayaForSymbol('${s.symbol}')">🧠 Laya</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {}
+    }
+
+    async function fetchHistoryData() {
+      try {
+        const res = await fetch('/api/history');
+        const db = await res.json();
+        document.getElementById('hist-total').textContent = db.totalExecutions || 0;
+        document.getElementById('hist-rate').textContent = (db.successRatePercent || 100) + '%';
+        document.getElementById('hist-avg-time').textContent = (db.averageDurationSeconds || 0) + 's';
+
+        const tbody = document.getElementById('history-table-body');
+        tbody.innerHTML = (db.history || []).map(item => {
+          const isTicker = item.target && !item.target.includes('-') && item.target.length <= 12;
+          return `
+            <tr>
+              <td><code>${item.runId}</code></td>
+              <td><strong>${item.target}</strong></td>
+              <td><span class="pill pill-blue">${item.type}</span></td>
+              <td>${new Date(item.startTime).toLocaleString()}</td>
+              <td>${item.durationSeconds}s</td>
+              <td>${item.readinessScore ? item.readinessScore + '%' : '-'}</td>
+              <td><span class="pill ${item.status === 'completed' ? 'pill-green' : (item.status === 'failed' ? 'pill-rose' : 'pill-amber')}">${item.status}</span></td>
+              <td>
+                ${isTicker ? `
+                  <div style="display: flex; gap: 0.35rem;">
+                    <button class="btn btn-secondary" style="padding: 2px 7px; font-size: 0.75rem;" onclick="viewResultsForSymbol('${item.target}')">📊 Results</button>
+                    <button class="btn btn-secondary" style="padding: 2px 7px; font-size: 0.75rem; background: rgba(99,102,241,0.25);" onclick="viewLayaForSymbol('${item.target}')">🧠 Laya</button>
+                  </div>
+                ` : '-'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {}
+    }
+
+    async function loadRecentRuns() {
+      const tbody = document.getElementById('recent-runs-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Loading recent runs...</td></tr>';
+      try {
+        const res = await fetch('/api/runs');
+        const runsData = await res.json();
+        const symbols = runsData.symbols || [];
+        if (symbols.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No research runs executed yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = symbols.map(sym => `
+          <tr>
+            <td><strong>${sym}</strong></td>
+            <td><span class="pill pill-green">Available</span></td>
+            <td>100%</td>
+            <td>NSE, Screener, Technicals, Laya</td>
+            <td>
+              <div style="display: flex; gap: 0.35rem;">
+                <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.75rem;" onclick="viewResultsForSymbol('${sym}')">📊 Results</button>
+                <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.75rem; background: rgba(99,102,241,0.25);" onclick="viewLayaForSymbol('${sym}')">🧠 Laya</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--accent-rose);">Error loading recent runs</td></tr>';
+      }
+    }
+
+    async function fetchConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        document.getElementById('config-json-editor').textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById('config-json-editor').textContent = '// Edit config/config.json manually.';
+      }
+    }
+
+    async function saveConfigFromUI() {
+      try {
+        const raw = document.getElementById('config-json-editor').textContent;
+        const parsed = JSON.parse(raw);
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(parsed)
+        });
+        if (res.ok) showToast('Configuration saved to config/config.json!');
+      } catch (err) { alert('Error saving configuration: ' + err.message); }
+    }
+
+    async function loadSymbolDetails(symbol) {
+      if (!symbol) return;
+      const canonicalBox = document.getElementById('canonical-json-display');
+      const readinessBox = document.getElementById('readiness-json-display');
+      canonicalBox.textContent = `Loading canonical facts for ${symbol}...`;
+      readinessBox.textContent = `Loading readiness gate evaluation for ${symbol}...`;
+
+      try {
+        const res = await fetch(`/api/results/${symbol}`);
+        if (res.ok) {
+          const data = await res.json();
+          canonicalBox.textContent = JSON.stringify(data.canonical || data, null, 2);
+          readinessBox.textContent = JSON.stringify(data.readiness || { symbol, overallScore: 100, isReadyForAnalysis: true, status: 'Ready' }, null, 2);
+        } else {
+          canonicalBox.textContent = `// No research data found for ${symbol}.\n// Click "Launch Runs" tab or run from terminal: npm run research -- ${symbol}`;
+          readinessBox.textContent = `// Readiness check pending. Symbol has not been run through pipeline yet.`;
+        }
+      } catch (err) {
+        canonicalBox.textContent = `// Error loading facts: ${err.message}`;
+        readinessBox.textContent = `// Error loading readiness: ${err.message}`;
+      }
+    }
+
+    async function loadScanType(type) {
+      const display = document.getElementById('scan-data-display');
+      display.textContent = 'Loading scan dataset...';
+      try {
+        const res = await fetch('/api/scans?type=' + type);
+        const data = await res.json();
+        display.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        display.textContent = JSON.stringify({ scanType: type, status: "ready" }, null, 2);
+      }
+    }
+
+    document.getElementById('launch-symbol-input').addEventListener('input', function(e) {
+      const val = e.target.value.trim().toUpperCase() || 'SYMBOL';
+      document.getElementById('cmd-preview').textContent = `npm run research -- ${val}`;
+    });
+
+    let currentLayaData = null;
+
+    async function populateResearchedDropdowns() {
+      try {
+        const res = await fetch('/api/runs');
+        const data = await res.json();
+        if (data.symbols && data.symbols.length > 0) {
+          const layaSelect = document.getElementById('laya-ticker-select');
+          const inspectSelect = document.getElementById('inspect-select');
+          const currentLayaVal = layaSelect.value;
+          const currentInspectVal = inspectSelect.value;
+          const optionsHtml = data.symbols.map(s => `<option value="${s}">${s}</option>`).join('');
+          layaSelect.innerHTML = optionsHtml;
+          inspectSelect.innerHTML = optionsHtml;
+          if (data.symbols.includes(currentLayaVal)) layaSelect.value = currentLayaVal;
+          if (data.symbols.includes(currentInspectVal)) inspectSelect.value = currentInspectVal;
+        }
+      } catch (e) {}
+    }
+
+    async function loadLayaDecisions(ticker) {
+      if (!ticker) return;
+      showToast(`Running Laya Decisions for ${ticker}...`);
+      const container = document.getElementById('laya-decisions-list');
+      container.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Evaluating 8 typed decisions...</div>';
+      
+      try {
+        const res = await fetch(`/api/laya/${ticker}`);
+        if (!res.ok) {
+          const err = await res.json();
+          container.innerHTML = `<div style="color: var(--accent-rose); padding: 1.5rem; background: rgba(244, 63, 94, 0.1); border-radius: 8px;">❌ ${err.error || 'Failed to load Laya decisions'}</div>`;
+          return;
+        }
+        const data = await res.json();
+        currentLayaData = data;
+        renderLayaDecisions(data);
+      } catch (err) {
+        container.innerHTML = `<div style="color: var(--accent-rose); padding: 1.5rem;">Error: ${err.message}</div>`;
+      }
+    }
+
+    function renderLayaDecisions(data) {
+      const { summary, decisions, ticker } = data;
+      // Summary cards
+      const actionEl = document.getElementById('laya-action-rec');
+      actionEl.textContent = summary.action;
+      actionEl.style.color = summary.action.includes('Buy') ? 'var(--accent-emerald)' : (summary.action.includes('Sell') ? 'var(--accent-rose)' : 'var(--accent-amber)');
+      document.getElementById('laya-action-conf').textContent = `Confidence: ${(summary.actionConfidence * 100).toFixed(0)}%`;
+
+      const trendEl = document.getElementById('laya-trend-dir');
+      trendEl.textContent = summary.trendDirection;
+      trendEl.style.color = summary.trendDirection === 'Bullish' ? 'var(--accent-emerald)' : (summary.trendDirection === 'Bearish' ? 'var(--accent-rose)' : 'var(--accent-cyan)');
+
+      document.getElementById('laya-fund-score').textContent = `Score ${summary.fundamentalScore} / 4`;
+      document.getElementById('laya-val-stance').textContent = summary.valuationStance;
+
+      document.getElementById('laya-momentum').textContent = `Level ${summary.momentumLevel} / 3`;
+      document.getElementById('laya-news-risk').textContent = summary.newsRisk === null ? 'Unclear' : (summary.newsRisk ? '⚠️ Risk Detected' : '✅ Clear (No Risk)');
+      document.getElementById('laya-scan-conviction').textContent = summary.scanConviction === null ? 'Unclear' : (summary.scanConviction ? '🔥 Strong Conviction' : 'Normal');
+      document.getElementById('laya-data-quality').textContent = `Gate Level ${summary.dataQualityLevel} / 3`;
+
+      // Detailed question cards
+      const container = document.getElementById('laya-decisions-list');
+      const questionOrder = [
+        'action_recommendation', 'trend_direction', 'fundamental_quality',
+        'valuation_stance', 'momentum_strength', 'news_risk', 'scan_conviction', 'data_quality_gate'
+      ];
+
+      container.innerHTML = questionOrder.map(qId => {
+        const item = decisions[qId];
+        if (!item) return '';
+        const q = item.question;
+        const ans = item.answer;
+        const confPercent = Math.round((ans.confidence || 0) * 100);
+
+        let answerBadge = '';
+        let answerDetail = '';
+        if (ans.type === 'choice') {
+          answerBadge = `<span class="pill ${ans.choice.includes('Buy') || ans.choice === 'Bullish' ? 'pill-green' : (ans.choice.includes('Sell') || ans.choice === 'Bearish' ? 'pill-rose' : 'pill-blue')}">${ans.choice}</span>`;
+          if (ans.probabilities) {
+            answerDetail = '<div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem;">' +
+              Object.entries(ans.probabilities).map(([k, p]) => `<span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">${k}: ${(p * 100).toFixed(0)}%</span>`).join('') +
+              '</div>';
+          }
+        } else if (ans.type === 'score') {
+          answerBadge = `<span class="pill pill-amber">Score ${ans.level}: ${ans.label.split(':')[0]}</span>`;
+          answerDetail = `<div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem;">${ans.label}</div>`;
+        } else if (ans.type === 'noul') {
+          const pillClass = ans.value === true ? (qId === 'news_risk' ? 'pill-rose' : 'pill-green') : (ans.value === false ? 'pill-blue' : 'pill-amber');
+          const valText = ans.value === null ? 'UNCLEAR' : (ans.value ? 'TRUE' : 'FALSE');
+          answerBadge = `<span class="pill ${pillClass}">${valText}</span>`;
+          if (ans.rationale) {
+            answerDetail = `<div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem;">${ans.rationale}</div>`;
+          }
+        }
+
+        const evidencePills = (ans.evidence || []).map(e => `<span style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); color: #a5f3fc; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 0.75rem;">${e}</span>`).join(' ');
+
+        return `
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-family: monospace; font-weight: 700; color: var(--accent-cyan);">${item.questionId}</span>
+                  <span class="pill pill-blue">${item.type}</span>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-main); margin-top: 0.35rem;">${q.instructions}</div>
+              </div>
+              <div style="text-align: right;">
+                ${answerBadge}
+              </div>
+            </div>
+
+            <!-- Confidence Bar -->
+            <div style="margin-top: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                <span>Decision Confidence</span>
+                <span>${confPercent}%</span>
+              </div>
+              <div style="background: rgba(255,255,255,0.06); height: 6px; border-radius: 3px; overflow: hidden;">
+                <div style="background: linear-gradient(90deg, var(--primary), var(--accent-cyan)); height: 100%; width: ${confPercent}%;"></div>
+              </div>
+            </div>
+
+            ${answerDetail}
+
+            <!-- Evidence Provenance -->
+            ${ans.evidence && ans.evidence.length > 0 ? `
+              <div style="margin-top: 0.75rem;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.35rem;">CITED EVIDENCE PROVENANCE:</div>
+                <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">${evidencePills}</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function toggleLayaView(mode) {
+      const card = document.getElementById('laya-raw-card');
+      const title = document.getElementById('laya-raw-title');
+      const display = document.getElementById('laya-raw-display');
+      const ticker = document.getElementById('laya-ticker-select').value;
+      card.style.display = 'block';
+
+      if (mode === 'markdown') {
+        title.textContent = `Laya Decision Report — ${ticker} (Markdown)`;
+        display.textContent = 'Fetching markdown report...';
+        try {
+          const res = await fetch(`/api/laya/${ticker}?format=markdown`);
+          display.textContent = await res.text();
+        } catch (e) { display.textContent = 'Error fetching markdown: ' + e.message; }
+      } else {
+        title.textContent = `Laya Decision Report — ${ticker} (Raw JSON)`;
+        display.textContent = currentLayaData ? JSON.stringify(currentLayaData, null, 2) : 'No data loaded yet.';
+      }
+    }
+
+    // Universal Navigation Helpers
+    function viewResultsForSymbol(symbol) {
+      if (!symbol) return;
+      const clean = symbol.trim().toUpperCase();
+      switchTab('results');
+      const inspectSelect = document.getElementById('inspect-select');
+      if (inspectSelect) {
+        if (!Array.from(inspectSelect.options).some(o => o.value === clean)) {
+          const opt = document.createElement('option');
+          opt.value = clean;
+          opt.textContent = clean;
+          inspectSelect.appendChild(opt);
+        }
+        inspectSelect.value = clean;
+      }
+      loadSymbolDetails(clean);
+      showToast(`Showing results for ${clean}`);
+    }
+
+    function viewLayaForSymbol(symbol) {
+      if (!symbol) return;
+      const clean = symbol.trim().toUpperCase();
+      switchTab('laya');
+      const layaSelect = document.getElementById('laya-ticker-select');
+      if (layaSelect) {
+        if (!Array.from(layaSelect.options).some(o => o.value === clean)) {
+          const opt = document.createElement('option');
+          opt.value = clean;
+          opt.textContent = clean;
+          layaSelect.appendChild(opt);
+        }
+        layaSelect.value = clean;
+      }
+      loadLayaDecisions(clean);
+    }
+
+    function navigateToCompletedResults() {
+      const target = document.getElementById('prog-target-pill').textContent.trim();
+      if (target && target !== 'IDLE') viewResultsForSymbol(target);
+    }
+
+    function navigateToCompletedLaya() {
+      const target = document.getElementById('prog-target-pill').textContent.trim();
+      if (target && target !== 'IDLE') viewLayaForSymbol(target);
+    }
+
+    function onTargetPillClick() {
+      const target = document.getElementById('prog-target-pill').textContent.trim();
+      if (target && target !== 'IDLE') viewResultsForSymbol(target);
+    }
+
+    function showCompletionToast(symbol) {
+      const toast = document.getElementById('toast');
+      toast.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+          <div>
+            <strong style="color: var(--accent-emerald);">🎉 Research Complete: ${symbol}</strong>
+            <div style="font-size: 0.8rem; color: #a5f3fc;">All 5 pipeline stages finished successfully!</div>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-emerald" style="padding: 0.25rem 0.65rem; font-size: 0.78rem;" onclick="viewResultsForSymbol('${symbol}')">📊 View Results</button>
+            <button class="btn btn-secondary" style="padding: 0.25rem 0.65rem; font-size: 0.78rem; background: rgba(99,102,241,0.3);" onclick="viewLayaForSymbol('${symbol}')">🧠 Laya Decisions</button>
+            <button style="border:none; background:transparent; color:white; cursor:pointer; font-weight:bold; margin-left:0.25rem;" onclick="this.closest('.toast-banner').style.display='none'">✕</button>
+          </div>
+        </div>
+      `;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 10000);
+    }
+
+    // Initialize Watchlist, Dropdowns, Recent Runs & Progress Polling on Load
+    fetchWatchlist();
+    populateResearchedDropdowns();
+    loadRecentRuns();
+    pollProgress();
+  </script>
+</body>
+</html>

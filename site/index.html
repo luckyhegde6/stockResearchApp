@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Deterministic NSE-first evidence collection for Indian equity research.">
+    <title>Stock Research Pipeline</title>
+    <style>
+      :root { color-scheme: dark; --bg: #0b1220; --card: #162033; --text: #e7edf7; --muted: #a8b4c8; --accent: #61d1c4; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: radial-gradient(circle at top, #1d3457, var(--bg) 52%); color: var(--text); font: 16px/1.55 system-ui, sans-serif; }
+      main { width: min(920px, calc(100% - 2rem)); margin: 0 auto; padding: 5rem 0; }
+      .eyebrow { color: var(--accent); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+      h1 { font-size: clamp(2.4rem, 7vw, 4.7rem); line-height: 1.05; margin: .5rem 0 1rem; }
+      .lead { color: var(--muted); font-size: 1.2rem; max-width: 720px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 2.5rem 0; }
+      article { background: color-mix(in srgb, var(--card) 86%, transparent); border: 1px solid #34445d; border-radius: 14px; padding: 1.35rem; }
+      h2 { margin-top: 0; font-size: 1.12rem; }
+      code { background: #09101b; padding: .2rem .4rem; border-radius: 4px; color: #c8f4ef; }
+      a { color: var(--accent); }
+      .links { display: flex; flex-wrap: wrap; gap: .9rem; margin-top: 2rem; }
+      .links a { border: 1px solid var(--accent); border-radius: 7px; padding: .7rem 1rem; text-decoration: none; }
+      footer { color: var(--muted); margin-top: 4rem; font-size: .9rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">Indian equity research</div>
+      <h1>Stock Research Pipeline</h1>
+      <p class="lead">A deterministic, NSE-first pipeline that produces traceable stock-research evidence, validates readiness, and optionally generates a schema-validated final analysis.</p>
+      <section class="grid" aria-label="Pipeline stages">
+        <article><h2>1. Acquire</h2><p>Collect exchange, fundamentals, ownership, market, chart, and news evidence from defined sources.</p></article>
+        <article><h2>2. Normalize</h2><p>Preserve raw artifacts and convert supported documents into Markdown evidence for review.</p></article>
+        <article><h2>3. Analyze</h2><p>Use the prepared evidence package for optional LLM reasoning with a validated JSON contract.</p></article>
+      </section>
+      <p>Run <code>npm run research -- ITC</code> to prepare an evidence package. Configure the optional LLM variables in <code>.env</code> before running <code>npm run analyze -- ITC</code>.</p>
+      <div class="links">
+        <a href="https://github.com/luckyhegde6/stockResearchApp">View source</a>
+        <a href="https://github.com/luckyhegde6/stockResearchApp/blob/main/docs/ONBOARDING.md">Onboarding</a>
+        <a href="https://github.com/luckyhegde6/stockResearchApp/wiki">Wiki</a>
+      </div>
+      <footer>The interactive dashboard runs locally with the project API server; this site is a static overview.</footer>
+    </main>
+  </body>
+</html>

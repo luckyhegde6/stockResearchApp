@@ -1,0 +1,11 @@
+import { normalizeFinancialRows, normalizeAnnouncements, normalizeBoardMeetings, normalizeAnnualReports, normalizePeers, normalizeShareholding } from '../src/lib/nse-nextapi-normalizers.js';
+const financial=[{from_date:'01 Oct 2024',to_date:'31 Dec 2024',expenditure:'1283125',totalIncome:'1937686',audited:'Un-Audited',eps:'4.34',reProLossBefTax:'707357',netProLossAftTax:'563825',to_date_MonYr:'Dec-2024'}];
+const announcements=[{symbol:'ITC',desc:'Acquisition',an_dt:'31-Aug-2026 19:16:45',attchmntText:'Strategic combination',attchmntFile:'https://nsearchives.nseindia.com/corporate/example.pdf'}];
+const board=[{bm_symbol:'ITC',bm_date:'31-Jul-2026',bm_purpose:'Board Meeting Intimation',bm_desc:'Financial Results',bm_timestamp_full:'17-Jul-2026 18:37:55'}];
+const annual=[{companyName:'ITC Limited',fromYr:'2025',toYr:'2026',fileName:'https://nsearchives.nseindia.com/annual_reports/example.pdf',attFileSize:'14.00 MB'}];
+const peers=[{symbol:'ITC',series:'EQ',marketCap:3201359309176,eps:2.86,ltp:255.5,pat:357882,pe:16.56,totalIncome:2758856,PChange:-3.95}];
+const shareholding={data:[{shareHolding:0,promoterHolding:0,fiiHolding:0,diiHolding:0,publicHolding:100}]};
+const results={financialRows:normalizeFinancialRows(financial),announcementRows:normalizeAnnouncements(announcements),boardRows:normalizeBoardMeetings(board),annualRows:normalizeAnnualReports(annual),peerRows:normalizePeers(peers),shareholding:normalizeShareholding(shareholding)};
+const ok=results.financialRows.length===1&&results.announcementRows.length===1&&results.boardRows.length===1&&results.annualRows.length===1&&results.peerRows.length===1&&results.shareholding.rows.length>0;
+console.log(JSON.stringify({ok,checks:{financial:results.financialRows.length,announcements:results.announcementRows.length,board:results.boardRows.length,annual:results.annualRows.length,peers:results.peerRows.length,shareholdingRows:results.shareholding.rows.length,shareholdingExtracted:results.shareholding.extracted}},null,2));
+if(!ok) process.exitCode=1;

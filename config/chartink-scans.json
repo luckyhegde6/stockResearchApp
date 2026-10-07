@@ -1,0 +1,24 @@
+{
+  "searchUrl": "https://chartink.com/screeners/search?searchTerm=swing&page=1&per_page=30",
+  "strategies": [
+    {"name":"Nifty, BankNifty LONG using Swing Trading","url":"https://chartink.com/screener/nifty-banknifty-long-using-swing-trading","category":"swing","tags":["long","nifty","banknifty"]},
+    {"name":"Short term breakouts","url":"https://chartink.com/scanner/short-term-breakouts","category":"swing","tags":["breakout"]},
+    {"name":"NKS BEST BUY STOCKS FOR INTRADAY","url":"https://chartink.com/scanner/copy-nks-best-buy-stocks-for-intraday-2","category":"intraday","tags":["buy"]},
+    {"name":"Potential breakouts","url":"https://chartink.com/scanner/potential-breakouts","category":"swing","tags":["breakout"]},
+    {"name":"Buy 100% accuracy - Morning scanner scan at 9:30","url":"https://chartink.com/scanner/copy-morning-scanner-for-buy-nr7-based-breakout-8","category":"intraday","tags":["morning","breakout"]},
+    {"name":"BOSS SCANNER FOR BTST","url":"https://chartink.com/scanner/boss-scanner-for-btst","category":"swing","tags":["btst","long"]},
+    {"name":"Ichimoku Uptrend Cloud Crossover","url":"https://chartink.com/scanner/ichimoku-uptrend-cloud-crossover","category":"long","tags":["ichimoku","trend"]},
+    {"name":"EMA crossover(5,13,26) scan","url":"https://chartink.com/scanner/ema-crossover-5-13-26-scan","category":"swing","tags":["ema","crossover"]},
+    {"name":"Futures crossover","url":"https://chartink.com/scanner/futures-crossover","category":"intraday","tags":["futures","crossover"]},
+    {"name":"Chart Link","url":"https://chartink.com/scanner/chart-link","category":"swing","tags":["trend","breakout"]},
+    {"name":"4 moving average crossover-1","url":"https://chartink.com/scanner/4-moving-average-crossover","category":"swing","tags":["moving-average","crossover"]},
+    {"name":"FNO stocks Bullish Trend scanner (Moving average + ADX + MACD) - Prabhu","url":"https://chartink.com/scanner/moving-average-bullish-strong-buy","category":"long","tags":["fno","bullish","adx","macd"]},
+    {"name":"Stocks closing below the supertrend line","url":"https://chartink.com/scanner/stocks-closing-below-the-supertrend-line-4","category":"short","tags":["supertrend","bearish"]},
+    {"name":"GOOD WeeKly MACD AND EMA 12,26 crossover","url":"https://chartink.com/scanner/macd-and-ema-12-26-crossover","category":"swing","tags":["weekly","macd","ema"]},
+    {"name":"Monthly RSI Above 50","url":"https://chartink.com/scanner/monthly-rsi-above-50","category":"long","tags":["monthly","rsi"]},
+    {"name":"Stocks above 200 EMA","url":"https://chartink.com/scanner/stocks-above-200-ema","category":"long","tags":["ema200","trend"]},
+    {"name":"Moving Average Crossover (Bullish)","url":"https://chartink.com/scanner/moving-average-crossover-2","category":"long","tags":["bullish","moving-average"]},
+    {"name":"my ST breakout","url":"https://chartink.com/scanner/copy-supertrend-positive-breakout-1652","category":"swing","tags":["supertrend","breakout"]},
+    {"name":"Mm 200 SMA crossover","url":"https://chartink.com/scanner/copy-200-sma-crossover-135","category":"long","tags":["sma200","crossover"]}
+  ]
+}

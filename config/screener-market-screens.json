@@ -1,0 +1,39 @@
+{
+  "screens": [
+    {
+      "id": "golden-crossover",
+      "name": "Golden Crossover",
+      "url": "https://www.screener.in/screens/336509/golden-crossover/",
+      "folder": "technical",
+      "tags": ["golden-cross", "dma", "trend"]
+    },
+    {
+      "id": "rsi-oversold-stocks",
+      "name": "RSI - Oversold Stocks",
+      "url": "https://www.screener.in/screens/985942/rsi-oversold-stocks/",
+      "folder": "technical",
+      "tags": ["rsi", "oversold", "mean-reversion"]
+    },
+    {
+      "id": "quarterly-growers",
+      "name": "Quarterly Growers",
+      "url": "https://www.screener.in/screens/86/quarterly-growers/",
+      "folder": "results",
+      "tags": ["quarterly", "profit-growth", "growth"]
+    },
+    {
+      "id": "all-latest-qtr-results-date-wise",
+      "name": "All Latest QTR Results [Date Wise]",
+      "url": "https://www.screener.in/screens/2437615/all-latest-qtr-results-date-wise/",
+      "folder": "results",
+      "tags": ["quarterly", "results", "date-wise"]
+    },
+    {
+      "id": "the-bull-cartel",
+      "name": "The Bull Cartel",
+      "url": "https://www.screener.in/screens/1/the-bull-cartel/",
+      "folder": "results",
+      "tags": ["quarterly", "bullish", "growth"]
+    }
+  ]
+}

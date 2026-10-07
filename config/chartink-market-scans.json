@@ -1,0 +1,639 @@
+{
+  "schema_version": "1.0",
+  "generatedAt": "2026-08-31T00:00:00.000Z",
+  "total": 104,
+  "counts": {
+    "fundamental": 13,
+    "candlestick": 13,
+    "range-breakouts": 26,
+    "bullish": 11,
+    "bearish": 15,
+    "intraday": 26
+  },
+  "scans": [
+    {
+      "name": "Profit jump by 200%",
+      "url": "https://chartink.com/scanner/profit-jump-by-200",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Large cap stocks",
+      "url": "https://chartink.com/scanner/large-cap-stocks",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Stocks below Book value - Undervalued",
+      "url": "https://chartink.com/scanner/stocks-below-book-value",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Low debt companies",
+      "url": "https://chartink.com/scanner/low-debt-companies",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Mid cap stocks",
+      "url": "https://chartink.com/scanner/mid-cap-stocks",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Sales jump by 200%",
+      "url": "https://chartink.com/scanner/sales-jump-by-200",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Top stocks with the lowest Price Earning Ratios(PE)",
+      "url": "https://chartink.com/scanner/top-stocks-with-the-lowest-pe-pricing-earnings",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Highest Earning per share - EPS Stocks",
+      "url": "https://chartink.com/scanner/highest-earning-per-share-eps-stocks",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Small cap stocks",
+      "url": "https://chartink.com/scanner/small-cap-stocks",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "pious volume generator",
+      "url": "https://chartink.com/scanner/pious-volume-generator",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Top stocks with the highest EPS - Earning per share",
+      "url": "https://chartink.com/scanner/top-stocks-with-the-highest-eps-earning-per-share",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Penny Stocks - Multi Bagger",
+      "url": "https://chartink.com/scanner/penny-stocks-multi-bagger-1",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "position buy seema",
+      "url": "https://chartink.com/scanner/position-buy-seema",
+      "scanType": "fundamental",
+      "chartEvidence": true
+    },
+    {
+      "name": "Short term breakouts",
+      "url": "https://chartink.com/scanner/short-term-breakouts",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Doji - daily",
+      "url": "https://chartink.com/scanner/doji-daily-64",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Tweezer Bottom 15min-Timeframe Scan",
+      "url": "https://chartink.com/scanner/tweezer-bottom-15min-timeframe-scan",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bullish marubozu for 15 min",
+      "url": "https://chartink.com/scanner/bullish-marubozu-for-15-min",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Tweezer Top 15-Timeframe Scan",
+      "url": "https://chartink.com/scanner/tweezer-top-15-timeframe-scan",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Dark cloud cover 15min timeframe",
+      "url": "https://chartink.com/scanner/dark-cloud-cover-15min-timeframe",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Dragonfly Doji - 15min",
+      "url": "https://chartink.com/scanner/dragonfly-doji-15min",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bearish harami for 15min-timeframe",
+      "url": "https://chartink.com/scanner/bearish-harami-for-15min-timeframe-1",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Piercing pattern 15min timeframe",
+      "url": "https://chartink.com/scanner/piercing-pattern-15min-timeframe",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bullish Engulfing For 15minute Timeframe",
+      "url": "https://chartink.com/scanner/bullish-engulfing-for-15minute-timeframe",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Hanging man - daily",
+      "url": "https://chartink.com/scanner/hanging-man-daily-6",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bullish harami for 15min-timeframe",
+      "url": "https://chartink.com/scanner/bullish-harami-for-15min-timeframe",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bearish Spinning top for previous 15min timeframe",
+      "url": "https://chartink.com/scanner/bearish-spinning-top-for-previous-15min-timeframe",
+      "scanType": "candlestick",
+      "chartEvidence": true
+    },
+    {
+      "name": "Potential breakouts",
+      "url": "https://chartink.com/scanner/potential-breakouts",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "NR7- CURRENT DAY",
+      "url": "https://chartink.com/scanner/nr7-current-day",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Narrow Range 7 - NR7",
+      "url": "https://chartink.com/scanner/copy-nr7-fut-6",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "NR7/NR4 with INSIDE",
+      "url": "https://chartink.com/scanner/nr7-nr4",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "52 WEEK LOW",
+      "url": "https://chartink.com/scanner/52-week-low-3",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "OHOL+PRB",
+      "url": "https://chartink.com/scanner/ohol-prb",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Technical Indicators",
+      "url": "https://chartink.com/scanner/abc-4",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "NR7 IB - NR7 stocks with Inside Bar pattern by www.squareoff.in",
+      "url": "https://chartink.com/scanner/nr7-ib-nr7-stocks-with-inside-bar-pattern-by-www-squareoff-in",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "003-NR7-9:30 Buy Scan",
+      "url": "https://chartink.com/scanner/tn-nr7-9-30-buy-scan",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "NR7-FUT",
+      "url": "https://chartink.com/scanner/copy-nr7",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "15 min Candle outside bollinger band",
+      "url": "https://chartink.com/scanner/15-min-candle-outside-bollinger-band",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "First 15 Min Candle Breakout on both sides",
+      "url": "https://chartink.com/scanner/first-15-min-candle-breakout-on-both-sides",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Open High Low Scanner Intraday",
+      "url": "https://chartink.com/scanner/open-high-low-scanner-intraday",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Ichimoku Uptrend Cloud Crossover",
+      "url": "https://chartink.com/scanner/ichimoku-uptrend-cloud-crossover",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "EMA crossover(5,13,26) scan",
+      "url": "https://chartink.com/scanner/ema-crossover-5-13-26-scan",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Futures crossover",
+      "url": "https://chartink.com/scanner/futures-crossover",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Chart Link",
+      "url": "https://chartink.com/scanner/chart-link",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "4 moving average crossover-1",
+      "url": "https://chartink.com/scanner/4-moving-average-crossover",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "FNO stocks Bullish Trend scanner (Moving average + ADX + MACD) - Prabhu",
+      "url": "https://chartink.com/scanner/moving-average-bullish-strong-buy",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Stocks closing below the supertrend line",
+      "url": "https://chartink.com/scanner/stocks-closing-below-the-supertrend-line-4",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "GOOD WeeKly MACD AND EMA 12,26 crossover",
+      "url": "https://chartink.com/scanner/macd-and-ema-12-26-crossover",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Monthly RSI Above 50",
+      "url": "https://chartink.com/scanner/monthly-rsi-above-50",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Stocks above 200 EMA",
+      "url": "https://chartink.com/scanner/stocks-above-200-ema",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Moving Average Crossover (Bullish)",
+      "url": "https://chartink.com/scanner/moving-average-crossover-2",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "my ST breakout",
+      "url": "https://chartink.com/scanner/copy-supertrend-positive-breakout-1652",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "Mm 200 SMA crossover",
+      "url": "https://chartink.com/scanner/copy-200-sma-crossover-135",
+      "scanType": "range-breakouts",
+      "chartEvidence": true
+    },
+    {
+      "name": "pure bullish trend stocks",
+      "url": "https://chartink.com/scanner/pure-bullish-trend-stocks",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bullish Engulfing Pattern",
+      "url": "https://chartink.com/scanner/bullish-engulfing-pattern-1",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Morning Star - Bullish Pattern",
+      "url": "https://chartink.com/scanner/morning-star-bullish-pattern",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "bullish-rsi-stochastic",
+      "url": "https://chartink.com/scanner/bullish-rsi-stochastic",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bullish Engulf",
+      "url": "https://chartink.com/scanner/bullish-engulf-3",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "TSS Momentum Long",
+      "url": "https://chartink.com/scanner/tss-momentum-long",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bullish - Momentum Stocks",
+      "url": "https://chartink.com/scanner/bullish-momentum-stocks",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Enhanced BTST bullish engulfing",
+      "url": "https://chartink.com/scanner/testing-btst-bullish-engulfing",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "BULLISH HARAMI",
+      "url": "https://chartink.com/scanner/bullish-harami-11",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Abhishek Bullish RSI Divergence",
+      "url": "https://chartink.com/scanner/abhishek-bullish-rsi-divergence",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Strong Uptrend F&O Stocks ( price > 180 RS) - Prabhu",
+      "url": "https://chartink.com/scanner/fno-strong-uptrend-stocks-price-180-rs",
+      "scanType": "bullish",
+      "chartEvidence": true
+    },
+    {
+      "name": "MomentumHourlyBearish_AmitB",
+      "url": "https://chartink.com/scanner/momentumhourlybearish-amitb",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "MomentumDailyBearish_AmitB",
+      "url": "https://chartink.com/scanner/momentumdailybearish-amitb",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "PERFECT BEARISH",
+      "url": "https://chartink.com/scanner/perfect",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bearish Engulifing-see after 3:15 PM for Next day trade",
+      "url": "https://chartink.com/scanner/yesterday-bearish-engulifing",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Intraday Sell",
+      "url": "https://chartink.com/scanner/sell-volume-change",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Chanakya Bearish Scanner - Working",
+      "url": "https://chartink.com/scanner/copy-chanakya-bearish-scanner-working-11",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "My-intraday-sell-setup-ADX",
+      "url": "https://chartink.com/scanner/my-intraday-sell-setup-adx",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Sell 15 Min",
+      "url": "https://chartink.com/scanner/sell-15-min",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Highly Bearish I-day",
+      "url": "https://chartink.com/scanner/highly-bearish-i-day",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bearish RSi-Stoc",
+      "url": "https://chartink.com/scanner/bearish-rsi-stoc",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Volume Spike in 5 minutes",
+      "url": "https://chartink.com/scanner/volume-spike-in-5-minutes",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Stocks in Downtrend",
+      "url": "https://chartink.com/scanner/stocks-in-downtrend",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "ADX Future 15 Min",
+      "url": "https://chartink.com/scanner/adx-future-5-min",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Momentum sell (RDX)",
+      "url": "https://chartink.com/scanner/momentum-sell-rdx-4",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "Bearish Pinbar - EOD",
+      "url": "https://chartink.com/scanner/bearish-pinbar-eod",
+      "scanType": "bearish",
+      "chartEvidence": true
+    },
+    {
+      "name": "SELL OPEN=HIGH",
+      "url": "https://chartink.com/scanner/sell-open-high-7",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "My Intraday sell setup",
+      "url": "https://chartink.com/scanner/my-intraday-buy-setup",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "FULLY BEARISH WITH SELLING SEEN IN LAST 15MIN",
+      "url": "https://chartink.com/scanner/fully-bearish-with-selling-seen-in-last-15min",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Intraday Future Sell with SuperTrend -80 % Accuracy",
+      "url": "https://chartink.com/scanner/intraday-future-sell-with-supertrend-80-accuracy",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Mohan'S sure sell candidate -- MACD CROSS",
+      "url": "https://chartink.com/scanner/mohan-sure-sell-candidate",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Day Short Trade",
+      "url": "https://chartink.com/scanner/day-short-trade",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Stocks near support level - bearish (Parimal Wadiwala) 15 minutes",
+      "url": "https://chartink.com/scanner/stocks-near-support-level-bearish-parimal-wadiwala",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Shot Down",
+      "url": "https://chartink.com/scanner/shoot-up",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Ichimoku Cloud Bottom Crossover",
+      "url": "https://chartink.com/scanner/ichimoku-cloud-bottom-crossover",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Secondary Gap Up Opening, Open-High - SHORT Intraday",
+      "url": "https://chartink.com/scanner/secondary-gap-up-opening-open-high-short-intraday",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Intra Opt pe 5",
+      "url": "https://chartink.com/scanner/intra-opt-1",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Intraday bearish but longer time frame bullish",
+      "url": "https://chartink.com/scanner/intraday-bearish-but-longer-time-frame-bullish",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Intra PE 15",
+      "url": "https://chartink.com/scanner/intra-pe-15",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "BUY open equals to Low",
+      "url": "https://chartink.com/scanner/buy-open-equals-to-low",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Day low = High",
+      "url": "https://chartink.com/scanner/day-low-high",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "JAVEED HUSSAIN INTRADAY BUY",
+      "url": "https://chartink.com/scanner/javeed-hussain-intraday-buy-1",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Santu baba trick on open equal low with 1% higher than previous close",
+      "url": "https://chartink.com/scanner/santu-baba-trick-on-open-equal-low-with-1-higher-previous-close",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "my-intraday-buy-setup-pivot",
+      "url": "https://chartink.com/scanner/my-intraday-buy-setup-1",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "IntraDay Long:",
+      "url": "https://chartink.com/scanner/intraday-go-long",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Copy - RSI BREAKOUT",
+      "url": "https://chartink.com/scanner/copy-rsi-breakout-3",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "My-intraday-buy-setup-ADX",
+      "url": "https://chartink.com/scanner/my-intraday-buy-setup-adx",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Ichimoku Cloud Top Crossover",
+      "url": "https://chartink.com/scanner/ichimoku-cloud-top-crossover",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Intra Opt15",
+      "url": "https://chartink.com/scanner/intra-opt15",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Intra CE 5",
+      "url": "https://chartink.com/scanner/intra-ce-5",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "BTST OR READY TO BULL RUN",
+      "url": "https://chartink.com/scanner/about-to-break-1",
+      "scanType": "intraday",
+      "chartEvidence": true
+    },
+    {
+      "name": "Intraday Jackpot Buy Stock Slection By Rk Meena",
+      "url": "https://chartink.com/scanner/intraday-jackpot-buy-stock-slection-by-rk-meena",
+      "scanType": "intraday",
+      "chartEvidence": true
+    }
+  ]
+}

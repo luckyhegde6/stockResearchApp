@@ -1,0 +1,9 @@
+{
+  "source": "User-supplied NSE Legend of Series",
+  "purpose": "Classify NSE series codes before building equity/index universes.",
+  "standard_equity_series": ["EQ"],
+  "sme_equity_series": ["SM"],
+  "surveillance_equity_series": ["BE","BZ","ST","SZ"],
+  "reit_invit_series": ["RR","RT","IV"],
+  "non_equity_examples": ["MF","ME","GB","GS","TB","BO"]
+}
