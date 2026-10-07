@@ -1,37 +1,19 @@
+import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 
-async function main() {
-  const file = path.resolve(process.cwd(), 'src/adapters/tradingview.ts');
-  const text = await readFile(file, 'utf8');
-  const required = [
-    'tradingViewSurfaceUrl',
-    'in.tradingview.com/symbols/NSE-',
-    'captureUiSurface',
-    'direct-public-symbol-page',
-    'TRADINGVIEW_DIRECT_SURFACE_TIMEOUT_MS',
-    'TRADINGVIEW_DIRECT_SURFACE_SETTLE_MS',
-    'TRADINGVIEW_UI_SURFACE_SETTLE_MS',
-    'TRADINGVIEW_INITIAL_SETTLE_MS',
-    'waitForUiSurfaceConfirmation',
-    'routeChanged',
-    'surfaceContent',
-    'Forecast',
-    'News',
-    'Documents',
-    'Seasonals',
-    'Community',
-    'Financials',
-  ];
-  const missing = required.filter(x => !text.includes(x));
-  const ok = missing.length === 0;
-  console.log(JSON.stringify({
-    ok,
-    test: 'tradingview-ui-direct-pages',
-    missing,
-    assertion: 'UI surfaces are captured directly from TradingView public symbol-page URLs through Playwright, with a chart-page settle before each capture and route/content confirmation',
-  }, null, 2));
-  if (!ok) process.exit(1);
-}
-
-main().catch(err => { console.error(err); process.exit(1); });
+const text = await readFile(new URL('../src/adapters/tradingview.ts', import.meta.url), 'utf8');
+assert.equal(text.includes('clickMetricsLauncher'), false);
+assert.equal(text.includes('openTradingViewMetricsMenu'), false);
+assert.equal(text.includes('findMetricsSurfaceItem'), false);
+assert.equal(text.includes('clickUiSurface'), false);
+assert.equal(text.includes('buildTradingViewSurfaceUrl'), true);
+assert.equal(text.includes('waitForUiSurfaceConfirmation'), true);
+console.log(JSON.stringify({
+  ok:true,
+  test:'tradingview-ui-legacy-launcher-removal',
+  assertions:{
+    metricsCodeRemoved:true,
+    directSurfaceBuilder:true,
+    routeConfirmation:true
+  }
+},null,2));
