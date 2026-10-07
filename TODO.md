@@ -30,6 +30,35 @@ Prioritized backlog. Items are not claims of existing functionality.
 - [ ] Add more fixture-backed adapter tests for provider outages.
 - [ ] Add configurable evidence freshness policies.
 
+## P2 — chart intelligence, forecasting & backtesting
+
+- [ ] **Kronos forecasting track:** evaluate and integrate ideas from [Kronos](https://github.com/shiyu-coder/Kronos) for OHLCV/K-line forecasting and symbol-level chart analysis. Start with research-only experiments using existing NSE historical data; compare forecast outputs against deterministic technical signals before exposing them to the final analysis layer.
+- [ ] **Kronos data/experiment adapter:** define a vendor-isolated interface that can transform each researched symbol's historical OHLCV into a Kronos-compatible time-series dataset, run forecasts, persist model metadata/results, and support reproducible experiments/backtests.
+- [ ] **Backtesting framework:** build a deterministic, leakage-aware backtesting layer around generated signals and technical strategies. Include train/validation/test separation where applicable, transaction costs, slippage, position sizing, risk controls, benchmark comparison, and performance metrics.
+- [ ] **Pine Script strategy research:** use [awesome-pinescript](https://github.com/pAulseperformance/awesome-pinescript) as a curated reference for Pine syntax, indicators, libraries, strategy patterns, debugging, and TradingView scripting conventions.
+- [ ] **Pine strategy corpus:** use the [pinescript-strategies](https://github.com/topics/pinescript-strategies) topic as a discovery source for strategy ideas. Any imported strategy must be normalized, reviewed for lookahead/repainting risk, and converted into a local strategy specification before backtesting.
+- [ ] **Chart UI:** evaluate [TradingView Lightweight Charts](https://github.com/tradingview/lightweight-charts) for a lightweight local charting layer that can render the project's deterministic OHLCV/indicator/backtest results without requiring TradingView page capture.
+- [ ] **Local Algo integration:** evaluate [OpenAlgo](https://github.com/marketcalls/openalgo) as a future local algorithmic-trading/execution integration boundary. Keep this strictly downstream of research/backtesting first; no live-order capability should be introduced until paper-trading, risk controls, credential isolation, and explicit execution gates are defined.
+- [ ] **Research → strategy → backtest contract:** define a stable artifact contract connecting `research/<SYMBOL>` → historical/technical features → strategy definitions → backtest runs → charts → performance reports, without coupling the core evidence pipeline to one model, charting library, or execution platform.
+
+### Reference roles
+
+| Reference | Intended use | Current status |
+|---|---|---|
+| Kronos | Financial K-line forecasting experiments and chart-analysis research | Research only |
+| awesome-pinescript | Pine Script knowledge/reference | Research/reference |
+| pinescript-strategies | Strategy discovery corpus | Research/reference |
+| Lightweight Charts | Local chart visualization | Evaluate |
+| OpenAlgo | Future local algo/execution boundary | Evaluate |
+
+### Guardrails for this roadmap
+
+- Forecasts are experimental signals, not facts.
+- Backtests must avoid lookahead bias and should model costs/slippage.
+- Pine strategies must be checked for repainting and future-data leakage.
+- New forecasting/strategy outputs must remain separate from canonical source facts.
+- OpenAlgo/live execution must remain disabled until an explicit execution PRD and safety gate exist.
+
 ## P2 — dashboard
 
 - [ ] Add a compact "why not ready?" view.
