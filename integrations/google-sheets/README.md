@@ -17,7 +17,7 @@ Create Script Properties:
 - `SHEET_ID` = `1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak`
 - `API_TOKEN` = a private random token
 
-Deploy the Apps Script as a **Web app**. Use a versioned deployment for production. Google documents versioned deployments under **Deploy → Manage deployments**. citehttps://developers.google.com/apps-script/concepts/deployments
+Deploy the Apps Script as a **Web app**. Use a versioned deployment for production. Use a versioned Apps Script deployment for production; Google documents versioned deployments under **Deploy → Manage deployments**.
 
 The web app must be reachable by the pipeline. Do not put the spreadsheet ID or token in source code outside the script properties.
 
