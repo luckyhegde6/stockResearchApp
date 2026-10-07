@@ -1,6 +1,6 @@
 # Stock Research Pipeline Documentation Index
 
-Welcome to the documentation hub for the **Stock Research Pipeline** (v1.49.5).
+Welcome to the documentation hub for the **Stock Research Pipeline** (v1.50.0).
 
 This repository contains a symbol-agnostic, NSE-first Indian equity research pipeline designed for deterministic evidence collection, schema validation, and optional LLM-driven financial analysis.
 
@@ -18,7 +18,7 @@ This repository contains a symbol-agnostic, NSE-first Indian equity research pip
 | 🌐 **[NSE NextAPI Guide](NSE_NEXTAPI_GUIDE.md)** | API catalog, session/cookie handling, historical data chunking, security master resolution (`EQUITY_L`), and rate-limiting rules. |
 | 🧪 **[Testing & Quality Assurance](TESTING_AND_QUALITY.md)** | Test runner execution guide, diagnostic tools (`cli-doctor`, `markitdown-doctor`), evidence completeness gates, and scan quality scoring. |
 | 💻 **[CLI & Environment Reference](CLI_REFERENCE.md)** | Complete reference for all CLI subcommands, `npm run` scripts, flags, environment variables (`.env`), and installation prerequisites. |
-| 📜 **[Releases & Changelog](RELEASES_AND_CHANGELOG.md)** | Consolidated version history and detailed changelogs from v1.0 up to v1.49.5. |
+| 📜 **[Releases & Changelog](RELEASES_AND_CHANGELOG.md)** | Consolidated version history and detailed changelogs from v1.0 up to v1.50.0. |
 
 ---
 
