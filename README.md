@@ -10,6 +10,42 @@ It combines official NSE data, Screener, Tijori, TradingView, optional news/Char
 
 > **Important:** This project produces research evidence and analysis inputs. It is not investment advice.
 
+## Developer & Agent Operating System
+
+This repository is designed to be usable by both humans and model-driven coding agents without binding the project to one AI vendor.
+
+Start here:
+
+- [AGENTS.md](AGENTS.md) — canonical coding-agent and developer rules
+- [MEMORY.md](MEMORY.md) — stable architecture facts
+- [HANDOFF.md](HANDOFF.md) — current state, blockers, and next actions
+- [TODO.md](TODO.md) — prioritized backlog
+- [DECISIONS.md](DECISIONS.md) — compact architecture decisions
+- [CONTRIBUTING.md](CONTRIBUTING.md) — Git workflow and review expectations
+- [docs/AGENT_GUIDE.md](docs/AGENT_GUIDE.md) — context-efficient agent workflow
+- [docs/PRD.md](docs/PRD.md) — product requirement index
+
+### Context-efficient research handoff
+
+For a researched symbol, agents should prefer:
+
+```text
+research/<SYMBOL>/manifest.json
+research/<SYMBOL>/analysis-readiness.json
+research/<SYMBOL>/normalized/analysis-evidence-pack.json
+research/<SYMBOL>/normalized/analysis-inputs.json
+research/<SYMBOL>/normalized/reconciliation.json
+research/<SYMBOL>/source-health.json
+research/<SYMBOL>/evidence-quality.json
+```
+
+Use raw PDFs, HTML, and screenshots only when a provenance check or missing detail requires them.
+
+### Repository contract
+
+The project is intentionally agent-neutral. The stable interfaces are the CLI commands, deterministic research artifacts, JSON schemas, and documented source contracts. A future agent tool or model provider should wrap these interfaces rather than redefine them.
+
+
 ---
 
 ## What this project actually does
