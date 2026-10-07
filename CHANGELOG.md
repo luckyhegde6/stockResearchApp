@@ -4,6 +4,9 @@ Canonical release history for repository behavior. Older detail remains in docs/
 
 ## [Unreleased]
 
+### Research roadmap
+- Added a roadmap for Kronos forecasting/backtesting, Pine Script strategy research, Lightweight Charts visualization, and future OpenAlgo integration.
+
 ### Developer experience
 - Added an agent-neutral repository operating contract.
 - Added stable memory, current handoff, prioritized TODOs, architecture decisions, contributing guidance, product requirements, and GitHub templates.
