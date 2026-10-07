@@ -5,8 +5,8 @@ async function main() {
   const file = path.resolve(process.cwd(), 'src/adapters/tradingview.ts');
   const text = await readFile(file, 'utf8');
   const required = [
-    'tradingViewSurfaceUrl',
-    'in.tradingview.com/symbols/NSE-',
+    'buildTradingViewSurfaceUrl',
+    'in.tradingview.com/symbols/',
     'waitForUiSurfaceConfirmation',
     'routeChanged',
     'surfaceContent',
