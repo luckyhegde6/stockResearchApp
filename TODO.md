@@ -9,7 +9,7 @@ Prioritized backlog. Items are not claims of existing functionality.
 - [ ] Expand regression coverage for readiness edge cases.
 - [ ] Keep TradingView route tests synchronized with configured surfaces.
 
-## P1 — developer experience
+## P1 — data export / reporting\n\n- [ ] Configure and validate the Google Sheets Apps Script sink for the target workbook.\n- [ ] Add automatic export hooks to research/scan/analyze commands after the explicit export workflow is verified.\n- [ ] Add per-dataset tab schemas and optional append/deduplication policies.\n\n## P1 — developer experience
 
 - [x] Add a machine-readable repository manifest for agents.
 - [ ] Add a lightweight local health command for runtime, Playwright, MarkItDown, config, and test readiness.
