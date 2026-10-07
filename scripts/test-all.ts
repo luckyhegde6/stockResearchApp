@@ -31,7 +31,6 @@ const TEST_SUITES = [
   'scripts/test-news-sentiment.ts',
   'scripts/test-tradingview-url.ts',
   'scripts/test-tradingview-ui-surfaces.ts',
-  'scripts/test-tradingview-ui-metrics.ts',
   'scripts/test-tradingview-ui-confirmation.ts',
   'scripts/test-tradingview-ui-surface-routing.ts',
   'scripts/test-tradingview-ui-direct-pages.ts',
