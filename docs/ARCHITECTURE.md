@@ -1,6 +1,6 @@
 # Stock Research Pipeline Architecture Guide
 
-This document details the system architecture, design principles, data acquisition flow, normalization pipeline, and validation contracts of the **Stock Research Pipeline** (v1.49.5).
+This document details the system architecture, design principles, data acquisition flow, normalization pipeline, and validation contracts of the **Stock Research Pipeline** (v1.50.0).
 
 ---
 
@@ -97,7 +97,7 @@ Each adapter implements source-specific acquisition logic using a common structu
 - **`nse.ts`**: Fetches stock quote, historical OHLCV chunks, corporate announcements, shareholding pattern, and annual report links via direct NextAPI and Playwright fallback.
 - **`screener.ts`**: Extracts fundamental ratios, 10-year P&L, balance sheet, cash flows, and concall transcript links.
 - **`tijori.ts`**: Captures product revenue breakups, sector metrics, and operational performance.
-- **`tradingview.ts`**: Launches Playwright to capture full 1D chart screenshots and technical summary indicators directly from public symbol pages.
+- **`tradingview.ts`**: Uses Playwright for 1D/full-range charts, technicals, and direct public TradingView symbol-page evidence surfaces (`forecast`, `news`, `documents`, `seasonals`, `community`). Surface URLs are centralized in `src/lib/tradingview-url.ts`; the production path does not depend on Metrics/More launcher DOM.
 - **`chartink.ts`**: Opt-in scanner adapter for custom technical filters and screen outputs.
 - **`news-sentiment.ts`**: Aggregates recent Google News and financial media headlines, evaluating sentiment impact.
 
