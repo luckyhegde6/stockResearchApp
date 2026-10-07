@@ -1,4 +1,4 @@
-# Stock Research Pipeline v1.49.5
+# Stock Research Pipeline v1.50.0
 
 Deterministic NSE-first individual-stock evidence pipeline with Screener, Tijori, TradingView and Chartink, followed by an explicit analysis-readiness gate.
 
@@ -176,7 +176,9 @@ No model is used before the final analysis call.
 - Playwright capture of the 1D symbol page.
 - Playwright screenshot of the chart.
 - Playwright capture of the technicals page.
-- The chart screenshot is retained as visual evidence for the final analyst.
+- Direct public symbol-page capture for forecast, news, documents, seasonals, and community.
+- Surface URLs are generated centrally in src/lib/tradingview-url.ts; production capture does not click the Metrics/More launcher.
+- Surface screenshots are retained as supplementary visual evidence for the final analyst.
 
 ## MarkItDown
 
