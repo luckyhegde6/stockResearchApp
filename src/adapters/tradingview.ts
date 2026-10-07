@@ -2,7 +2,7 @@ import path from 'node:path';
 import { stat } from 'node:fs/promises';
 import { browserRunCode, closeBrowserSession } from '../lib/browser.js';
 import { ensureDir, writeText, fileExists } from '../lib/fs.js';
-import { buildTradingViewInstrument } from '../lib/tradingview-url.js';
+import { buildTradingViewInstrument, buildTradingViewSurfaceUrl, type TradingViewUiSurface } from '../lib/tradingview-url.js';
 import type { AdapterContext, AdapterResult, SourceArtifact } from '../types/research.js';
 
 async function firstVisible(page: any, locators: any[]) {
@@ -165,17 +165,6 @@ async function captureRange(page: any, range: '5Y' | 'All', screenshotPath: stri
 }
 
 
-type TradingViewUiSurface =
-  | 'forecast'
-  | 'news'
-  | 'documents'
-  | 'seasonals'
-  | 'community'
-  | 'financials'
-  | 'options'
-  | 'etfs'
-  | 'bonds';
-
 const UI_SURFACE_LABELS: Record<TradingViewUiSurface,string> = {
   forecast: 'Forecast',
   news: 'News',
@@ -197,252 +186,7 @@ function configuredUiSurfaces(): TradingViewUiSurface[] {
   return raw.filter((x): x is TradingViewUiSurface => valid.has(x as TradingViewUiSurface));
 }
 
-async function clickMetricsLauncher(page:any, instrument:any) {
-  // RETAINED FALLBACK (v1.49 UI approach, superseded by v1.49.5 direct
-  // public symbol-page navigation in captureUiSurface). Current TradingView
-  // Supercharts labels this launcher "Metrics". The tooltip is visible on
-  // hover in the supplied UI and the control is the four-square/grid icon in
-  // the instrument card on the right sidebar.
-  const semantic = await firstVisible(page, [
-    page.getByRole('button', { name: /^Metrics$/i }),
-    page.locator('[aria-label="Metrics" i]'),
-    page.locator('[title="Metrics" i]'),
-    page.locator('[data-tooltip="Metrics" i]'),
-    page.locator('[data-tooltip-content="Metrics" i]'),
-    page.locator('[data-name="metrics" i]'),
-    page.locator('[data-testid*="metrics" i]'),
-  ]);
-  if (semantic) {
-    const clicked = await semantic.click({ timeout: 8000 }).then(() => true).catch(() => false);
-    if (clicked) await page.waitForTimeout(Number(process.env.TRADINGVIEW_METRICS_SETTLE_MS || 700));
-    return { found:true, clicked, launcher:'metrics-semantic', matchedText:await semantic.innerText().catch(()=>null), strategy:'semantic' };
-  }
-
-  const ticker = String(instrument?.symbol || '').trim();
-  const company = String(instrument?.companyName || '').trim();
-  const cardText = await page.evaluate(({ticker, company}) => {
-    const wanted = [company, ticker].map(v => v.toUpperCase()).filter(Boolean);
-    const els = [...document.querySelectorAll('div,span,a')].map((e:any) => {
-      const r=e.getBoundingClientRect(); const st=getComputedStyle(e);
-      return {e,text:String(e.textContent||'').trim(),r,st};
-    }).filter((x:any)=> {
-      if (!x.text || x.r.width<=0 || x.r.height<=0) return false;
-      if (x.r.left < window.innerWidth*0.70) return false;
-      if (x.st.display==='none' || x.st.visibility==='hidden') return false;
-      return wanted.includes(x.text.toUpperCase());
-    }).sort((a:any,b:any)=> {
-      const ac = company && a.text.toUpperCase()===company.toUpperCase() ? 1:0;
-      const bc = company && b.text.toUpperCase()===company.toUpperCase() ? 1:0;
-      if (ac!==bc) return bc-ac;
-      return b.r.y-a.r.y;
-    });
-    if(!els.length) return null;
-    const x=els[0];
-    return {x:x.r.x,y:x.r.y,right:x.r.right,bottom:x.r.bottom,text:x.text};
-  }, {ticker,company}).catch(()=>null);
-
-  // Inspect actual interactive elements near the stock card. We score a
-  // candidate as Metrics when its accessibility/title/tooltip indicates it,
-  // or when its SVG looks like the four-square grid shown in the supplied UI.
-  const candidates = await page.locator('button,[role="button"],a,div').evaluateAll((nodes:any[]) => {
-    const vw=innerWidth, vh=innerHeight;
-    const visible=(e:any)=>{const r=e.getBoundingClientRect(); const st=getComputedStyle(e); return r.width>=14&&r.height>=14&&r.width<=80&&r.height<=80&&r.right>0&&r.left<vw&&r.bottom>0&&r.top<vh&&st.display!=='none'&&st.visibility!=='hidden';};
-    const clean=(v:any)=>String(v||'').trim();
-    const rows:any[]=[];
-    for (const e of nodes) {
-      if(!visible(e)) continue;
-      const r=e.getBoundingClientRect();
-      if(r.left<vw*0.70) continue;
-      const aria=clean(e.getAttribute('aria-label'));
-      const title=clean(e.getAttribute('title'));
-      const tt=clean(e.getAttribute('data-tooltip')) || clean(e.getAttribute('data-tooltip-content'));
-      const dn=clean(e.getAttribute('data-name'));
-      const text=clean(e.innerText||e.textContent);
-      const svg=e.querySelector('svg');
-      const rects=svg ? svg.querySelectorAll('rect').length : 0;
-      const paths=svg ? svg.querySelectorAll('path').length : 0;
-      const lines=svg ? svg.querySelectorAll('line').length : 0;
-      const hint=[aria,title,tt,dn,text].join(' ');
-      let score=0;
-      if(/metrics/i.test(hint)) score+=100;
-      if(rects>=4 && rects<=8) score+=50;
-      if(/grid|menu|panel|details|fundamental|analysis/i.test(hint)) score+=10;
-      if(r.left>vw*0.80) score+=5;
-      rows.push({x:r.x,y:r.y,w:r.width,h:r.height,aria,title,tooltip:tt,dataName:dn,text,rects,paths,lines,score});
-    }
-    return rows.sort((a:any,b:any)=>b.score-a.score || a.x-b.x).slice(0,80);
-  }).catch(()=>[]);
-
-  if (cardText && candidates.length) {
-    const nearby = candidates.filter((c:any)=>
-      c.x >= cardText.right-8 &&
-      c.x <= cardText.right+210 &&
-      c.y >= cardText.y-75 &&
-      c.y <= cardText.bottom+85
-    );
-    const selected = (nearby.length?nearby:candidates).sort((a:any,b:any)=>b.score-a.score || a.x-b.x)[0];
-    if(selected) {
-      const clicked = await page.mouse.click(selected.x+selected.w/2, selected.y+selected.h/2).then(()=>true).catch(()=>false);
-      if(clicked) await page.waitForTimeout(Number(process.env.TRADINGVIEW_METRICS_SETTLE_MS || 700));
-      return {found:true,clicked,launcher:'metrics-grid-geometry',matchedText:selected.text||null,strategy:'card-geometry',cardText,candidate:selected,nearbyCount:nearby.length};
-    }
-  }
-
-  return {found:false,clicked:false,launcher:'metrics',matchedText:null,strategy:'not-found',cardText,candidates:candidates.slice(0,20)};
-}
-
-async function clickNewsAlternate(page:any, instrument:any) {
-  // RETAINED FALLBACK (v1.49 UI approach, superseded by v1.49.5 direct
-  // public symbol-page navigation in captureUiSurface). Alternate path shown
-  // in the supplied UI: News can also be opened directly from the right-side
-  // watchlist/stock panel. Prefer an exact News control and constrain
-  // geometry to the right-hand panel so article headlines do not match.
-  const semantic = await firstVisible(page, [
-    page.getByRole('button', { name: /^News$/i }),
-    page.getByRole('link', { name: /^News$/i }),
-    page.locator('[aria-label="News" i]'),
-    page.locator('[title="News" i]'),
-    page.locator('[data-tooltip="News" i]'),
-    page.locator('[data-name="news" i]'),
-  ]);
-  if (semantic) {
-    const clicked=await semantic.click({timeout:7000}).then(()=>true).catch(()=>false);
-    if(clicked) await page.waitForTimeout(Number(process.env.TRADINGVIEW_NEWS_SETTLE_MS||3000));
-    return {found:true,clicked,launcher:'news-direct-semantic'};
-  }
-
-  const ticker=String(instrument?.symbol||'').trim();
-  const company=String(instrument?.companyName||'').trim();
-  const result=await page.locator('button,[role="button"],a,div').evaluateAll((nodes:any[])=>{
-    const vw=innerWidth,vh=innerHeight;
-    const rows:any[]=[];
-    for(const e of nodes){
-      const r=e.getBoundingClientRect(); const st=getComputedStyle(e);
-      if(r.width<=0||r.height<=0||r.left<vw*0.70||r.top<vh*0.25||r.bottom>vh||st.display==='none'||st.visibility==='hidden') continue;
-      const aria=String(e.getAttribute('aria-label')||''); const title=String(e.getAttribute('title')||''); const text=String(e.innerText||e.textContent||'').trim();
-      const hint=[aria,title,text].join(' ');
-      if(/^news$/i.test(text)||/^news$/i.test(aria)||/^news$/i.test(title)||/\bNews\b/i.test(aria)) rows.push({x:r.x,y:r.y,w:r.width,h:r.height,aria,title,text,score:/^news$/i.test(aria)?100:/^news$/i.test(title)?90:/^news$/i.test(text)?80:50});
-    }
-    return rows.sort((a:any,b:any)=>b.score-a.score||a.y-b.y).slice(0,20);
-  }).catch(()=>[]);
-  if(result.length){
-    const c=result[0];
-    const clicked=await page.mouse.click(c.x+c.w/2,c.y+c.h/2).then(()=>true).catch(()=>false);
-    if(clicked) await page.waitForTimeout(Number(process.env.TRADINGVIEW_NEWS_SETTLE_MS||3000));
-    return {found:true,clicked,launcher:'news-right-panel-geometry',candidate:c};
-  }
-  return {found:false,clicked:false,launcher:'news-direct-not-found'};
-}
-
-async function openTradingViewMetricsMenu(page:any, instrument:any) {
-  return clickMetricsLauncher(page,instrument);
-}
-
-
-async function findMetricsSurfaceItem(page:any, label:string) {
-  // RETAINED FALLBACK (v1.49 UI approach, superseded by v1.49.5 direct
-  // public symbol-page navigation in captureUiSurface). TradingView's current
-  // Metrics launcher renders a transient menu in the right side of the chart.
-  // In practice its visible text is more reliable than DOM roles/classes. We
-  // therefore locate *visible exact text* in the right-side popover and return
-  // its geometry for a precise click.
-  const result = await page.evaluate((wantedLabel:string) => {
-    const wanted = wantedLabel.trim().toLowerCase();
-    const known = new Set(['financials','documents','technicals','seasonals','news','forecast','community','options','etfs','bonds']);
-    const visible = (e:any) => {
-      const r=e.getBoundingClientRect();
-      const st=getComputedStyle(e);
-      return r.width>0 && r.height>0 && r.right>0 && r.left<innerWidth &&
-        r.bottom>0 && r.top<innerHeight && st.display!=='none' &&
-        st.visibility!=='hidden' && st.opacity!=='0';
-    };
-    const exact = (e:any) => String(e.textContent||'').trim().toLowerCase()===wanted;
-
-    const matches:any[]=[];
-    for (const e of Array.from(document.querySelectorAll('button,a,[role="button"],[role="menuitem"],div,span'))) {
-      if(!visible(e) || !exact(e)) continue;
-      const r=e.getBoundingClientRect();
-      if(r.left < innerWidth*0.62) continue;
-      if(r.width > innerWidth*0.38 || r.height > 70) continue;
-
-      // Walk a few ancestors and look for the Metrics-menu signature. The
-      // screenshot shows the menu as a compact right-side vertical list.
-      let p:any=e;
-      let signature=0;
-      let ancestor:any=null;
-      for(let i=0;i<6 && p;i++,p=p.parentElement){
-        if(!visible(p)) continue;
-        const toks=String(p.innerText||'').split(/\n+/).map((x:string)=>x.trim().toLowerCase()).filter(Boolean);
-        const hits=[...new Set(toks.filter((x:string)=>known.has(x)))];
-        if(hits.includes('forecast') && hits.includes('news') && hits.includes('documents')) {
-          const pr=p.getBoundingClientRect();
-          if(pr.left>innerWidth*0.55 && pr.width<innerWidth*0.45 && pr.height<innerHeight*0.85){
-            signature=hits.length;
-            ancestor={x:pr.x,y:pr.y,w:pr.width,h:pr.height,labels:hits};
-            break;
-          }
-        }
-      }
-      matches.push({x:r.x,y:r.y,w:r.width,h:r.height,text:String(e.textContent||'').trim(),signature,ancestor});
-    }
-
-    matches.sort((a,b)=>b.signature-a.signature || b.x-a.x || a.y-b.y);
-    if(matches.length) return {found:true,strategy:matches[0].signature?'metrics-popover-exact-text':'metrics-rightpanel-exact-text',candidate:matches[0],candidates:matches.slice(0,20)};
-
-    return {found:false,strategy:'exact-text-not-found',candidates:[]};
-  }, label).catch((e:any)=>({found:false,strategy:`evaluate-error:${e?.message||String(e)}`,candidates:[]}));
-
-  if(!result.found) return result;
-  const c=result.candidate;
-  const clicked=await page.mouse.click(c.x+c.w/2,c.y+c.h/2).then(()=>true).catch(()=>false);
-  if(clicked) await page.waitForTimeout(Number(process.env.TRADINGVIEW_UI_SURFACE_SETTLE_MS || 2500));
-  return {...result,clicked};
-}
-
-function tradingViewSurfaceUrl(instrument:any, surface:TradingViewUiSurface) {
-  const symbol=encodeURIComponent(String(instrument?.symbol||'').trim()).replace(/%/g,'%25');
-  // These public symbol pages are the primary destinations for direct
-  // Playwright navigation. A chart-page SPA settle precedes each capture
-  // so the surface-specific route can load reliably.
-  const paths:Record<string,string> = {
-    forecast:'forecast-price-target',
-    news:'news',
-    documents:'documents',
-    seasonals:'seasonals',
-    community:'community',
-    financials:'financials-earnings',
-    options:'options',
-    etfs:'etfs',
-    bonds:'bonds',
-  };
-  const pathPart=paths[surface] || surface;
-  return `https://in.tradingview.com/symbols/NSE-${symbol}/${pathPart}/`;
-}
-
-async function directNavigateToSurface(page:any, instrument:any, surface:TradingViewUiSurface) {
-  const url=tradingViewSurfaceUrl(instrument,surface);
-  const timeout=Number(process.env.TRADINGVIEW_DIRECT_SURFACE_TIMEOUT_MS || 120000);
-  const result:any={attempted:true,url,finalUrl:null,loaded:false,error:null};
-  try {
-    await page.goto(url,{waitUntil:'domcontentloaded',timeout});
-    await page.waitForTimeout(Number(process.env.TRADINGVIEW_DIRECT_SURFACE_SETTLE_MS || 5000));
-    result.finalUrl=page.url();
-    result.loaded=true;
-  } catch(e:any) {
-    result.error=e?.message||String(e);
-    result.finalUrl=page.url();
-  }
-  return result;
-}
-
-async function clickUiSurface(page:any, surface:TradingViewUiSurface) {
-  const label = UI_SURFACE_LABELS[surface];
-  const item = await findMetricsSurfaceItem(page, label);
-  if (item.found) return { found:true, clicked:Boolean(item.clicked), label, strategy:item.strategy, container:item.container, item:item.item };
-  return { found:false, clicked:false, label, strategy:item.strategy };
-}
-
-async function waitForUiSurfaceConfirmation(page:any, surface:TradingViewUiSurface, beforeUrl:string) {
+async function waitForUiSurfaceConfirmation(page:any, surface:TradingViewUiSurface, beforeUrl:string, targetUrl:string) {
   const deadline=Date.now()+Number(process.env.TRADINGVIEW_UI_CONFIRM_TIMEOUT_MS || 10000);
   const patterns:Record<string,RegExp>={
     forecast:/Price target|Analyst rating|Actuals and estimates|Analysts offering 1-year price forecasts/i,
@@ -461,39 +205,29 @@ async function waitForUiSurfaceConfirmation(page:any, surface:TradingViewUiSurfa
     last=await dumpState(page).catch(()=>({url:beforeUrl,bodyText:''}));
     const body=String(last.bodyText||'');
     const url=String(last.url||'');
-    let strong=Boolean(patterns[surface]?.test(body));
+    const contentMatches = Boolean(patterns[surface]?.test(body));
+    let routeMatches = false;
+    try {
+      const current = new URL(url);
+      const expected = new URL(targetUrl);
+      routeMatches =
+        current.hostname === expected.hostname &&
+        current.pathname.replace(/\\/+$/, '/') === expected.pathname.replace(/\\/+$/, '/');
+    } catch {}
 
-    // Public TradingView symbol pages have stable surface paths. Prefer the
-    // actual destination over generic text that can exist on the chart.
-    const expectedPart = {
-      forecast:'/forecast-price-target/',
-      news:'/news/',
-      documents:'/documents/',
-      seasonals:'/seasonals/',
-      community:'/community/',
-      financials:'/financials-',
-      options:'/options/',
-      etfs:'/etfs/',
-      bonds:'/bonds/',
-    }[surface];
-    const routeMatches=expectedPart ? url.includes(expectedPart) : false;
-
-    if(surface==='news') {
-      strong = routeMatches || /Latest news|Earnings|Dividends|Share buybacks|Mergers and acquisitions|Insider trading|Analysts/i.test(body) && !chartTokens.test(body.slice(0,4000));
-    } else if(surface==='documents') {
-      strong = routeMatches || /Earnings, Q\d|Corporate events|Interim report|Annual report/i.test(body) && /Documents/i.test(body);
-    } else if(surface==='forecast') {
-      strong = routeMatches || /Price target|Analyst rating|Actuals and estimates/i.test(body);
-    } else if(surface==='seasonals') {
-      strong = routeMatches || /Historical seasonal performance|Seasonality/i.test(body);
-    } else if(surface==='community') {
-      strong = routeMatches || /Community|Ideas|Published/i.test(body) && !chartTokens.test(body.slice(0,3000));
+    if (routeMatches && contentMatches) {
+      return {
+        confirmed:true,
+        routeChanged:url!==beforeUrl,
+        routeMatched:true,
+        surfaceContent:true,
+        url,
+        bodyTextSample:body.slice(0,12000),
+      };
     }
-
-    if(strong) return {confirmed:true,routeChanged:url!==beforeUrl,surfaceContent:true,url,bodyTextSample:body.slice(0,12000)};
     await page.waitForTimeout(400);
   }
-  return {confirmed:false,routeChanged:String(last.url||'')!==beforeUrl,surfaceContent:false,url:String(last.url||beforeUrl),bodyTextSample:String(last.bodyText||'').slice(0,12000)};
+  return {confirmed:false,routeChanged:String(last.url||'')!==beforeUrl,routeMatched:false,surfaceContent:false,url:String(last.url||beforeUrl),bodyTextSample:String(last.bodyText||'').slice(0,12000)};
 }
 
 async function captureUiSurface(
@@ -511,7 +245,7 @@ async function captureUiSurface(
   //   https://in.tradingview.com/symbols/NSE-ITC/seasonals/
   //   https://in.tradingview.com/symbols/NSE-ITC/forecast-price-target/
   const before = await dumpState(page).catch(()=>({url:instrument.chartUrl,title:'',width:0,height:0,bodyText:''}));
-  const targetUrl = tradingViewSurfaceUrl(instrument, surface);
+  const targetUrl = buildTradingViewSurfaceUrl(instrument.symbol, instrument.exchange, surface);
   const timeout = Number(process.env.TRADINGVIEW_DIRECT_SURFACE_TIMEOUT_MS || process.env.SOURCE_TIMEOUT_MS || 120000);
   const settle = Number(process.env.TRADINGVIEW_DIRECT_SURFACE_SETTLE_MS || 5000);
 
@@ -535,7 +269,7 @@ async function captureUiSurface(
   }
 
   const state = await dumpState(page).catch(()=>({url:page.url(),title:'',width:0,height:0,bodyText:''}));
-  const confirmation = await waitForUiSurfaceConfirmation(page, surface, String(before.url || instrument.chartUrl));
+  const confirmation = await waitForUiSurfaceConfirmation(page, surface, String(before.url || instrument.chartUrl), targetUrl);
   const screenshot = await safeScreenshot(page, screenshotPath, { fullPage: true });
   const bodyText = String(state.bodyText || '');
   const label = UI_SURFACE_LABELS[surface];
@@ -545,7 +279,7 @@ async function captureUiSurface(
   const out = {
     schema_version:'1.2',
     provider:'TradingView',
-    ticker:instrument.ticker,
+    ticker:instrument.symbol,
     instrument,
     surface,
     surfaceLabel:label,
@@ -565,7 +299,7 @@ async function captureUiSurface(
       url:state.url,
       title:state.title,
       surfaceConfirmed,
-      routeHint:Boolean(confirmation.routeChanged || String(state.url||'').includes(new URL(targetUrl).pathname)),
+      routeHint:Boolean(confirmation.routeMatched),
       contentHint:Boolean(confirmation.surfaceContent),
       bodyTextSample:bodyText.slice(0,20000),
     },
