@@ -7,4 +7,4 @@ const dir=path.join(process.cwd(),'research',ticker);
 const manifest=JSON.parse(await readFile(path.join(dir,'manifest.json'),'utf8'));
 const report=await buildAnalysisReadiness(dir,manifest);
 console.log(JSON.stringify({ok:report.ready,ticker,blockingReasons:report.blockingReasons,missingFiles:report.missingFiles,missingFilesByGroup:report.missingFilesByGroup,qualityStatus:report.qualityStatus,coreCompleteness:report.coreCompleteness,actionableWarnings:report.actionableWarnings},null,2));
-process.exitCode = (report && report.deterministic !== undefined) ? 0 : 1;
+process.exitCode = report?.deterministic === true && report?.ready === true ? 0 : 1;
