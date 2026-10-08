@@ -22,7 +22,7 @@ const checks = {
     tv.includes("'Community'"),
   directNavigationMethod: tv.includes("method:'playwright-direct-public-symbol-page'"),
   fullPageScreenshot: tv.includes('fullPage: true'),
-  noMetricsLauncher: !tv.includes('No Metrics launcher interaction is required for these surfaces.'),
+  canonicalDirectPageComment: tv.includes("Use TradingView's stable public symbol pages directly with\n  // Playwright"),
   uiArtifact: tv.includes('tradingview-ui-${surface}'),
   uiSummary: tv.includes("'ui-surfaces.json'"),
   configEnv: config.includes('TRADINGVIEW_UI_SURFACES'),
