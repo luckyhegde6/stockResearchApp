@@ -11,6 +11,6 @@ async function main(){
   const summary = report.report?.summary || report.summary || { missing: 0 };
   const bySource = report.report?.bySource || report.bySource || {};
   console.log(JSON.stringify({ticker,status:report.status,summary,bySource},null,2));
-  if(summary.missing > 0 && report.status !== 'ok') process.exitCode=1;
+  if(report.status !== 'ok' || summary.missing > 0) process.exitCode=1;
 }
 main().catch(e=>{console.error(e?.stack||e);process.exitCode=1;});
