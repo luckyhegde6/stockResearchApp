@@ -14,3 +14,6 @@ scans/*
 *_head.txt
 *_full.txt
 *.log
+
+fixtures/research/
+fixtures/data/nse-equity-universe.json
