@@ -104,7 +104,8 @@
     "laya:decisions": "tsx scripts/laya-decision-run.ts",
     "laya": "tsx scripts/laya-decision-run.ts",
     "test:laya": "tsx scripts/test-laya-decisions.ts",
-    "sheets:export": "tsx scripts/export-to-google-sheets.ts"
+    "sheets:export": "tsx scripts/export-to-google-sheets.ts",
+    "test:fixture": "tsx scripts/ensure-test-research-fixture.ts"
   },
   "engines": {
     "node": ">=20"
