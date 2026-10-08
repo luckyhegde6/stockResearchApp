@@ -80,7 +80,7 @@ In Apps Script:
 5. Deploy and complete the Google authorization prompts.
 6. Copy the Web app URL.
 
-Google documents versioned deployments under Deploy → Manage deployments; use a versioned deployment for the endpoint used by the pipeline. The deployment has a URL and deployment ID. citeturn133453search3
+Google documents versioned deployments under Deploy → Manage deployments; use a versioned deployment for the endpoint used by the pipeline. The deployment has a URL and deployment ID.
 
 The URL normally looks like:
 
@@ -198,7 +198,7 @@ GOOGLE_SHEETS_WEBHOOK_TOKEN=<same value as API_TOKEN>
 
 ### The script cannot write the spreadsheet
 
-Check that the deployed web app executes under a Google account with edit permission to the target Sheet. Web-app deployments explicitly carry execution identity and access configuration. citeturn133453search0turn133453search4
+Check that the deployed web app executes under a Google account with edit permission to the target Sheet. Web-app deployments explicitly carry execution identity and access configuration.
 
 ### Old code is still running
 
@@ -206,7 +206,7 @@ Update the existing versioned deployment under Deploy → Manage deployments so 
 
 ### Multiple Google accounts
 
-Apps Script documents limitations around simultaneous Google-account sessions. When testing the deployment, use the Google account that owns or controls the Sheet. citeturn133453search8
+Apps Script documents limitations around simultaneous Google-account sessions. When testing the deployment, use the Google account that owns or controls the Sheet.
 
 ## Security rules
 
