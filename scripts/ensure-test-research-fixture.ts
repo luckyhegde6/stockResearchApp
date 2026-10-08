@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { writeIndividualStockEvidence } from '../src/lib/individual-stock-evidence.js';
 import { writeEvidenceQuality } from '../src/lib/evidence-quality.js';
 import { writeAnalysisEvidencePack } from '../src/lib/analysis-evidence-pack.js';
 import { writeAnalysisReadiness } from '../src/lib/analysis-readiness.js';
@@ -159,6 +160,7 @@ async function main() {
   await json('evidence-bundle.json', { deterministic:true,ticker:TICKER });
   await json('normalized/analysis-inputs.json', { deterministic:true,ticker:TICKER });
 
+  await writeIndividualStockEvidence(DIR, manifest);
   const quality = await writeEvidenceQuality(DIR, manifest);
   await writeAnalysisEvidencePack(DIR, manifest);
   const readiness = await writeAnalysisReadiness(DIR, manifest);
