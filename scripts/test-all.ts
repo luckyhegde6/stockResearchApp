@@ -72,7 +72,20 @@ async function runTestSuite(file: string): Promise<TestResult> {
   });
 }
 
+async function runFixtureSetup() {
+  return new Promise<void>((resolve, reject) => {
+    const child = spawn('npx', ['tsx', path.join(ROOT, 'scripts/ensure-test-research-fixture.ts')], {
+      cwd: ROOT,
+      shell: true,
+      stdio: 'inherit',
+    });
+    child.on('close', (code) => code === 0 ? resolve() : reject(new Error(`Fixture setup failed with code ${code}`)));
+    child.on('error', reject);
+  });
+}
+
 async function runAll() {
+  await runFixtureSetup();
   console.log('====================================================');
   console.log('  Stock Research Pipeline - Unified Test Suite Runner');
   console.log(`  Total Suites to Run: ${TEST_SUITES.length}`);
