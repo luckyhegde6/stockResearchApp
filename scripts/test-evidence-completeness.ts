@@ -4,7 +4,7 @@ import { writeIndividualStockEvidence } from '../src/lib/individual-stock-eviden
 import { writeEvidenceQuality } from '../src/lib/evidence-quality.js';
 
 const ticker = (process.argv[2] || 'ITC').toUpperCase();
-const dir = path.join(process.cwd(), 'research', ticker);
+const dir = path.join(process.cwd(), 'fixtures', 'research', ticker);
 const manifest = JSON.parse(await readFile(path.join(dir,'manifest.json'),'utf8'));
 await writeIndividualStockEvidence(dir, manifest);
 await writeEvidenceQuality(dir, manifest);
