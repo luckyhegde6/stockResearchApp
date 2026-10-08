@@ -8,7 +8,8 @@ import type { ResearchManifest, SourceArtifact } from '../src/types/research.js'
 
 const ROOT = process.cwd();
 const TICKER = 'ITC';
-const DIR = path.join(ROOT, 'research', TICKER);
+const FIXTURE_ROOT = path.join(ROOT, 'fixtures');
+const DIR = path.join(FIXTURE_ROOT, 'research', TICKER);
 const NOW = '2026-10-08T00:00:00.000Z';
 
 async function json(rel:string, value:any) {
@@ -33,6 +34,8 @@ function artifact(id:string, type:SourceArtifact['type'], provider:string, rel:s
 
 async function main() {
   await rm(DIR, { recursive:true, force:true });
+  await mkdir(path.join(FIXTURE_ROOT, 'data'), { recursive:true });
+  await writeFile(path.join(FIXTURE_ROOT, 'data', 'nse-equity-universe.json'), JSON.stringify([{symbol:'ITC',companyName:'ITC Limited',series:'EQ',dateOfListing:'23-AUG-1995',paidUpValue:1,marketLot:1,isin:'INE154A01025',faceValue:1,equityEligible:true,preferredForStockResearch:true}], null, 2), 'utf8');
   await mkdir(path.join(DIR,'raw'), { recursive:true });
   await mkdir(path.join(DIR,'normalized'), { recursive:true });
   await mkdir(path.join(DIR,'markdown'), { recursive:true });
