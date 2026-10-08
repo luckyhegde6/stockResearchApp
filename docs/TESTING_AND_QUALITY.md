@@ -31,6 +31,34 @@ npx tsx scripts/test-all.ts
 
 ---
 
+
+
+## CI fixture policy
+
+The integration suite must not depend on a live prior stock-research run.
+
+The five evidence-contract tests use a generated fixture under:
+
+~~~text
+fixtures/research/ITC/
+~~~
+
+The fixture is created by:
+
+~~~powershell
+npm run test:fixture
+~~~
+
+and automatically refreshed by:
+
+~~~powershell
+npm run test:all
+~~~
+
+The generated fixture is gitignored. It uses a minimal deterministic NSE security master under fixtures/data and synthetic source artifacts. It tests the evidence contracts and readiness logic without scraping live providers.
+
+The TradingView UI-surface test is source-contract based; it verifies the direct public-page implementation and does not launch Chromium.
+
 ## 🩺 System Diagnostic Tools
 
 Before running live research, verify pipeline dependencies using the diagnostic tools:
