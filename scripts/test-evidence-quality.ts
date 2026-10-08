@@ -5,7 +5,7 @@ import type { ResearchManifest } from '../src/types/research.js';
 
 async function main(){
   const ticker=(process.argv[2]||'ITC').toUpperCase();
-  const dir=path.join(process.cwd(),'research',ticker);
+  const dir=path.join(process.cwd(),'fixtures','research',ticker);
   const manifest=JSON.parse(await readFile(path.join(dir,'manifest.json'),'utf8')) as ResearchManifest;
   const report=await buildEvidenceQuality(dir,manifest);
   const summary = report.report?.summary || report.summary || { missing: 0 };
