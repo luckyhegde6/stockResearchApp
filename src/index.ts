@@ -412,7 +412,6 @@ async function acquire(ticker: string) {
 
   if (hasFlag('--analyze')) {
     await analyze(ticker);
-    await publishAfterPipelineRun('analysis', ticker, ROOT);
     return;
   }
 
