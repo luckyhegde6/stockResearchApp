@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -41,7 +42,7 @@ assert(launcher.includes("beginGoogleSheetsCommandStep('dashboard:research'"), '
 assert(launcher.includes("beginGoogleSheetsCommandStep('dashboard:batch-research'"), 'Batch research must expose the Sheets step');
 assert(launcher.includes('beginGoogleSheetsCommandStep(\`dashboard:market-scan:\${scanType}\`'), 'Market scans must expose the Sheets step');
 assert(launcher.includes("beginGoogleSheetsCommandStep('dashboard:analysis'"), 'Analysis runs must expose the Sheets step');
-assert(launcher.includes('completeGoogleSheetsCommandStep(sheetsStep'), 'Every dashboard-launched process must finalize its Sheets step');
+assert(launcher.includes('makeSheetsStepFinalizer(sheetsStep)'), 'Every dashboard-launched process must finalize its Sheets step exactly once');
 assert(index.includes("publishDatasetFile('chartinkScan'"), 'Chartink market scan commands must publish their generated index');
 assert(index.includes("publishDatasetFile('nse52w'"), 'NSE 52-week-high commands must publish their normalized result');
 assert(index.includes("case 'screener-screens':"), 'Screener shortcut must remain available');
@@ -63,6 +64,30 @@ for (const [name, command] of Object.entries(packageScripts)) {
   assert(handledByCentralCli || handledByWrapper, `npm script "${name}" bypasses the shared Sheets command lifecycle`);
 }
 assert(html.includes("running: 'PROCESS RUNNING'"), 'Dashboard must show running command/process steps');
+
+const smoke = spawnSync('npx', [
+  'tsx', path.join(root, 'scripts', 'with-google-sheets-step.ts'),
+  '--name', 'test:universal-wrapper-smoke',
+  '--exec', 'node', '--', '--version',
+], {
+  cwd: root,
+  encoding: 'utf8',
+  shell: true,
+  env: {
+    ...process.env,
+    GOOGLE_SHEETS_AUTO_EXPORT: 'false',
+    GOOGLE_SHEETS_WEBHOOK_URL: '',
+    GOOGLE_SHEETS_WEBHOOK_TOKEN: '',
+  },
+});
+assert(smoke.status === 0, 'Universal wrapper must preserve child exit status for a successful command');
+assert(String(smoke.stdout || '') + String(smoke.stderr || '').includes('[sheets]'), 'Wrapper must report its Sheets step');
+const syncState = JSON.parse(await readFile(path.join(root, 'outputs', 'google-sheets-sync-status.json'), 'utf8'));
+assert(
+  syncState.recentRuns.some((run: any) => run.symbol === 'TEST:UNIVERSAL-WRAPPER-SMOKE' && run.status === 'skipped'),
+  'Wrapper must persist final Sheets status when automatic publishing is disabled',
+);
+
 
 console.log(JSON.stringify({
   ok: true,
