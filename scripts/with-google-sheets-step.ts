@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { spawn, type ChildProcess } from 'node:child_process';
-import path from 'node:path';
 import {
   beginGoogleSheetsCommandStep,
   completeGoogleSheetsCommandStep,
@@ -28,7 +27,6 @@ async function run() {
   const shellCommand = readOption(args, '--shell-command');
   const separator = args.indexOf('--');
   const commandArgs = separator >= 0 ? args.slice(separator + 1) : [];
-  const longRunning = args.includes('--long-running');
 
   if (!commandName || (!executable && !shellCommand) || (executable && commandArgs.length === 0)) {
     console.error('Usage: tsx scripts/with-google-sheets-step.ts --name <command-name> --exec <executable> -- <args...>');
@@ -40,15 +38,9 @@ async function run() {
   const target = commandTarget(args);
   const step = await beginGoogleSheetsCommandStep(commandName, target, ROOT, 'cli');
   const startMs = Date.now();
-  const stdoutTail: string[] = [];
-  const stderrTail: string[] = [];
   let child: ChildProcess | undefined;
   let signalReceived: NodeJS.Signals | undefined;
 
-  const rememberTail = (buffer: string[], value: string) => {
-    buffer.push(value);
-    while (buffer.reduce((total, item) => total + item.length, 0) > 4000 && buffer.length > 1) buffer.shift();
-  };
 
   try {
     child = shellCommand
@@ -67,12 +59,10 @@ async function run() {
     child.stdout?.on('data', (chunk: Buffer | string) => {
       const value = chunk.toString();
       process.stdout.write(value);
-      rememberTail(stdoutTail, value);
     });
     child.stderr?.on('data', (chunk: Buffer | string) => {
       const value = chunk.toString();
       process.stderr.write(value);
-      rememberTail(stderrTail, value);
     });
 
     const outcome = await new Promise<{ exitCode: number; error?: string }>(resolve => {
@@ -89,11 +79,10 @@ async function run() {
     process.off('SIGINT', onSigInt);
     process.off('SIGTERM', onSigTerm);
     const exitCode = signalReceived === 'SIGINT' && outcome.exitCode === 0 ? 130 : outcome.exitCode;
-    const combinedTail = [...stdoutTail, ...stderrTail].join('').slice(-8000);
     await completeGoogleSheetsCommandStep(step, {
       exitCode,
       completedAt: new Date().toISOString(),
-      error: outcome.error || (exitCode !== 0 ? combinedTail.slice(-1500) : undefined),
+      error: outcome.error || (exitCode !== 0 ? `Command exited with code ${exitCode}` : undefined),
     });
     process.exitCode = exitCode;
   } catch (error) {
