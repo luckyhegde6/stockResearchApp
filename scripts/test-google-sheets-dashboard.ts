@@ -6,7 +6,7 @@ function assert(condition: unknown, message: string): asserts condition {
 }
 
 const root = process.cwd();
-const [server, html, launcher, publisher, index, laya, exporter] = await Promise.all([
+const [server, html, launcher, publisher, index, laya, exporter, wrapper, packageSource] = await Promise.all([
   readFile(path.join(root, 'src', 'server.ts'), 'utf8'),
   readFile(path.join(root, 'public', 'index.html'), 'utf8'),
   readFile(path.join(root, 'src', 'lib', 'process-launcher.ts'), 'utf8'),
@@ -14,6 +14,8 @@ const [server, html, launcher, publisher, index, laya, exporter] = await Promise
   readFile(path.join(root, 'src', 'index.ts'), 'utf8'),
   readFile(path.join(root, 'scripts', 'laya-decision-run.ts'), 'utf8'),
   readFile(path.join(root, 'scripts', 'export-to-google-sheets.ts'), 'utf8'),
+  readFile(path.join(root, 'scripts', 'with-google-sheets-step.ts'), 'utf8'),
+  readFile(path.join(root, 'package.json'), 'utf8'),
 ]);
 
 assert(server.includes("pathname === '/api/sheets/status'"), 'Dashboard must expose GET /api/sheets/status');
@@ -49,6 +51,17 @@ assert(index.includes("publishAfterPipelineRun('research'"), 'CLI research must 
 assert(index.includes("publishAfterPipelineRun('analysis'"), 'CLI analysis must auto-publish its validated analysis');
 assert(laya.includes("publishAfterPipelineRun('laya'"), 'CLI Laya decisions must auto-publish');
 assert(exporter.includes("kind === 'laya'"), 'Laya export must resolve its generated JSON by default');
+assert(wrapper.includes('beginGoogleSheetsCommandStep'), 'Non-central npm commands must use the universal Sheets lifecycle wrapper');
+assert(wrapper.includes('completeGoogleSheetsCommandStep'), 'Every wrapped process must finalize its Sheets status after exit');
+assert(index.includes('beginGoogleSheetsCommandStep'), 'Every central CLI command must announce the Sheets step');
+assert(index.includes('completeGoogleSheetsCommandStep(commandStep'), 'Every central CLI command must finalize the Sheets step');
+const packageScripts = JSON.parse(packageSource).scripts as Record<string, string>;
+for (const [name, command] of Object.entries(packageScripts)) {
+  const handledByCentralCli = command.includes('src/index.ts');
+  const handledByWrapper = command.includes('scripts/with-google-sheets-step.ts');
+  assert(handledByCentralCli || handledByWrapper, `npm script "${name}" bypasses the shared Sheets command lifecycle`);
+}
+assert(html.includes("running: 'PROCESS RUNNING'"), 'Dashboard must show running command/process steps');
 
 console.log(JSON.stringify({
   ok: true,
