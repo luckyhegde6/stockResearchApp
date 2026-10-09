@@ -38,6 +38,7 @@ import { writeAnalysisEvidencePack } from './lib/analysis-evidence-pack.js';
 import { loadNseEquityUniverse, resolveNseSecurity } from './lib/nse-securities.js';
 import { RESEARCH_CONFIG, featureSummary, normalizeSymbolInput } from './lib/research-config.js';
 import { classifyProvider } from './lib/source-classifier.js';
+import { publishAfterPipelineRun } from './lib/google-sheets-publish.js';
 
 const ROOT = process.cwd();
 const SKILL = path.join(ROOT, 'skills', 'stock-analysis', 'SKILL.md');
@@ -399,6 +400,7 @@ async function acquire(ticker: string) {
 
   if (hasFlag('--analyze')) {
     await analyze(ticker);
+    await publishAfterPipelineRun('analysis', ticker, ROOT);
     return;
   }
 
@@ -509,7 +511,7 @@ async function promptOnly(ticker: string) {
 const cmd = process.argv[2];
 (async () => {
   switch (cmd) {
-    case 'research': await acquire(await tickerArg()); break;
+    case 'research': { const ticker = await tickerArg(); await acquire(ticker); await publishAfterPipelineRun('research', ticker, ROOT); break; }
     case 'research-screener-screens': {
       const root = path.join(ROOT, 'research', 'market-screens', 'screener');
       const r = await runScreenerMarketScreens(root);
@@ -661,7 +663,7 @@ const cmd = process.argv[2];
       const finalBundle=await writeEvidenceBundle(dir,mf);
       await writeText(path.join(dir,'analysis-prep.json'),JSON.stringify({schema_version:'1.2',ticker:t,preparedAt:new Date().toISOString(),ingestion:{allEvidence:ing.allEvidence,structuredEvidence:ing.structuredEvidence,mdaEvidence:ing.mdaEvidence,visualEvidence:ing.visualEvidence},readiness:readiness.report,evidenceContract:contract,evidenceBundle:finalBundle,prompt:prompt.out,deterministic:true,llmUsed:false},null,2));
       console.log(JSON.stringify({ticker:t,ready:readiness.report.ready,blockingReasons:readiness.report.blockingReasons,advisoryReasons:readiness.report.advisoryReasons,analysisPrep:path.join(dir,'analysis-prep.json')},null,2)); break; }
-    case 'analyze': await analyze(await tickerArg()); break;
+    case 'analyze': { const ticker = await tickerArg(); await analyze(ticker); await publishAfterPipelineRun('analysis', ticker, ROOT); break; }
     case 'ingest': await ingestOnly(await tickerArg()); break;
     case 'validate': await validate(await tickerArg()); break;
     case 'prompt': await promptOnly(await tickerArg()); break;
