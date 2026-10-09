@@ -55,7 +55,7 @@ This plan keeps code work separate from Google-side deployment and final visual 
 **Acceptance:** every expected screenshot is embedded or has an explicit skip/failure reason; screenshots are not silently misreported as embedded.
 
 ### Task 4 — Automatic run publishing
-**Status: Implemented as best-effort post-run hooks; live end-to-end status pending**
+**Status: Implemented in code; live end-to-end status pending**
 
 - [x] On a successful standalone research run, publish the deterministic research package.
 - [x] For the combined research + analysis flow, publish research evidence before the analysis readiness gate.
@@ -66,7 +66,18 @@ This plan keeps code work separate from Google-side deployment and final visual 
 
 **Acceptance:** no duplicate research acquisition for the combined `--analyze` path; export failures warn and permit local output to remain available.
 
-### Task 5 — Live configuration and end-to-end verification
+### Task 5 — Dashboard visibility and local sync state
+**Status: Implemented in code; requires local restart to see it**
+
+- [x] Add a `Google Sheets Sync` navigation tab and a global status strip beneath the pipeline stepper.
+- [x] Add local APIs for status polling and explicit publish/retry.
+- [x] Persist recent publish attempts locally with run IDs, tab names, row counts and screenshot counts.
+- [x] Show waiting, publishing, succeeded, failed, not-configured and skipped states in the dashboard.
+- [x] Record the Sheets step when dashboard research, batch, scan and analysis processes are started.
+- [x] Publish supported CLI market-screen and scan artifacts after successful generation.
+- [ ] Deploy Apps Script and verify the actual workbook receives rows/images.
+
+### Task 6 — Live configuration and end-to-end verification
 **Status: Waiting on the deployed endpoint/local secrets; cannot be verified from this repository**
 
 1. Deploy the latest `integrations/google-sheets/Code.gs` version from the linked workbook's Apps Script project.
@@ -78,7 +89,7 @@ This plan keeps code work separate from Google-side deployment and final visual 
 
 **Acceptance:** actual sheet contents, row counts, recommendation/findings classifications and screenshot embedding are verified for a known run. Until these steps are complete, do not describe the live sync as confirmed.
 
-### Task 6 — Match the AI Studio UI reference
+### Task 7 — Match the AI Studio UI reference
 **Status: Blocked on reference visibility**
 
 - [ ] Inspect the reference's layout and interaction patterns (navigation, summary cards, data tables, filters, colors, density, responsive behavior).
@@ -88,7 +99,7 @@ This plan keeps code work separate from Google-side deployment and final visual 
 
 **Acceptance:** a documented field-to-component map and a before/after review against the actual reference.
 
-### Task 7 — Reliability and scale
+### Task 8 — Reliability and scale
 **Status: Backlog**
 
 - [ ] Add a dry-run mode that outputs planned tab names, row counts and screenshot byte totals without network writes.
