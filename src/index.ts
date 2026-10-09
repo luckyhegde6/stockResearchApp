@@ -527,17 +527,12 @@ const cmd = process.argv[2];
 (async () => {
   switch (cmd) {
     case 'research': { const ticker = await tickerArg(); if (hasFlag('--analyze')) await analyze(ticker); else { await acquire(ticker); await publishAfterPipelineRun('research', ticker, ROOT); } break; }
-    case 'research-screener-screens': {
-      const root = path.join(ROOT, 'research', 'market-screens', 'screener');
-      const r = await runScreenerMarketScreens(root);
-      console.log(JSON.stringify({ schema_version:'1.0', source:'Screener.in', root:path.relative(ROOT,root), artifacts:r.artifacts.length, dataGaps:r.gaps.length, warnings:r.warnings.length, artifactsDetail:r.artifacts }, null, 2));
-      await publishDatasetFile('screenerScan', path.join(root, 'index.json'));
-      break;
-    }
+    case 'research-screener-screens':
     case 'screener-screens': {
       const root = path.join(ROOT, 'research', 'market-screens', 'screener');
       const r = await runScreenerMarketScreens(root);
       console.log(JSON.stringify({ schema_version:'1.0', source:'Screener.in', root:path.relative(ROOT,root), artifacts:r.artifacts.length, dataGaps:r.gaps.length, warnings:r.warnings.length, artifactsDetail:r.artifacts }, null, 2));
+      await publishDatasetFile('screenerScan', path.join(root, 'index.json'));
       break;
     }
     case 'research-tijori-market':
