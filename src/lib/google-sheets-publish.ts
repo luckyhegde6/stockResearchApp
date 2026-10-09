@@ -269,7 +269,7 @@ export function startGoogleSheetsExport(
 }
 
 export async function publishAfterPipelineRun(
-  kind: 'research' | 'analysis',
+  kind: 'research' | 'analysis' | 'laya',
   symbol: string,
   root = process.cwd(),
 ): Promise<void> {
