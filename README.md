@@ -25,6 +25,8 @@ Automatic publishing requires `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEB
 **UI/sync reference:** [Google AI Studio preview](https://aistudio.google.com/apps/bf7ddb4a-486d-46db-9e2a-4cc6cfcfee5c?showPreview=true&showAssistant=true). The app preview was not inspectable through the connected web fetch in this session; see [the staged rollout plan](docs/GOOGLE_SHEETS_PUBLISHING_PLAN.md) for status and acceptance criteria.
 
 
+Every supported npm command and every `src/index.ts` CLI command now runs through a shared Google Sheets lifecycle. The dashboard-launched research, batch, scan and analysis processes announce the step when triggered and finalize a run record when they exit. Each completed command/process appends an execution-audit row to `command-runs-YYYY-MM-DD`; data-producing commands also publish their specialized research, analysis or scan tabs. While a process is active the sixth step shows **PROCESS RUNNING**; at completion it shows whether the run record synced, was skipped, failed, or could not sync because credentials are missing. The process exit status and the Sheet sync status are tracked separately in the audit row.
+
 The pipeline can publish classified research and investment-analysis reports into the linked workbook through the optional Apps Script sink under `integrations/google-sheets/`. Research and analysis exports create dedicated summary, findings/evidence, quality/score, risk, catalyst, scenario, source, audit, and visual-evidence tabs. Chart screenshots are embedded in the visual-evidence tab when file-size limits permit.
 
 Example:
@@ -63,7 +65,7 @@ ITC-YYYY-MM-DD-news
 ITC-YYYY-MM-DD-laya
 ```
 
-When `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are configured, the standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands publish their results automatically after the local run succeeds. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable automatic publishing; manual exports remain available. The `StockResearch` tab is the workbook's clickable index and `_EXPORT_LOG` records published runs. A Sheets outage never invalidates locally saved research or analysis. See [Google Sheets Export](integrations/google-sheets/README.md).
+When `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are configured, standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands publish their results automatically after local output is generated, and other commands append a command-run audit row. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable automatic publishing; manual exports remain available. The `StockResearch` tab is the workbook's clickable index and `_EXPORT_LOG` records published runs. A Sheets outage never invalidates locally saved research or analysis. See [Google Sheets Export](integrations/google-sheets/README.md).
 
 ## Developer & Agent Operating System
 
