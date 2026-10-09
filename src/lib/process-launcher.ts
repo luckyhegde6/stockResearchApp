@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { recordRunStart, recordRunComplete, updateActiveProgress } from './run-history.js';
-import { beginGoogleSheetsCommandStep, completeGoogleSheetsCommandStep, type GoogleSheetsDatasetKind } from './google-sheets-publish.js';
+import { beginGoogleSheetsCommandStep, completeGoogleSheetsCommandStep } from './google-sheets-publish.js';
 
 const ROOT = process.cwd();
 
@@ -148,25 +148,6 @@ export async function launchBatchResearchProcess(symbols: string[]): Promise<Lau
     status: 'started',
     message: `Batch research task ${runId} triggered for ${symbols.length} symbols`,
   };
-}
-
-function scanSheetExport(scanType: string): { kind: GoogleSheetsDatasetKind; file: string } {
-  if (scanType === '52w' || scanType === 'nse-52week-high') {
-    const dateSlug = new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric',
-    }).format(new Date()).replaceAll('/', '-');
-    return { kind: 'nse52w', file: path.join('scans', `52-Week-High-${dateSlug}`, 'raw', 'nse-api', '52-week-high.normalized.json') };
-  }
-  if (scanType === 'top20' || scanType === 'chartink-top20') {
-    return { kind: 'chartinkScan', file: path.join('research', 'chartink', 'top20', 'index.json') };
-  }
-  if (scanType === 'screener' || scanType === 'screener-market') {
-    return { kind: 'screenerScan', file: path.join('research', 'market-screens', 'screener', 'index.json') };
-  }
-  if (scanType === 'tijori' || scanType === 'tijori-market') {
-    return { kind: 'tijoriScan', file: path.join('research', 'market-screens', 'tijori', 'index.json') };
-  }
-  return { kind: 'chartinkScan', file: path.join('scans', 'index.json') };
 }
 
 export async function launchScanProcess(scanType: string): Promise<LaunchResult> {
