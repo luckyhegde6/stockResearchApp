@@ -1082,6 +1082,7 @@
       if (status === 'succeeded') return 'pill-green';
       if (status === 'failed') return 'pill-rose';
       if (status === 'publishing') return 'pill-blue';
+      if (status === 'waiting') return 'pill-amber';
       if (status === 'not_configured' || status === 'skipped') return 'pill-amber';
       return 'pill-blue';
     }
@@ -1090,6 +1091,7 @@
       return ({
         succeeded: 'SYNCED',
         failed: 'FAILED',
+        waiting: 'WAITING FOR ARTIFACTS',
         publishing: 'PUBLISHING',
         not_configured: 'NOT CONFIGURED',
         skipped: 'SKIPPED',
@@ -1283,8 +1285,6 @@
         const data = await res.json();
         showToast(data.message || `Started research for ${symbol}`);
         pollProgress();
-    refreshSheetsStatus();
-    setInterval(refreshSheetsStatus, 2500);
       } catch (err) {
         showToast('Trigger failed: ' + err.message);
       }
@@ -1838,6 +1838,8 @@
     populateResearchedDropdowns();
     loadRecentRuns();
     pollProgress();
+    refreshSheetsStatus();
+    setInterval(refreshSheetsStatus, 2500);
   </script>
 </body>
 </html>
