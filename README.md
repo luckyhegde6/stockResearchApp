@@ -13,7 +13,10 @@ It combines official NSE data, Screener, Tijori, TradingView, optional news/Char
 
 ## Google Sheets export
 
-The pipeline can export compact deterministic research, analysis, scan, news, and decision datasets into dated Google Sheets tabs through the optional Apps Script sink under `integrations/google-sheets/`.
+**StockResearch workbook:** [Open StockResearch — Research & Analysis](https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0)
+
+
+The pipeline can publish classified research and investment-analysis reports into the linked workbook through the optional Apps Script sink under `integrations/google-sheets/`. Research and analysis exports create dedicated summary, findings/evidence, quality/score, risk, catalyst, scenario, source, audit, and visual-evidence tabs. Chart screenshots are embedded in the visual-evidence tab when file-size limits permit.
 
 Example:
 
@@ -27,8 +30,21 @@ npm run sheets:export -- chartinkScan --file scans/chartink-market-scans.json
 Expected tab naming:
 
 ```text
-ITC-YYYY-MM-DD-research
-ITC-YYYY-MM-DD-analysis
+ITC-YYYY-MM-DD-research-summary
+ITC-YYYY-MM-DD-research-evidence
+ITC-YYYY-MM-DD-research-sources
+ITC-YYYY-MM-DD-research-findings
+ITC-YYYY-MM-DD-research-quality
+ITC-YYYY-MM-DD-research-visual-evidence
+ITC-YYYY-MM-DD-analysis-summary
+ITC-YYYY-MM-DD-analysis-findings
+ITC-YYYY-MM-DD-analysis-scores
+ITC-YYYY-MM-DD-analysis-risks
+ITC-YYYY-MM-DD-analysis-catalysts
+ITC-YYYY-MM-DD-analysis-scenarios
+ITC-YYYY-MM-DD-analysis-sources
+ITC-YYYY-MM-DD-analysis-audit
+ITC-YYYY-MM-DD-analysis-visual-evidence
 ITC-YYYY-MM-DD-fullscan
 chartinkScan-YYYY-MM-DD
 nse52wScan-YYYY-MM-DD
@@ -38,7 +54,7 @@ ITC-YYYY-MM-DD-news
 ITC-YYYY-MM-DD-laya
 ```
 
-The export is intentionally outside the core pipeline boundary. A Sheet outage must never invalidate deterministic research. See [Google Sheets Export](integrations/google-sheets/README.md).
+The `StockResearch` tab is the workbook's clickable index and `_EXPORT_LOG` records published runs. The exporter is intentionally outside the core pipeline boundary. A Sheet outage must never invalidate deterministic research. See [Google Sheets Export](integrations/google-sheets/README.md).
 
 ## Developer & Agent Operating System
 
