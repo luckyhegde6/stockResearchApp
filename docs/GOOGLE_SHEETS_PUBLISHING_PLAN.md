@@ -73,7 +73,7 @@ This plan keeps code work separate from Google-side deployment and final visual 
 - [x] Add local APIs for status polling and explicit publish/retry.
 - [x] Persist recent publish attempts locally with run IDs, tab names, row counts and screenshot counts.
 - [x] Show waiting, publishing, succeeded, failed, not-configured and skipped states in the dashboard.
-- [x] Record the Sheets step when dashboard research, batch, scan and analysis processes are started.
+- [x] Record the Sheets step when dashboard research, batch, scan and analysis processes are started; show the actual state in step 6.
 - [x] Publish supported CLI market-screen and scan artifacts after successful generation.
 - [ ] Deploy Apps Script and verify the actual workbook receives rows/images.
 
