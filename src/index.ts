@@ -452,6 +452,8 @@ async function analyze(ticker: string) {
   console.log(`\n=== ANALYZE ${ticker} ===`);
   console.log(`→ ANALYZE/RESEARCH: Running complete deterministic acquisition pipeline`);
   await acquire(ticker);
+  // Publish the evidence package even if a later readiness gate blocks LLM analysis.
+  await publishAfterPipelineRun('research', ticker, ROOT);
 
   console.log(`→ ANALYZE/PREPARE: Running complete deterministic preparation pipeline`);
   const readiness = await ensureAnalysisPrepared(ticker);
@@ -482,6 +484,7 @@ async function analyze(ticker: string) {
     pipeline: ['research','prepare-analysis','llm-analysis'],
   }, null, 2));
   console.log(JSON.stringify({ status: 'analyzed', ticker, output: outputPath }, null, 2));
+  await publishAfterPipelineRun('analysis', ticker, ROOT);
 }
 
 async function ingestOnly(ticker: string) {
@@ -511,7 +514,7 @@ async function promptOnly(ticker: string) {
 const cmd = process.argv[2];
 (async () => {
   switch (cmd) {
-    case 'research': { const ticker = await tickerArg(); await acquire(ticker); await publishAfterPipelineRun('research', ticker, ROOT); break; }
+    case 'research': { const ticker = await tickerArg(); await acquire(ticker); if (hasFlag('--analyze')) await analyze(ticker); else await publishAfterPipelineRun('research', ticker, ROOT); break; }
     case 'research-screener-screens': {
       const root = path.join(ROOT, 'research', 'market-screens', 'screener');
       const r = await runScreenerMarketScreens(root);
@@ -663,7 +666,7 @@ const cmd = process.argv[2];
       const finalBundle=await writeEvidenceBundle(dir,mf);
       await writeText(path.join(dir,'analysis-prep.json'),JSON.stringify({schema_version:'1.2',ticker:t,preparedAt:new Date().toISOString(),ingestion:{allEvidence:ing.allEvidence,structuredEvidence:ing.structuredEvidence,mdaEvidence:ing.mdaEvidence,visualEvidence:ing.visualEvidence},readiness:readiness.report,evidenceContract:contract,evidenceBundle:finalBundle,prompt:prompt.out,deterministic:true,llmUsed:false},null,2));
       console.log(JSON.stringify({ticker:t,ready:readiness.report.ready,blockingReasons:readiness.report.blockingReasons,advisoryReasons:readiness.report.advisoryReasons,analysisPrep:path.join(dir,'analysis-prep.json')},null,2)); break; }
-    case 'analyze': { const ticker = await tickerArg(); await analyze(ticker); await publishAfterPipelineRun('analysis', ticker, ROOT); break; }
+    case 'analyze': await analyze(await tickerArg()); break;
     case 'ingest': await ingestOnly(await tickerArg()); break;
     case 'validate': await validate(await tickerArg()); break;
     case 'prompt': await promptOnly(await tickerArg()); break;
