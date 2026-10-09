@@ -220,6 +220,9 @@ async function buildExport(parsed: ParsedArgs, baseTab: string): Promise<{ tabs:
   if (!sourceFile && symbol && kind === 'analysis') {
     sourceFile = path.join(ROOT, 'outputs', `${symbol}-analysis.json`);
   }
+  if (!sourceFile && symbol && kind === 'laya') {
+    sourceFile = path.join(ROOT, 'research', symbol, 'normalized', 'laya-decisions.json');
+  }
   if (!sourceFile) {
     throw new Error('This dataset requires --file. For research/analysis, a symbol can be supplied.');
   }
