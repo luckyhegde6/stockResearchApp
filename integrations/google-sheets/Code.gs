@@ -41,16 +41,24 @@ function doPost(e) {
       const tabName = sanitizeTabName_(item.tabName || 'research');
       const sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName);
       const rows = Array.isArray(item.rows) ? item.rows : [];
-      writeRows_(sheet, rows, mode);
+      const dataStartRow = writeRows_(sheet, rows, mode);
       results.push({
         tabName: tabName,
         dataset: String(item.dataset || payload.dataset || ''),
         rows: rows.length,
-        gid: sheet.getSheetId()
+        gid: sheet.getSheetId(),
+        dataStartRow: dataStartRow
       });
     });
 
-    const screenshotResult = embedScreenshots_(ss, Array.isArray(payload.screenshots) ? payload.screenshots : []);
+    const screenshots = Array.isArray(payload.screenshots) ? payload.screenshots : [];
+    screenshots.forEach(function(item) {
+      const tabResult = results.find(function(result) { return result.tabName === sanitizeTabName_(item.tabName || 'visual-evidence'); });
+      if (tabResult && tabResult.dataStartRow) {
+        item.rowIndex = tabResult.dataStartRow + (Number(item.rowIndex || 2) - 2);
+      }
+    });
+    const screenshotResult = embedScreenshots_(ss, screenshots);
     const screenshotCount = screenshotResult.embedded;
     results.forEach(function(result) {
       const sheet = ss.getSheetByName(result.tabName);
@@ -116,7 +124,7 @@ function writeRows_(sheet, rows, mode) {
     sheet.getRange(1, 1).setValue('No rows returned');
     sheet.setFrozenRows(1);
     sheet.setColumnWidth(1, 280);
-    return;
+    return 2;
   }
 
   const columns = [];
@@ -159,6 +167,7 @@ function writeRows_(sheet, rows, mode) {
     if (sheet.getColumnWidth(column) < 100) sheet.setColumnWidth(column, 120);
   }
   sheet.setRowHeights(dataStartRow, values.length, previewColumn > 0 ? 230 : 48);
+  return dataStartRow;
 }
 
 function styleHeader_(sheet, width) {
