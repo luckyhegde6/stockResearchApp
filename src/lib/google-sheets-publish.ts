@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 
 export type GoogleSheetsDatasetKind =
   | 'research'
@@ -117,10 +117,7 @@ async function persistRun(root: string, run: GoogleSheetsRun): Promise<void> {
     updatedAt: new Date().toISOString(),
     recentRuns,
   };
-  const temp = `${file}.tmp`;
-  await writeFile(temp, JSON.stringify(next, null, 2), 'utf8');
   await writeFile(file, JSON.stringify(next, null, 2), 'utf8');
-  await import('node:fs/promises').then(fs => fs.rm(temp, { force: true })).catch(() => {});
 }
 
 export async function getGoogleSheetsSyncStatus(root = process.cwd()): Promise<GoogleSheetsStatus> {
@@ -322,17 +319,37 @@ export async function writeGoogleSheetsStatusMessage(
   return run;
 }
 
+export async function resolveGoogleSheetsExportFile(
+  kind: GoogleSheetsDatasetKind,
+  root = process.cwd(),
+): Promise<string | undefined> {
+  if (kind === 'chartinkScan') return path.join(root, 'scans', 'index.json');
+  if (kind === 'screenerScan') return path.join(root, 'research', 'market-screens', 'screener', 'index.json');
+  if (kind === 'tijoriScan') return path.join(root, 'research', 'market-screens', 'tijori', 'index.json');
+  if (kind !== 'nse52w') return undefined;
+
+  const scansRoot = path.join(root, 'scans');
+  try {
+    const dirs = await readdir(scansRoot, { withFileTypes: true });
+    const candidates = dirs.filter(item => item.isDirectory() && /^52-Week-High-\\d{2}-\\d{2}-\\d{4}$/.test(item.name));
+    const dated = candidates.map(item => {
+      const match = item.name.match(/52-Week-High-(\\d{2})-(\\d{2})-(\\d{4})$/);
+      const timestamp = match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime() : 0;
+      return { name: item.name, timestamp };
+    }).sort((a, b) => b.timestamp - a.timestamp);
+    if (!dated.length) return path.join(scansRoot, 'not-yet-generated', 'raw', 'nse-api', '52-week-high.normalized.json');
+    return path.join(scansRoot, dated[0].name, 'raw', 'nse-api', '52-week-high.normalized.json');
+  } catch {
+    return path.join(scansRoot, 'not-yet-generated', 'raw', 'nse-api', '52-week-high.normalized.json');
+  }
+}
+
 export async function getAvailableSheetArtifacts(root = process.cwd(), symbol?: string): Promise<Record<string, boolean>> {
   const ticker = safeId(symbol);
-  const dateSlug = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric',
-  }).format(new Date()).replace(/\//g, '-');
-  const checks: Record<string, string> = {
-    chartinkScan: path.join(root, 'scans', 'index.json'),
-    nse52w: path.join(root, 'scans', `52-Week-High-${dateSlug}`, 'raw', 'nse-api', '52-week-high.normalized.json'),
-    screenerScan: path.join(root, 'research', 'market-screens', 'screener', 'index.json'),
-    tijoriScan: path.join(root, 'research', 'market-screens', 'tijori', 'index.json'),
-  };
+  const checks: Record<string, string> = {};
+  for (const kind of ['chartinkScan', 'nse52w', 'screenerScan', 'tijoriScan'] as const) {
+    checks[kind] = (await resolveGoogleSheetsExportFile(kind, root)) || '';
+  }
   if (ticker) {
     checks.research = path.join(root, 'research', ticker, 'manifest.json');
     checks.analysis = path.join(root, 'outputs', `${ticker}-analysis.json`);
@@ -341,8 +358,13 @@ export async function getAvailableSheetArtifacts(root = process.cwd(), symbol?: 
     checks.fullscan = path.join(root, 'research', ticker, 'fullscan.json');
   }
   const entries = await Promise.all(Object.entries(checks).map(async ([key, file]) => {
-    try { await access(file); return [key, true] as const; }
-    catch { return [key, false] as const; }
+    try {
+      if (!file) return [key, false] as const;
+      await access(file);
+      return [key, true] as const;
+    } catch {
+      return [key, false] as const;
+    }
   }));
   return Object.fromEntries(entries);
 }
