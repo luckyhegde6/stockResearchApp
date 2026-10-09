@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 
 export type GoogleSheetsDatasetKind =
   | 'research'
@@ -324,20 +324,29 @@ export async function resolveGoogleSheetsExportFile(
   root = process.cwd(),
 ): Promise<string | undefined> {
   if (kind === 'chartinkScan') {
+    const scanRoot = path.join(root, 'scans');
     const candidates = [
-      path.join(root, 'scans', 'index.json'),
+      path.join(scanRoot, 'index.json'),
       path.join(root, 'research', 'chartink', 'top20', 'index.json'),
     ];
-    for (const candidate of candidates) {
-      try { await access(candidate); return candidate; } catch {}
-    }
-    const scanRoot = path.join(root, 'scans');
     try {
       const entries = await readdir(scanRoot, { withFileTypes: true });
-      const dated = entries.filter(entry => entry.isDirectory() && /^(All|Fundamental|Candlestick|Range-Breakouts|Bullish|Bearish|Intraday)-/.test(entry.name)).sort((a, b) => b.name.localeCompare(a.name));
-      if (dated.length) return path.join(scanRoot, dated[0].name, 'index.json');
+      for (const entry of entries) {
+        if (entry.isDirectory() && !entry.name.startsWith('52-Week-High-')) {
+          candidates.push(path.join(scanRoot, entry.name, 'index.json'));
+        }
+      }
     } catch {}
-    return candidates[0];
+
+    const existing: Array<{ file: string; modifiedAt: number }> = [];
+    for (const candidate of [...new Set(candidates)]) {
+      try {
+        const info = await stat(candidate);
+        if (info.isFile()) existing.push({ file: candidate, modifiedAt: info.mtimeMs });
+      } catch {}
+    }
+    existing.sort((a, b) => b.modifiedAt - a.modifiedAt);
+    return existing[0]?.file || candidates[0];
   }
   if (kind === 'screenerScan') return path.join(root, 'research', 'market-screens', 'screener', 'index.json');
   if (kind === 'tijoriScan') return path.join(root, 'research', 'market-screens', 'tijori', 'index.json');
