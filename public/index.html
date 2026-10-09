@@ -949,7 +949,7 @@
               <option value="HPCL">Hindustan Petroleum Corporation</option>
               <option value="RELIANCE">Reliance Industries</option>
             </select>
-            <button class="btn btn-emerald" onclick="loadLayaDecisions(document.getElementById('laya-ticker-select').value)">⚡ Run Laya Decisions</button>
+            <button class="btn btn-emerald" onclick="triggerLayaDecisionRun()">⚡ Run Laya Decisions & Sync</button>
             <button class="btn btn-secondary" onclick="viewResultsForSymbol(document.getElementById('laya-ticker-select').value)">📊 View Canonical Facts</button>
           </div>
           <div style="display: flex; gap: 0.5rem;">
@@ -1323,6 +1323,26 @@
         pollProgress();
       } catch (err) {
         showToast('Scan trigger failed: ' + err.message);
+      }
+    }
+
+    async function triggerLayaDecisionRun() {
+      const ticker = document.getElementById('laya-ticker-select').value;
+      showToast(`Running Laya decisions and publishing ${ticker}...`);
+      try {
+        const res = await fetch('/api/trigger/laya', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbol: ticker })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Laya decision run failed.');
+        showToast(`Laya decisions generated for ${ticker}; Sheets status is updating.`);
+        await loadLayaDecisions(ticker);
+        await refreshSheetsStatus();
+      } catch (err) {
+        showToast('Laya run failed: ' + (err && err.message ? err.message : String(err)));
+        await refreshSheetsStatus();
       }
     }
 
