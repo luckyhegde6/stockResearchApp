@@ -154,7 +154,7 @@ function scanSheetExport(scanType: string): { kind: GoogleSheetsDatasetKind; fil
   if (scanType === '52w' || scanType === 'nse-52week-high') {
     const dateSlug = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric',
-    }).format(new Date()).replace(/\\//g, '-');
+    }).format(new Date()).replaceAll('/', '-');
     return { kind: 'nse52w', file: path.join('scans', `52-Week-High-${dateSlug}`, 'raw', 'nse-api', '52-week-high.normalized.json') };
   }
   if (scanType === 'top20' || scanType === 'chartink-top20') {
