@@ -323,7 +323,22 @@ export async function resolveGoogleSheetsExportFile(
   kind: GoogleSheetsDatasetKind,
   root = process.cwd(),
 ): Promise<string | undefined> {
-  if (kind === 'chartinkScan') return path.join(root, 'scans', 'index.json');
+  if (kind === 'chartinkScan') {
+    const candidates = [
+      path.join(root, 'scans', 'index.json'),
+      path.join(root, 'research', 'chartink', 'top20', 'index.json'),
+    ];
+    for (const candidate of candidates) {
+      try { await access(candidate); return candidate; } catch {}
+    }
+    const scanRoot = path.join(root, 'scans');
+    try {
+      const entries = await readdir(scanRoot, { withFileTypes: true });
+      const dated = entries.filter(entry => entry.isDirectory() && /^(All|Fundamental|Candlestick|Range-Breakouts|Bullish|Bearish|Intraday)-/.test(entry.name)).sort((a, b) => b.name.localeCompare(a.name));
+      if (dated.length) return path.join(scanRoot, dated[0].name, 'index.json');
+    } catch {}
+    return candidates[0];
+  }
   if (kind === 'screenerScan') return path.join(root, 'research', 'market-screens', 'screener', 'index.json');
   if (kind === 'tijoriScan') return path.join(root, 'research', 'market-screens', 'tijori', 'index.json');
   if (kind !== 'nse52w') return undefined;
