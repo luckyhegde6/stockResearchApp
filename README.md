@@ -15,6 +15,13 @@ It combines official NSE data, Screener, Tijori, TradingView, optional news/Char
 
 **StockResearch workbook:** [Open StockResearch — Research & Analysis](https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0)
 
+### Dashboard Google Sheets sync
+
+The local Control Center now includes a **Google Sheets Sync** navigation tab and a live publish-status strip below the pipeline stepper. It polls the local `/api/sheets/status` endpoint and displays the latest run, row counts, tabs and screenshot results. Use the tab to retry publishing existing research, analysis, Laya decisions or supported market scans. Credentials are never rendered into the browser.
+
+Automatic publishing requires `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` in the local `.env`. When they are absent, the dashboard deliberately shows **NOT CONFIGURED** rather than implying that data synced.
+
+
 **UI/sync reference:** [Google AI Studio preview](https://aistudio.google.com/apps/bf7ddb4a-486d-46db-9e2a-4cc6cfcfee5c?showPreview=true&showAssistant=true). The app preview was not inspectable through the connected web fetch in this session; see [the staged rollout plan](docs/GOOGLE_SHEETS_PUBLISHING_PLAN.md) for status and acceptance criteria.
 
 
