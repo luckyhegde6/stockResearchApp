@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { recordRunStart, recordRunComplete, updateActiveProgress } from './run-history.js';
-import { announceGoogleSheetsStep, writeGoogleSheetsStatusMessage, type GoogleSheetsDatasetKind } from './google-sheets-publish.js';
+import { beginGoogleSheetsCommandStep, completeGoogleSheetsCommandStep, type GoogleSheetsDatasetKind } from './google-sheets-publish.js';
 
 const ROOT = process.cwd();
 
@@ -36,7 +36,7 @@ export async function launchResearchProcess(
   const sym = symbol.trim().toUpperCase();
   const runId = `run-${Date.now()}-${sym.toLowerCase()}`;
   await recordRunStart(runId, 'individual_research', sym);
-  await announceGoogleSheetsStep('research', sym, ROOT, 'dashboard');
+  const sheetsStep = await beginGoogleSheetsCommandStep('dashboard:research', sym, ROOT, 'dashboard');
 
   updateActiveProgress(1, 'Step 1/5: Symbol Master Resolution', sym, runId, `Resolving NSE security master for ${sym}`);
 
@@ -75,14 +75,14 @@ export async function launchResearchProcess(
     activeProcess = null;
     const ok = code === 0;
     await recordRunComplete(runId, ok ? 'completed' : 'failed', ok ? 92.5 : null, ok ? undefined : `Process exited with code ${code}`);
-    if (!ok) await writeGoogleSheetsStatusMessage('skipped', `Google Sheets export skipped because research for ${sym} failed.`, { root: ROOT, trigger: 'post_process', kind: 'research', symbol: sym, error: `Research process exit code ${code}` });
+    await completeGoogleSheetsCommandStep(sheetsStep, { exitCode: code ?? 1, completedAt: new Date().toISOString(), error: code === 0 ? undefined : `Research process exited with code ${code}` });
     console.log(`[PROCESS LAUNCHER] Task ${runId} finished with code ${code}`);
   });
 
   child.on('error', async (err) => {
     activeProcess = null;
     await recordRunComplete(runId, 'failed', null, err.message);
-    await writeGoogleSheetsStatusMessage('skipped', `Google Sheets export skipped because research for ${sym} could not start.`, { root: ROOT, trigger: 'post_process', kind: 'research', symbol: sym, error: err.message });
+    await completeGoogleSheetsCommandStep(sheetsStep, { exitCode: 127, completedAt: new Date().toISOString(), error: err.message });
     console.error(`[PROCESS LAUNCHER] Task ${runId} error:`, err);
   });
 
@@ -109,7 +109,7 @@ export async function launchBatchResearchProcess(symbols: string[]): Promise<Lau
   const runId = `batch-${Date.now()}`;
   const targetStr = symbols.join(', ');
   await recordRunStart(runId, 'batch_research', targetStr);
-  await announceGoogleSheetsStep('research', targetStr, ROOT, 'dashboard');
+  const sheetsStep = await beginGoogleSheetsCommandStep('dashboard:batch-research', targetStr, ROOT, 'dashboard');
 
   updateActiveProgress(1, 'Step 1/5: Initializing Batch Queue', targetStr, runId, `Starting batch research over ${symbols.length} symbols`);
 
@@ -132,13 +132,13 @@ export async function launchBatchResearchProcess(symbols: string[]): Promise<Lau
     activeProcess = null;
     const ok = code === 0;
     await recordRunComplete(runId, ok ? 'completed' : 'failed', ok ? 90 : null, ok ? undefined : `Batch exited with code ${code}`);
-    if (!ok) await writeGoogleSheetsStatusMessage('skipped', 'Batch research did not complete; any per-symbol exports in history remain valid.', { root: ROOT, trigger: 'post_process', kind: 'research', symbol: targetStr, error: `Batch exited with code ${code}` });
+    await completeGoogleSheetsCommandStep(sheetsStep, { exitCode: code ?? 1, completedAt: new Date().toISOString(), error: code === 0 ? undefined : `Batch exited with code ${code}` });
   });
 
   child.on('error', async (err) => {
     activeProcess = null;
     await recordRunComplete(runId, 'failed', null, err.message);
-    await writeGoogleSheetsStatusMessage('skipped', 'Batch research could not start; export skipped.', { root: ROOT, trigger: 'post_process', kind: 'research', symbol: targetStr, error: err.message });
+    await completeGoogleSheetsCommandStep(sheetsStep, { exitCode: 127, completedAt: new Date().toISOString(), error: err.message });
   });
 
   return {
@@ -182,7 +182,7 @@ export async function launchScanProcess(scanType: string): Promise<LaunchResult>
 
   const runId = `scan-${Date.now()}-${scanType}`;
   await recordRunStart(runId, 'market_scan', scanType, ['Chartink', 'NSE NextAPI']);
-  await announceGoogleSheetsStep(scanSheetExport(scanType).kind, scanType, ROOT, 'dashboard');
+  const sheetsStep = await beginGoogleSheetsCommandStep(`dashboard:market-scan:${scanType}`, scanType, ROOT, 'dashboard');
 
   updateActiveProgress(1, 'Step 1/5: Initializing Market Scan', scanType, runId, `Triggering market scan: ${scanType}`);
 
@@ -212,18 +212,13 @@ export async function launchScanProcess(scanType: string): Promise<LaunchResult>
     activeProcess = null;
     const ok = code === 0;
     await recordRunComplete(runId, ok ? 'completed' : 'failed', ok ? 100 : null, ok ? undefined : `Scan exited with code ${code}`);
-    if (!ok) {
-      await writeGoogleSheetsStatusMessage('skipped', `Sheets publish skipped because market scan ${scanType} failed.`, {
-        root: ROOT, trigger: 'post_process', kind: scanSheetExport(scanType).kind,
-        error: `Market scan exited with code ${code}`,
-      });
-    }
+    await completeGoogleSheetsCommandStep(sheetsStep, { exitCode: code ?? 1, completedAt: new Date().toISOString(), error: code === 0 ? undefined : `Market scan exited with code ${code}` });
   });
 
   child.on('error', async (err) => {
     activeProcess = null;
     await recordRunComplete(runId, 'failed', null, err.message);
-    await writeGoogleSheetsStatusMessage('skipped', `Sheets publish skipped because market scan ${scanType} could not start.`, { root: ROOT, trigger: 'post_process', kind: scanSheetExport(scanType).kind, error: err.message });
+    await completeGoogleSheetsCommandStep(sheetsStep, { exitCode: 127, completedAt: new Date().toISOString(), error: err.message });
   });
 
   return {
@@ -249,7 +244,7 @@ export async function launchAnalyzeProcess(symbol: string): Promise<LaunchResult
   const sym = symbol.trim().toUpperCase();
   const runId = `analyze-${Date.now()}-${sym.toLowerCase()}`;
   await recordRunStart(runId, 'individual_research', sym, ['LLM Reasoner']);
-  await announceGoogleSheetsStep('analysis', sym, ROOT, 'dashboard');
+  const sheetsStep = await beginGoogleSheetsCommandStep('dashboard:analysis', sym, ROOT, 'dashboard');
 
   updateActiveProgress(1, 'Step 1/5: Loading Prompt Context', sym, runId, `Loading analysis-prompt.txt for ${sym}`);
 
@@ -268,13 +263,13 @@ export async function launchAnalyzeProcess(symbol: string): Promise<LaunchResult
     activeProcess = null;
     const ok = code === 0;
     await recordRunComplete(runId, ok ? 'completed' : 'failed', ok ? 95 : null, ok ? undefined : `Analyze exited with code ${code}`);
-    if (!ok) await writeGoogleSheetsStatusMessage('skipped', `Final analysis export skipped because analysis for ${sym} failed; any prior research export remains available.`, { root: ROOT, trigger: 'post_process', kind: 'analysis', symbol: sym, error: `Analysis process exit code ${code}` });
+    await completeGoogleSheetsCommandStep(sheetsStep, { exitCode: code ?? 1, completedAt: new Date().toISOString(), error: code === 0 ? undefined : `Analysis process exited with code ${code}` });
   });
 
   child.on('error', async (err) => {
     activeProcess = null;
     await recordRunComplete(runId, 'failed', null, err.message);
-    await writeGoogleSheetsStatusMessage('skipped', `Final analysis export skipped because analysis for ${sym} could not start.`, { root: ROOT, trigger: 'post_process', kind: 'analysis', symbol: sym, error: err.message });
+    await completeGoogleSheetsCommandStep(sheetsStep, { exitCode: 127, completedAt: new Date().toISOString(), error: err.message });
   });
 
   return {
