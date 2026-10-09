@@ -195,7 +195,7 @@ async function executeExport(
   }
 
   const script = path.join(root, 'scripts', 'export-to-google-sheets.ts');
-  const run = makeRun(runId, kind, symbol, options, 'publishing', `Publishing ${kind}${symbol ? ` for ${safeId(symbol)}` : ''} to Google Sheets.`);
+  const run = makeRun(runId, kind, symbol, options, 'publishing', [`Publishing ${kind}${symbol ? ` for ${safeId(symbol)}` : ''} to Google Sheets.`, options.contextMessage].filter(Boolean).join(' '));
   await persistRun(root, run);
   console.log(`[sheets] ${run.message}`);
 
@@ -225,7 +225,7 @@ async function executeExport(
       const output = parseExporterOutput(result.stdout);
       if (output?.ok === false) throw new Error(output.error || 'Exporter reported failure.');
       run.status = 'succeeded';
-      run.message = `Published ${kind}${symbol ? ` for ${safeId(symbol)}` : ''} to Google Sheets.`;
+      run.message = [`Published ${kind}${symbol ? ` for ${safeId(symbol)}` : ''} to Google Sheets.`, options.contextMessage].filter(Boolean).join(' ');
       run.tabs = Array.isArray(output.tabs) ? output.tabs : [];
       run.rowCount = Number(output.rowCount ?? run.tabs.reduce((sum: number, tab: any) => sum + Number(tab.rows || 0), 0));
       run.screenshotsSent = Number(output.screenshotsSent || 0);
@@ -358,7 +358,7 @@ export async function completeGoogleSheetsCommandStep(
   await mkdir(path.dirname(reportPath), { recursive: true });
   await writeFile(reportPath, JSON.stringify(report, null, 2), 'utf8');
 
-  const result = await runGoogleSheetsExport('custom', undefined, {
+  const result = await runGoogleSheetsExport('custom', step.target || step.command, {
     root: step.root,
     file: path.relative(step.root, reportPath),
     tab: `command-runs-${tabDate}`,
