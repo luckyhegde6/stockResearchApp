@@ -58,6 +58,8 @@ This plan keeps code work separate from Google-side deployment and final visual 
 **Status: Implemented in code; live end-to-end status pending**
 
 - [x] On a successful standalone research run, publish the deterministic research package.
+- [x] Wrap every npm script that does not enter `src/index.ts` directly with a shared lifecycle wrapper; central CLI commands use the same lifecycle inside `src/index.ts`.
+- [x] Append an execution-audit row to `command-runs-YYYY-MM-DD` for each completed command/process when sync is configured.
 - [x] For the combined research + analysis flow, publish research evidence before the analysis readiness gate.
 - [x] After a schema-valid analysis, publish the full investment analysis.
 - [x] Require both webhook URL and token; allow `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable hooks.
@@ -72,7 +74,8 @@ This plan keeps code work separate from Google-side deployment and final visual 
 - [x] Add a `Google Sheets Sync` navigation tab and a global status strip beneath the pipeline stepper.
 - [x] Add local APIs for status polling and explicit publish/retry.
 - [x] Persist recent publish attempts locally with run IDs, tab names, row counts and screenshot counts.
-- [x] Show waiting, publishing, succeeded, failed, not-configured and skipped states in the dashboard.
+- [x] Show running, waiting, publishing, succeeded, failed, not-configured and skipped states in the dashboard.
+- [x] Finalize dashboard-launched research, batch, market-scan and analysis process records on child exit, including launch/exit failures.
 - [x] Record the Sheets step when dashboard research, batch, scan and analysis processes are started; show the actual state in step 6.
 - [x] Publish supported CLI market-screen and scan artifacts after successful generation.
 - [ ] Deploy Apps Script and verify the actual workbook receives rows/images.
