@@ -39,7 +39,8 @@ assert(launcher.includes('announceGoogleSheetsStep(scanSheetExport(scanType).kin
 assert(launcher.includes("announceGoogleSheetsStep('analysis'"), 'Analysis runs must expose the Sheets step');
 assert(index.includes("publishDatasetFile('chartinkScan'"), 'Chartink market scan commands must publish their generated index');
 assert(index.includes("publishDatasetFile('nse52w'"), 'NSE 52-week-high commands must publish their normalized result');
-assert(index.includes("publishDatasetFile('screenerScan'"), 'Screener market-screen commands must publish their result index');
+assert(index.includes("case 'screener-screens':"), 'Screener shortcut must remain available');
+assert(index.includes("publishDatasetFile('screenerScan'"), 'Both Screener command aliases must publish their result index');
 assert(index.includes("publishDatasetFile('tijoriScan'"), 'Tijori market-screen commands must publish their result index');
 
 assert(index.includes("publishAfterPipelineRun('research'"), 'CLI research must auto-publish its evidence');
