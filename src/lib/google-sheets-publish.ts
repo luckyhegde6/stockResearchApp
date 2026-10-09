@@ -16,6 +16,7 @@ export type GoogleSheetsDatasetKind =
   | 'custom';
 
 export type GoogleSheetsRunState =
+  | 'waiting'
   | 'publishing'
   | 'succeeded'
   | 'failed'
@@ -289,8 +290,26 @@ export async function runGoogleSheetsExport(
   return started.completion;
 }
 
+export async function announceGoogleSheetsStep(
+  kind: GoogleSheetsDatasetKind,
+  target: string,
+  root = process.cwd(),
+  trigger: GoogleSheetsRun['trigger'] = 'dashboard',
+): Promise<GoogleSheetsRun> {
+  const config = configInfo();
+  const status: GoogleSheetsRunState = !config.autoExportEnabled
+    ? 'skipped'
+    : (!config.configured ? 'not_configured' : 'waiting');
+  const message = status === 'skipped'
+    ? 'Publishing is disabled by GOOGLE_SHEETS_AUTO_EXPORT=false.'
+    : status === 'not_configured'
+      ? 'This run reached the Google Sheets step, but the webhook URL/token are not configured.'
+      : 'Run started. Google Sheets publishing will begin after local artifacts are ready.';
+  return writeGoogleSheetsStatusMessage(status, message, { kind, symbol: target, root, trigger });
+}
+
 export async function writeGoogleSheetsStatusMessage(
-  status: 'publishing' | 'succeeded' | 'failed' | 'not_configured' | 'skipped',
+  status: 'waiting' | 'publishing' | 'succeeded' | 'failed' | 'not_configured' | 'skipped',
   message: string,
   details: { kind?: GoogleSheetsDatasetKind; symbol?: string; root?: string; trigger?: GoogleSheetsRun['trigger']; error?: string } = {},
 ): Promise<GoogleSheetsRun> {
@@ -298,7 +317,7 @@ export async function writeGoogleSheetsStatusMessage(
   const runId = `sheets-event-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   const run = makeRun(runId, details.kind || 'custom', details.symbol, { root, trigger: details.trigger || 'post_process' }, status, message);
   if (details.error) run.error = details.error;
-  if (status !== 'publishing') run.completedAt = new Date().toISOString();
+  if (status !== 'publishing' && status !== 'waiting') run.completedAt = new Date().toISOString();
   await persistRun(root, run);
   return run;
 }
