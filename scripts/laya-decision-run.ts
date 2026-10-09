@@ -1,3 +1,4 @@
+import 'dotenv/config';
 /**
  * Laya Decision Run — CLI script
  *
@@ -17,6 +18,7 @@ import {
   renderLayaReportMarkdown
 } from '../src/lib/laya-decision-engine.js';
 import { runStockDecisions } from '../src/lib/laya-stock-questions.js';
+import { publishAfterPipelineRun } from '../src/lib/google-sheets-publish.js';
 
 async function readJson(file: string): Promise<any | null> {
   try { return JSON.parse(await readFile(file, 'utf8')); } catch { return null; }
@@ -92,6 +94,8 @@ async function run() {
     await writeFile(mdPath, md, 'utf8');
     if (!silent) console.log(`✅  Markdown: ${mdPath}`);
   }
+
+  if (shouldWriteJson) await publishAfterPipelineRun('laya', ticker, root);
 
   // Pretty console output
   if (!silent) {
