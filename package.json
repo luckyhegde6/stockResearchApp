@@ -6,8 +6,8 @@
   "scripts": {
     "test": "tsx scripts/with-google-sheets-step.ts --name \"test\" --exec \"tsx\" -- scripts/test-all.ts",
     "test:all": "tsx scripts/with-google-sheets-step.ts --name \"test:all\" --exec \"tsx\" -- scripts/test-all.ts",
-    "dashboard": "tsx scripts/with-google-sheets-step.ts --name \"dashboard\" --long-running --exec tsx -- src/server.ts",
-    "cron": "tsx scripts/with-google-sheets-step.ts --name \"cron\" --long-running --exec tsx -- scripts/cron-scheduler.ts",
+    "dashboard": "tsx scripts/with-google-sheets-step.ts --name \"dashboard\" --exec tsx -- src/server.ts",
+    "cron": "tsx scripts/with-google-sheets-step.ts --name \"cron\" --exec tsx -- scripts/cron-scheduler.ts",
     "research:batch": "tsx scripts/with-google-sheets-step.ts --name \"research:batch\" --exec \"tsx\" -- scripts/run-batch-research.ts",
     "tracking:update": "tsx scripts/with-google-sheets-step.ts --name \"tracking:update\" --exec \"tsx\" -- scripts/test-performance-tracker.ts",
     "research": "tsx src/index.ts research",
