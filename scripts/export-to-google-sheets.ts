@@ -173,7 +173,9 @@ async function collectScreenshots(symbol: string, baseTab: string): Promise<{ ta
     const mimeType = /\.jpe?g$/i.test(fileName) ? 'image/jpeg' : /\.webp$/i.test(fileName) ? 'image/webp' : 'image/png';
     let status = 'embedded';
     let base64: string | undefined;
-    if (info.size > maxFileBytes) {
+    if (info.size === 0) {
+      status = 'skipped_empty_file';
+    } else if (info.size > maxFileBytes) {
       status = `skipped_file_over_limit_${maxFileBytes}_bytes`;
     } else if (totalBytes + info.size > maxTotalBytes) {
       status = `skipped_total_over_limit_${maxTotalBytes}_bytes`;
