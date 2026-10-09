@@ -9,7 +9,21 @@ Prioritized backlog. Items are not claims of existing functionality.
 - [ ] Expand regression coverage for readiness edge cases.
 - [ ] Keep TradingView route tests synchronized with configured surfaces.
 
-## P1 — data export / reporting\n\n- [ ] Configure and validate the Google Sheets Apps Script sink for the target workbook.\n- [ ] Add automatic export hooks to research/scan/analyze commands after the explicit export workflow is verified.\n- [ ] Add per-dataset tab schemas and optional append/deduplication policies.\n\n## P1 — developer experience
+## P1 — data export / reporting
+
+- [x] Add per-dataset tab schemas and classified transformers for research and investment analysis.
+- [x] Add a clickable `StockResearch` index tab and export audit log.
+- [x] Add best-effort automatic publishing after successful research/analysis stages when the webhook is configured.
+- [x] Embed captured chart screenshots into a visual-evidence tab within configurable size limits.
+- [ ] Deploy the latest Apps Script version and verify actual tab rows and screenshot insertion in the target workbook.
+- [ ] Compare the AI Studio UI reference against the actual workbook/UI and implement confirmed visual requirements.
+- [ ] Add mock-receiver end-to-end tests, idempotent retries and payload preflight.
+
+Task breakdown and acceptance criteria: [docs/GOOGLE_SHEETS_PUBLISHING_PLAN.md](docs/GOOGLE_SHEETS_PUBLISHING_PLAN.md).
+
+Target workbook: [StockResearch](https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0). UI reference: [Google AI Studio app preview](https://aistudio.google.com/apps/bf7ddb4a-486d-46db-9e2a-4cc6cfcfee5c?showPreview=true&showAssistant=true). The preview did not load through connected web access, so visual matching remains unverified.
+
+## P1 — developer experience
 
 - [x] Add a machine-readable repository manifest for agents.
 - [ ] Add a lightweight local health command for runtime, Playwright, MarkItDown, config, and test readiness.
