@@ -413,7 +413,6 @@ async function acquire(ticker: string) {
   }
 
   console.log(JSON.stringify(acquisitionReport, null, 2));
-  console.log(JSON.stringify(acquisitionReport, null, 2));
 }
 
 
