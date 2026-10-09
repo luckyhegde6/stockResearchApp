@@ -1100,7 +1100,7 @@
     function sheetsStatusClass(status) {
       if (status === 'succeeded') return 'pill-green';
       if (status === 'failed') return 'pill-rose';
-      if (status === 'publishing') return 'pill-blue';
+      if (status === 'publishing' || status === 'running') return 'pill-blue';
       if (status === 'waiting') return 'pill-amber';
       if (status === 'not_configured' || status === 'skipped') return 'pill-amber';
       return 'pill-blue';
@@ -1111,6 +1111,7 @@
         succeeded: 'SYNCED',
         failed: 'FAILED',
         waiting: 'WAITING FOR ARTIFACTS',
+        running: 'PROCESS RUNNING',
         publishing: 'PUBLISHING',
         not_configured: 'NOT CONFIGURED',
         skipped: 'SKIPPED',
@@ -1178,9 +1179,9 @@
           if (last?.status === 'succeeded') {
             stepPill.classList.add('done');
             stepPill.textContent = '6. Sheets Synced';
-          } else if (last?.status === 'publishing' || last?.status === 'waiting') {
+          } else if (last?.status === 'running' || last?.status === 'publishing' || last?.status === 'waiting') {
             stepPill.classList.add('active');
-            stepPill.textContent = last.status === 'waiting' ? '6. Sheets Waiting' : '6. Publishing to Sheets';
+            stepPill.textContent = last.status === 'running' ? '6. Process Running' : (last.status === 'waiting' ? '6. Sheets Waiting' : '6. Publishing to Sheets');
           } else if (last?.status === 'failed' || last?.status === 'not_configured') {
             stepPill.classList.add('error');
             stepPill.textContent = last.status === 'not_configured' ? '6. Configure Sheets' : '6. Sheets Failed';
