@@ -260,6 +260,9 @@ export async function startDashboardServer() {
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ status: 'ok', ticker, decisions, summary, sheetSync: { status: 'publishing', runId: sync.runId } }));
             } catch (e: any) {
+              await writeGoogleSheetsStatusMessage('skipped', `Laya sync skipped because decision generation failed for ${ticker}.`, {
+                root: ROOT, trigger: 'post_process', kind: 'laya', symbol: ticker, error: e?.message || String(e)
+              }).catch(() => {});
               res.writeHead(400, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: `Could not run Laya for ${ticker}: ${e.message}` }));
             }
