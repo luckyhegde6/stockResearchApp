@@ -2,7 +2,6 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { recordRunStart, recordRunComplete, updateActiveProgress } from './run-history.js';
 import { announceGoogleSheetsStep, startGoogleSheetsExport, writeGoogleSheetsStatusMessage, type GoogleSheetsDatasetKind } from './google-sheets-publish.js';
-import { startGoogleSheetsExport, writeGoogleSheetsStatusMessage, type GoogleSheetsDatasetKind } from './google-sheets-publish.js';
 
 const ROOT = process.cwd();
 
