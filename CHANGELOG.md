@@ -9,6 +9,9 @@ Canonical release history for repository behavior. Older detail remains in docs/
 - Added classified research and analysis transformer methods with dedicated summary, evidence/findings, scores, risks, catalysts, scenarios, sources, quality, audit, and visual-evidence tabs.
 - Added embedded chart screenshot publishing, a clickable StockResearch workbook index, and an _EXPORT_LOG audit trail.
 - Added best-effort automatic publication after successful `research`/`analyze` runs when webhook credentials are configured; Sheet failures do not invalidate local output.
+- Added a universal process lifecycle: all `src/index.ts` CLI commands, all npm scripts, and dashboard-launched research/batch/analysis/scan jobs create a start/final Sheets status record.
+- Appended a compact execution-audit row to `command-runs-YYYY-MM-DD` for each completed command/process when the Sheet connection is configured; command-specific outputs still publish to their own tabs.
+- Added an explicit running state and CI contract checks ensuring no npm script bypasses the shared Sheets lifecycle.
 - Added deterministic transformer tests and documented local deployment/configuration requirements.
 
 ### Research roadmap
