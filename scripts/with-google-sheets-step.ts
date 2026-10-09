@@ -15,8 +15,8 @@ function readOption(args: string[], name: string): string | undefined {
 function commandTarget(args: string[]): string | undefined {
   const afterSeparator = args.indexOf('--');
   const forwarded = afterSeparator >= 0 ? args.slice(afterSeparator + 1) : [];
-  const first = forwarded.find(arg => !arg.startsWith('--'));
-  if (first && /^[A-Za-z0-9&-]{1,20}$/.test(first)) return first.toUpperCase();
+  const first = forwarded.find(arg => !arg.startsWith('--') && /^[A-Za-z0-9&-]{1,20}$/.test(arg));
+  if (first) return first.toUpperCase();
   return undefined;
 }
 
@@ -37,7 +37,6 @@ async function run() {
 
   const target = commandTarget(args);
   const step = await beginGoogleSheetsCommandStep(commandName, target, ROOT, 'cli');
-  const startMs = Date.now();
   let child: ChildProcess | undefined;
   let signalReceived: NodeJS.Signals | undefined;
 
