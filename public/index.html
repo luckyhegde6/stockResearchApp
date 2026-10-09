@@ -259,6 +259,18 @@
       border-color: var(--accent-emerald);
       color: var(--accent-emerald);
     }
+    .step-pill.warning {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: var(--accent-amber);
+      color: var(--accent-amber);
+      font-weight: 600;
+    }
+    .step-pill.error {
+      background: rgba(244, 63, 94, 0.12);
+      border-color: var(--accent-rose);
+      color: var(--accent-rose);
+      font-weight: 600;
+    }
 
     main {
       flex: 1;
@@ -562,6 +574,7 @@
       <div class="step-pill" id="step-3">3. Normalization</div>
       <div class="step-pill" id="step-4">4. Reconciliation</div>
       <div class="step-pill" id="step-5">5. Readiness Gate</div>
+      <div class="step-pill" id="sheets-step-pill">6. Google Sheets Sync</div>
     </div>
     <div class="sheets-sync-strip">
       <div class="sheets-sync-strip-main">
@@ -1156,6 +1169,24 @@
         const mainLabel = last ? sheetsStatusLabel(currentStatus) : (configured ? 'READY' : 'NOT CONFIGURED');
         renderSheetsPill('sheets-status-pill', currentStatus, mainLabel);
         renderSheetsPill('sheets-live-pill', currentStatus, 'SHEETS: ' + mainLabel);
+        const stepPill = document.getElementById('sheets-step-pill');
+        if (stepPill) {
+          stepPill.classList.remove('active', 'done', 'warning', 'error');
+          stepPill.textContent = '6. Google Sheets Sync';
+          if (last?.status === 'succeeded') {
+            stepPill.classList.add('done');
+            stepPill.textContent = '6. Sheets Synced';
+          } else if (last?.status === 'publishing' || last?.status === 'waiting') {
+            stepPill.classList.add('active');
+            stepPill.textContent = last.status === 'waiting' ? '6. Sheets Waiting' : '6. Publishing to Sheets';
+          } else if (last?.status === 'failed' || last?.status === 'not_configured') {
+            stepPill.classList.add('error');
+            stepPill.textContent = last.status === 'not_configured' ? '6. Configure Sheets' : '6. Sheets Failed';
+          } else if (last?.status === 'skipped') {
+            stepPill.classList.add('warning');
+            stepPill.textContent = '6. Sheets Skipped';
+          }
+        }
         document.getElementById('sheets-live-message').textContent = last
           ? (last.symbol ? last.symbol + ' · ' : '') + (last.message || last.error || 'Last publish status updated.')
           : (configured ? 'Credentials are configured. No publish attempt has been recorded yet.' : 'Add the webhook URL and token to .env; details are in the setup guide.');
