@@ -82,6 +82,7 @@ export async function launchResearchProcess(
   child.on('error', async (err) => {
     activeProcess = null;
     await recordRunComplete(runId, 'failed', null, err.message);
+    await writeGoogleSheetsStatusMessage('skipped', `Google Sheets export skipped because research for ${sym} could not start.`, { root: ROOT, trigger: 'post_process', kind: 'research', symbol: sym, error: err.message });
     console.error(`[PROCESS LAUNCHER] Task ${runId} error:`, err);
   });
 
@@ -131,11 +132,13 @@ export async function launchBatchResearchProcess(symbols: string[]): Promise<Lau
     activeProcess = null;
     const ok = code === 0;
     await recordRunComplete(runId, ok ? 'completed' : 'failed', ok ? 90 : null, ok ? undefined : `Batch exited with code ${code}`);
+    if (!ok) await writeGoogleSheetsStatusMessage('skipped', 'Batch research did not complete; any per-symbol exports in history remain valid.', { root: ROOT, trigger: 'post_process', kind: 'research', symbol: targetStr, error: `Batch exited with code ${code}` });
   });
 
   child.on('error', async (err) => {
     activeProcess = null;
     await recordRunComplete(runId, 'failed', null, err.message);
+    await writeGoogleSheetsStatusMessage('skipped', 'Batch research could not start; export skipped.', { root: ROOT, trigger: 'post_process', kind: 'research', symbol: targetStr, error: err.message });
   });
 
   return {
@@ -229,6 +232,7 @@ export async function launchScanProcess(scanType: string): Promise<LaunchResult>
   child.on('error', async (err) => {
     activeProcess = null;
     await recordRunComplete(runId, 'failed', null, err.message);
+    await writeGoogleSheetsStatusMessage('skipped', `Sheets publish skipped because market scan ${scanType} could not start.`, { root: ROOT, trigger: 'post_process', kind: scanSheetExport(scanType).kind, error: err.message });
   });
 
   return {
@@ -279,6 +283,7 @@ export async function launchAnalyzeProcess(symbol: string): Promise<LaunchResult
   child.on('error', async (err) => {
     activeProcess = null;
     await recordRunComplete(runId, 'failed', null, err.message);
+    await writeGoogleSheetsStatusMessage('skipped', `Final analysis export skipped because analysis for ${sym} could not start.`, { root: ROOT, trigger: 'post_process', kind: 'analysis', symbol: sym, error: err.message });
   });
 
   return {
