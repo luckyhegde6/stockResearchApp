@@ -54,7 +54,7 @@ ITC-YYYY-MM-DD-news
 ITC-YYYY-MM-DD-laya
 ```
 
-The `StockResearch` tab is the workbook's clickable index and `_EXPORT_LOG` records published runs. The exporter is intentionally outside the core pipeline boundary. A Sheet outage must never invalidate deterministic research. See [Google Sheets Export](integrations/google-sheets/README.md).
+When `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are configured, the standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands publish their results automatically after the local run succeeds. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable automatic publishing; manual exports remain available. The `StockResearch` tab is the workbook's clickable index and `_EXPORT_LOG` records published runs. A Sheets outage never invalidates locally saved research or analysis. A Sheet outage must never invalidate deterministic research. See [Google Sheets Export](integrations/google-sheets/README.md).
 
 ## Developer & Agent Operating System
 
