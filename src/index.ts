@@ -38,7 +38,7 @@ import { writeAnalysisEvidencePack } from './lib/analysis-evidence-pack.js';
 import { loadNseEquityUniverse, resolveNseSecurity } from './lib/nse-securities.js';
 import { RESEARCH_CONFIG, featureSummary, normalizeSymbolInput } from './lib/research-config.js';
 import { classifyProvider } from './lib/source-classifier.js';
-import { publishAfterPipelineRun, runGoogleSheetsExport } from './lib/google-sheets-publish.js';
+import { beginGoogleSheetsCommandStep, completeGoogleSheetsCommandStep, publishAfterPipelineRun, runGoogleSheetsExport } from './lib/google-sheets-publish.js';
 
 const ROOT = process.cwd();
 
@@ -519,9 +519,13 @@ async function promptOnly(ticker: string) {
   console.log(p.out);
 }
 
-const cmd = process.argv[2];
+const cmd = process.argv[2] || 'unknown';
 (async () => {
-  switch (cmd) {
+  const targetArg = process.argv.slice(3).find(value => !value.startsWith('--') && /^[A-Za-z0-9&-]{1,20}$/.test(value));
+  const commandStep = await beginGoogleSheetsCommandStep(`src/index.ts ${cmd}`, targetArg?.toUpperCase(), ROOT, 'cli');
+  let commandError: string | undefined;
+  try {
+    switch (cmd) {
     case 'research': { const ticker = await tickerArg(); if (hasFlag('--analyze')) await analyze(ticker); else { await acquire(ticker); await publishAfterPipelineRun('research', ticker, ROOT); } break; }
     case 'research-screener-screens':
     case 'screener-screens': {
@@ -754,5 +758,16 @@ const cmd = process.argv[2];
       break;
     }
     default: throw new Error('Commands: research | research-nse | research-nse-market | nse-market | nse:securities | nse:lookup | nse:validate-symbol | research-screener-screens | screener-screens | research-tijori-market | tijori-market | research-chartink | research-tradingview | tradingview-doctor | research:nse-52week-high | market-scans | chartink-market-scans | chartink-top20 | screen:chartink | analyze | ingest | validate | prompt | normalize | evidence:contract | bundle | prepare-analysis');
+    }
+  } catch (error: any) {
+    commandError = error?.message || String(error);
+    console.error(error?.stack || commandError);
+    process.exitCode = 1;
+  } finally {
+    await completeGoogleSheetsCommandStep(commandStep, {
+      exitCode: process.exitCode ?? 0,
+      completedAt: new Date().toISOString(),
+      error: commandError,
+    });
   }
 })().catch(e => { console.error(e?.stack || e?.message || String(e)); process.exitCode = 1; });
