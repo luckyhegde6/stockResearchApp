@@ -24,6 +24,8 @@ assert(server.includes('Sheets sync is only available to a local dashboard origi
 assert(html.includes("switchTab('sheets')"), 'Dashboard navigation must include Google Sheets Sync');
 assert(html.includes('id="tab-sheets"'), 'Dashboard must render the Google Sheets Sync tab');
 assert(html.includes('id="sheets-live-pill"'), 'Dashboard must show the Google Sheets step in the progress banner');
+assert(html.includes('id="sheets-step-pill"'), 'Dashboard must include Google Sheets as the sixth pipeline stage');
+assert(html.includes('6. Publishing to Sheets'), 'Dashboard must show publishing as an explicit stepper state');
 assert(html.includes('function refreshSheetsStatus()'), 'Dashboard must poll and render sync status');
 assert(html.includes('setInterval(refreshSheetsStatus, 2500);'), 'Dashboard must keep sync status fresh');
 assert(html.includes('function triggerSheetsSync()'), 'Dashboard must support manual publish/retry');
