@@ -37,7 +37,10 @@ assert(launcher.includes("announceGoogleSheetsStep('research'"), 'Single researc
 assert(launcher.includes("announceGoogleSheetsStep('research', targetStr"), 'Batch research must expose the Sheets step');
 assert(launcher.includes('announceGoogleSheetsStep(scanSheetExport(scanType).kind'), 'Market scans must expose the Sheets step');
 assert(launcher.includes("announceGoogleSheetsStep('analysis'"), 'Analysis runs must expose the Sheets step');
-assert(launcher.includes('startGoogleSheetsExport(sheetExport.kind'), 'Market scans must sync after successful extraction');
+assert(index.includes("publishDatasetFile('chartinkScan'"), 'Chartink market scan commands must publish their generated index');
+assert(index.includes("publishDatasetFile('nse52w'"), 'NSE 52-week-high commands must publish their normalized result');
+assert(index.includes("publishDatasetFile('screenerScan'"), 'Screener market-screen commands must publish their result index');
+assert(index.includes("publishDatasetFile('tijoriScan'"), 'Tijori market-screen commands must publish their result index');
 
 assert(index.includes("publishAfterPipelineRun('research'"), 'CLI research must auto-publish its evidence');
 assert(index.includes("publishAfterPipelineRun('analysis'"), 'CLI analysis must auto-publish its validated analysis');
