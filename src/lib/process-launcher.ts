@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { recordRunStart, recordRunComplete, updateActiveProgress } from './run-history.js';
-import { announceGoogleSheetsStep, startGoogleSheetsExport, writeGoogleSheetsStatusMessage, type GoogleSheetsDatasetKind } from './google-sheets-publish.js';
+import { announceGoogleSheetsStep, writeGoogleSheetsStatusMessage, type GoogleSheetsDatasetKind } from './google-sheets-publish.js';
 
 const ROOT = process.cwd();
 
@@ -212,16 +212,7 @@ export async function launchScanProcess(scanType: string): Promise<LaunchResult>
     activeProcess = null;
     const ok = code === 0;
     await recordRunComplete(runId, ok ? 'completed' : 'failed', ok ? 100 : null, ok ? undefined : `Scan exited with code ${code}`);
-    if (ok) {
-      const sheetExport = scanSheetExport(scanType);
-      const started = startGoogleSheetsExport(sheetExport.kind, undefined, {
-        root: ROOT,
-        file: sheetExport.file,
-        trigger: 'post_process',
-        automatic: true,
-      });
-      void started.completion;
-    } else {
+    if (!ok) {
       await writeGoogleSheetsStatusMessage('skipped', `Sheets publish skipped because market scan ${scanType} failed.`, {
         root: ROOT, trigger: 'post_process', kind: scanSheetExport(scanType).kind,
         error: `Market scan exited with code ${code}`,
