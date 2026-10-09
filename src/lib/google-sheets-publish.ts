@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import { access, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 
 export type GoogleSheetsDatasetKind =
   | 'research'
@@ -331,12 +331,14 @@ export async function resolveGoogleSheetsExportFile(
   const scansRoot = path.join(root, 'scans');
   try {
     const dirs = await readdir(scansRoot, { withFileTypes: true });
-    const candidates = dirs.filter(item => item.isDirectory() && /^52-Week-High-\\d{2}-\\d{2}-\\d{4}$/.test(item.name));
+    const candidates = dirs.filter(item => item.isDirectory() && item.name.startsWith('52-Week-High-'));
     const dated = candidates.map(item => {
-      const match = item.name.match(/52-Week-High-(\\d{2})-(\\d{2})-(\\d{4})$/);
-      const timestamp = match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime() : 0;
+      const datePart = item.name.slice('52-Week-High-'.length);
+      const segments = datePart.split('-');
+      const valid = segments.length === 3 && segments.every((segment, index) => segment.length === (index === 2 ? 4 : 2) && /^[0-9]+$/.test(segment));
+      const timestamp = valid ? new Date(Number(segments[2]), Number(segments[1]) - 1, Number(segments[0])).getTime() : 0;
       return { name: item.name, timestamp };
-    }).sort((a, b) => b.timestamp - a.timestamp);
+    }).filter(item => item.timestamp > 0).sort((a, b) => b.timestamp - a.timestamp);
     if (!dated.length) return path.join(scansRoot, 'not-yet-generated', 'raw', 'nse-api', '52-week-high.normalized.json');
     return path.join(scansRoot, dated[0].name, 'raw', 'nse-api', '52-week-high.normalized.json');
   } catch {
