@@ -231,8 +231,29 @@ export async function startDashboardServer() {
               const packRaw = await readFile(packPath, 'utf8');
               const pack = JSON.parse(packRaw);
               const decisions = runStockDecisions(ticker, pack);
+              const summary = {
+                action: (decisions['action_recommendation']?.answer as any)?.choice ?? 'Insufficient-Data',
+                actionConfidence: (decisions['action_recommendation']?.answer as any)?.confidence ?? 0,
+                trendDirection: (decisions['trend_direction']?.answer as any)?.choice ?? 'Mixed',
+                fundamentalScore: (decisions['fundamental_quality']?.answer as any)?.level ?? 0,
+                valuationStance: (decisions['valuation_stance']?.answer as any)?.choice ?? 'Indeterminate',
+                momentumLevel: (decisions['momentum_strength']?.answer as any)?.level ?? 0,
+                newsRisk: (decisions['news_risk']?.answer as any)?.value ?? null,
+                scanConviction: (decisions['scan_conviction']?.answer as any)?.value ?? null,
+                dataQualityLevel: (decisions['data_quality_gate']?.answer as any)?.level ?? 0
+              };
+              const report: LayaDecisionReport = {
+                schema_version: '1.0', ticker, generatedAt: new Date().toISOString(),
+                deterministic: true, llmUsed: false, modelSource: 'laya-js-rule-engine',
+                decisions, summary
+              };
+              const normalizedDir = path.join(ROOT, 'research', ticker, 'normalized');
+              await import('node:fs/promises').then(fs => fs.mkdir(normalizedDir, { recursive: true }));
+              await import('node:fs/promises').then(fs => fs.writeFile(path.join(normalizedDir, 'laya-decisions.json'), JSON.stringify(report, null, 2), 'utf8'));
+              const sync = startGoogleSheetsExport('laya', ticker, { root: ROOT, trigger: 'post_process', automatic: true });
+              void sync.completion;
               res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ status: 'ok', ticker, decisions }));
+              res.end(JSON.stringify({ status: 'ok', ticker, decisions, summary, sheetSync: { status: 'publishing', runId: sync.runId } }));
             } catch (e: any) {
               res.writeHead(400, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: `Could not run Laya for ${ticker}: ${e.message}` }));
