@@ -18,7 +18,7 @@ import {
   renderLayaReportMarkdown
 } from '../src/lib/laya-decision-engine.js';
 import { runStockDecisions } from '../src/lib/laya-stock-questions.js';
-import { publishAfterPipelineRun } from '../src/lib/google-sheets-publish.js';
+import { publishAfterPipelineRun, writeGoogleSheetsStatusMessage } from '../src/lib/google-sheets-publish.js';
 
 async function readJson(file: string): Promise<any | null> {
   try { return JSON.parse(await readFile(file, 'utf8')); } catch { return null; }
@@ -95,7 +95,13 @@ async function run() {
     if (!silent) console.log(`✅  Markdown: ${mdPath}`);
   }
 
-  if (shouldWriteJson) await publishAfterPipelineRun('laya', ticker, root);
+  if (shouldWriteJson) {
+    await publishAfterPipelineRun('laya', ticker, root);
+  } else {
+    await writeGoogleSheetsStatusMessage('skipped', 'Laya report was requested as Markdown only; JSON source was not refreshed, so Sheet publishing was skipped.', {
+      root, trigger: 'cli', kind: 'laya', symbol: ticker
+    });
+  }
 
   // Pretty console output
   if (!silent) {
