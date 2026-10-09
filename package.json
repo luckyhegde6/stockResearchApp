@@ -106,6 +106,7 @@
     "test:laya": "tsx scripts/test-laya-decisions.ts",
     "sheets:export": "tsx scripts/export-to-google-sheets.ts",
     "test:google-sheets-transformers": "tsx scripts/test-google-sheets-transformers.ts",
+    "test:google-sheets-dashboard": "tsx scripts/test-google-sheets-dashboard.ts",
     "test:fixture": "tsx scripts/ensure-test-research-fixture.ts"
   },
   "engines": {
