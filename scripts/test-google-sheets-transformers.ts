@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import {
   buildVisualEvidenceRows,
   transformAnalysisToSheets,
@@ -60,4 +62,11 @@ assert(researchTabs.find(item => item.tabName.endsWith('-sources'))?.rows[0]?.pr
 
 const visualRows = buildVisualEvidenceRows('EXAMPLE', []);
 assert(visualRows[0]?.embedding_status === 'not_available', 'Missing screenshots should be explicitly identified');
+const appsScript = await readFile(path.join(process.cwd(), 'integrations', 'google-sheets', 'Code.gs'), 'utf8');
+assert(appsScript.includes('function json_('), 'Apps Script sink must expose JSON responses');
+assert(appsScript.includes('function doPost('), 'Apps Script sink must accept export POST requests');
+assert(appsScript.includes('function embedScreenshots_('), 'Apps Script sink must embed screenshot images');
+assert(appsScript.includes("const HOME_TAB = 'StockResearch'"), 'Apps Script sink must maintain the StockResearch index');
+assert(appsScript.includes("const name = '_EXPORT_LOG'"), 'Apps Script sink must record export runs');
+
 console.log(JSON.stringify({ ok: true, analysisTabs: analysisTabs.length, researchTabs: researchTabs.length, coverage: ['summary', 'findings', 'scores', 'risks', 'catalysts', 'scenarios', 'sources', 'audit'] }, null, 2));
