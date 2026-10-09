@@ -15,7 +15,7 @@ Prioritized backlog. Items are not claims of existing functionality.
 - [x] Add a clickable `StockResearch` index tab and export audit log.
 - [x] Add best-effort automatic publishing after successful research/analysis stages when the webhook is configured.
 - [x] Embed captured chart screenshots into a visual-evidence tab within configurable size limits.
-- [x] Add a visible Google Sheets Sync tab and live status strip to the local dashboard.
+- [x] Add a visible Google Sheets Sync tab, live status strip and sixth pipeline step to the local dashboard.
 - [x] Track the publishing step and recent attempts for dashboard-triggered research, batch, analysis, Laya and supported market scans.
 - [ ] Deploy the latest Apps Script version and verify actual tab rows and screenshot insertion in the target workbook.
 - [ ] Compare the AI Studio UI reference against the actual workbook/UI and implement confirmed visual requirements.
