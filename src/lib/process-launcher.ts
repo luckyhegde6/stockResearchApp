@@ -5,6 +5,15 @@ import { beginGoogleSheetsCommandStep, completeGoogleSheetsCommandStep } from '.
 
 const ROOT = process.cwd();
 
+function makeSheetsStepFinalizer(step: Awaited<ReturnType<typeof beginGoogleSheetsCommandStep>>) {
+  let finalized = false;
+  return async (outcome: { exitCode: number; completedAt?: string; error?: string }) => {
+    if (finalized) return;
+    finalized = true;
+    await completeGoogleSheetsCommandStep(step, outcome);
+  };
+}
+
 export interface LaunchResult {
   runId: string;
   target: string;
@@ -37,6 +46,7 @@ export async function launchResearchProcess(
   const runId = `run-${Date.now()}-${sym.toLowerCase()}`;
   await recordRunStart(runId, 'individual_research', sym);
   const sheetsStep = await beginGoogleSheetsCommandStep('dashboard:research', sym, ROOT, 'dashboard');
+  const finishSheetsStep = makeSheetsStepFinalizer(sheetsStep);
 
   updateActiveProgress(1, 'Step 1/5: Symbol Master Resolution', sym, runId, `Resolving NSE security master for ${sym}`);
 
@@ -75,7 +85,7 @@ export async function launchResearchProcess(
     activeProcess = null;
     const ok = code === 0;
     await recordRunComplete(runId, ok ? 'completed' : 'failed', ok ? 92.5 : null, ok ? undefined : `Process exited with code ${code}`);
-    await completeGoogleSheetsCommandStep(sheetsStep, { exitCode: code ?? 1, completedAt: new Date().toISOString(), error: code === 0 ? undefined : `Research process exited with code ${code}` });
+    await finishSheetsStep({ exitCode: code ?? 1, completedAt: new Date().toISOString(), error: code === 0 ? undefined : `Research process exited with code ${code}` });
     console.log(`[PROCESS LAUNCHER] Task ${runId} finished with code ${code}`);
   });
 
@@ -110,6 +120,7 @@ export async function launchBatchResearchProcess(symbols: string[]): Promise<Lau
   const targetStr = symbols.join(', ');
   await recordRunStart(runId, 'batch_research', targetStr);
   const sheetsStep = await beginGoogleSheetsCommandStep('dashboard:batch-research', targetStr, ROOT, 'dashboard');
+  const finishSheetsStep = makeSheetsStepFinalizer(sheetsStep);
 
   updateActiveProgress(1, 'Step 1/5: Initializing Batch Queue', targetStr, runId, `Starting batch research over ${symbols.length} symbols`);
 
@@ -164,6 +175,7 @@ export async function launchScanProcess(scanType: string): Promise<LaunchResult>
   const runId = `scan-${Date.now()}-${scanType}`;
   await recordRunStart(runId, 'market_scan', scanType, ['Chartink', 'NSE NextAPI']);
   const sheetsStep = await beginGoogleSheetsCommandStep(`dashboard:market-scan:${scanType}`, scanType, ROOT, 'dashboard');
+  const finishSheetsStep = makeSheetsStepFinalizer(sheetsStep);
 
   updateActiveProgress(1, 'Step 1/5: Initializing Market Scan', scanType, runId, `Triggering market scan: ${scanType}`);
 
@@ -226,6 +238,7 @@ export async function launchAnalyzeProcess(symbol: string): Promise<LaunchResult
   const runId = `analyze-${Date.now()}-${sym.toLowerCase()}`;
   await recordRunStart(runId, 'individual_research', sym, ['LLM Reasoner']);
   const sheetsStep = await beginGoogleSheetsCommandStep('dashboard:analysis', sym, ROOT, 'dashboard');
+  const finishSheetsStep = makeSheetsStepFinalizer(sheetsStep);
 
   updateActiveProgress(1, 'Step 1/5: Loading Prompt Context', sym, runId, `Loading analysis-prompt.txt for ${sym}`);
 
