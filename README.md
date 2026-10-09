@@ -17,7 +17,7 @@ It combines official NSE data, Screener, Tijori, TradingView, optional news/Char
 
 ### Dashboard Google Sheets sync
 
-The local Control Center now includes a **Google Sheets Sync** navigation tab and a live publish-status strip below the pipeline stepper. It polls the local `/api/sheets/status` endpoint and displays the latest run, row counts, tabs and screenshot results. Use the tab to retry publishing existing research, analysis, Laya decisions or supported market scans. Credentials are never rendered into the browser.
+The local Control Center now includes a **Google Sheets Sync** navigation tab, a live publish-status strip and a **sixth pipeline step** below the five research stages. It polls the local `/api/sheets/status` endpoint and displays waiting, publishing, success, failure or skipped states along with the latest run, row counts, tabs and screenshot results. Use the tab to retry publishing existing research, analysis, Laya decisions or supported market scans. Credentials are never rendered into the browser.
 
 Automatic publishing requires `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` in the local `.env`. When they are absent, the dashboard deliberately shows **NOT CONFIGURED** rather than implying that data synced.
 
