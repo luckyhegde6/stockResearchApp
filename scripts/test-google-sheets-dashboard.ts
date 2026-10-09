@@ -37,10 +37,11 @@ assert(html.includes('GOOGLE_SHEETS_WEBHOOK_TOKEN'), 'Dashboard must explain tok
 assert(publisher.includes('google-sheets-sync-status.json'), 'Publish state must be persisted for dashboard polling');
 assert(publisher.includes('announceGoogleSheetsStep'), 'Publisher must track the pre-publication stage');
 assert(publisher.includes("'not_configured'"), 'Missing credentials must be surfaced explicitly');
-assert(launcher.includes("announceGoogleSheetsStep('research'"), 'Single research runs must expose the Sheets step');
-assert(launcher.includes("announceGoogleSheetsStep('research', targetStr"), 'Batch research must expose the Sheets step');
-assert(launcher.includes('announceGoogleSheetsStep(scanSheetExport(scanType).kind'), 'Market scans must expose the Sheets step');
-assert(launcher.includes("announceGoogleSheetsStep('analysis'"), 'Analysis runs must expose the Sheets step');
+assert(launcher.includes("beginGoogleSheetsCommandStep('dashboard:research'"), 'Single research runs must expose the Sheets step');
+assert(launcher.includes("beginGoogleSheetsCommandStep('dashboard:batch-research'"), 'Batch research must expose the Sheets step');
+assert(launcher.includes('beginGoogleSheetsCommandStep(\`dashboard:market-scan:\${scanType}\`'), 'Market scans must expose the Sheets step');
+assert(launcher.includes("beginGoogleSheetsCommandStep('dashboard:analysis'"), 'Analysis runs must expose the Sheets step');
+assert(launcher.includes('completeGoogleSheetsCommandStep(sheetsStep'), 'Every dashboard-launched process must finalize its Sheets step');
 assert(index.includes("publishDatasetFile('chartinkScan'"), 'Chartink market scan commands must publish their generated index');
 assert(index.includes("publishDatasetFile('nse52w'"), 'NSE 52-week-high commands must publish their normalized result');
 assert(index.includes("case 'screener-screens':"), 'Screener shortcut must remain available');
