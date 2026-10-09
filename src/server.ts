@@ -9,7 +9,7 @@ import { loadRunHistory, recordRunStart, recordRunComplete, getActiveProgress } 
 import { launchResearchProcess, launchBatchResearchProcess, launchScanProcess, launchAnalyzeProcess } from './lib/process-launcher.js';
 import { renderLayaReportMarkdown, LayaDecisionReport } from './lib/laya-decision-engine.js';
 import { runStockDecisions } from './lib/laya-stock-questions.js';
-import { getAvailableSheetArtifacts, getGoogleSheetsSyncStatus, resolveGoogleSheetsExportFile, startGoogleSheetsExport, writeGoogleSheetsStatusMessage, type GoogleSheetsDatasetKind } from './lib/google-sheets-publish.js';
+import { announceGoogleSheetsStep, getAvailableSheetArtifacts, getGoogleSheetsSyncStatus, resolveGoogleSheetsExportFile, startGoogleSheetsExport, writeGoogleSheetsStatusMessage, type GoogleSheetsDatasetKind } from './lib/google-sheets-publish.js';
 
 const ROOT = process.cwd();
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -231,6 +231,7 @@ export async function startDashboardServer() {
 
           if (pathname === '/api/trigger/laya') {
             const ticker = (payload.symbol || 'ITC').toUpperCase();
+            await announceGoogleSheetsStep('laya', ticker, ROOT, 'dashboard');
             const packPath = path.join(ROOT, 'research', ticker, 'normalized', 'analysis-evidence-pack.json');
             try {
               const packRaw = await readFile(packPath, 'utf8');
