@@ -9,7 +9,7 @@ import { loadRunHistory, recordRunStart, recordRunComplete, getActiveProgress } 
 import { launchResearchProcess, launchBatchResearchProcess, launchScanProcess, launchAnalyzeProcess } from './lib/process-launcher.js';
 import { renderLayaReportMarkdown, LayaDecisionReport } from './lib/laya-decision-engine.js';
 import { runStockDecisions } from './lib/laya-stock-questions.js';
-import { getAvailableSheetArtifacts, getGoogleSheetsSyncStatus, startGoogleSheetsExport, writeGoogleSheetsStatusMessage, type GoogleSheetsDatasetKind } from './lib/google-sheets-publish.js';
+import { getAvailableSheetArtifacts, getGoogleSheetsSyncStatus, resolveGoogleSheetsExportFile, startGoogleSheetsExport, writeGoogleSheetsStatusMessage, type GoogleSheetsDatasetKind } from './lib/google-sheets-publish.js';
 
 const ROOT = process.cwd();
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -102,18 +102,10 @@ export async function startDashboardServer() {
             return;
           }
 
-          const dateSlug = new Intl.DateTimeFormat('en-GB', {
-            timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric'
-          }).format(new Date()).replace(/\\//g, '-');
-          const scanFiles: Partial<Record<GoogleSheetsDatasetKind, string>> = {
-            chartinkScan: 'scans/index.json',
-            nse52w: path.join('scans', `52-Week-High-${dateSlug}`, 'raw', 'nse-api', '52-week-high.normalized.json'),
-            screenerScan: path.join('research', 'market-screens', 'screener', 'index.json'),
-            tijoriScan: path.join('research', 'market-screens', 'tijori', 'index.json'),
-          };
-          const file = scanFiles[kind];
+          const resolvedFile = await resolveGoogleSheetsExportFile(kind, ROOT);
+          const file = resolvedFile ? path.relative(ROOT, resolvedFile) : undefined;
           const isAvailable = await getAvailableSheetArtifacts(ROOT, symbol || undefined);
-          if (file && !isAvailable[kind]) {
+          if (['chartinkScan', 'nse52w', 'screenerScan', 'tijoriScan'].includes(kind) && !isAvailable[kind]) {
             await writeGoogleSheetsStatusMessage('skipped', `No local artifact is available for ${kind}; run that scan first.`, {
               root: ROOT, trigger: 'dashboard', kind, symbol
             });
