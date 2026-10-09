@@ -38,9 +38,21 @@ import { writeAnalysisEvidencePack } from './lib/analysis-evidence-pack.js';
 import { loadNseEquityUniverse, resolveNseSecurity } from './lib/nse-securities.js';
 import { RESEARCH_CONFIG, featureSummary, normalizeSymbolInput } from './lib/research-config.js';
 import { classifyProvider } from './lib/source-classifier.js';
-import { publishAfterPipelineRun } from './lib/google-sheets-publish.js';
+import { publishAfterPipelineRun, runGoogleSheetsExport } from './lib/google-sheets-publish.js';
 
 const ROOT = process.cwd();
+
+async function publishDatasetFile(kind: 'chartinkScan' | 'nse52w' | 'screenerScan' | 'tijoriScan', filePath: string) {
+  const result = await runGoogleSheetsExport(kind, undefined, {
+    root: ROOT,
+    file: path.relative(ROOT, filePath),
+    trigger: 'cli',
+    automatic: true,
+  });
+  if (result.status === 'failed') {
+    console.warn(`[sheets] Dataset ${kind} was not published: ${result.error || result.message}`);
+  }
+}
 const SKILL = path.join(ROOT, 'skills', 'stock-analysis', 'SKILL.md');
 const PROMPT = path.join(ROOT, 'skills', 'stock-analysis', 'ANALYSIS_PROMPT.md');
 
@@ -519,6 +531,7 @@ const cmd = process.argv[2];
       const root = path.join(ROOT, 'research', 'market-screens', 'screener');
       const r = await runScreenerMarketScreens(root);
       console.log(JSON.stringify({ schema_version:'1.0', source:'Screener.in', root:path.relative(ROOT,root), artifacts:r.artifacts.length, dataGaps:r.gaps.length, warnings:r.warnings.length, artifactsDetail:r.artifacts }, null, 2));
+      await publishDatasetFile('screenerScan', path.join(root, 'index.json'));
       break;
     }
     case 'screener-screens': {
@@ -527,10 +540,12 @@ const cmd = process.argv[2];
       console.log(JSON.stringify({ schema_version:'1.0', source:'Screener.in', root:path.relative(ROOT,root), artifacts:r.artifacts.length, dataGaps:r.gaps.length, warnings:r.warnings.length, artifactsDetail:r.artifacts }, null, 2));
       break;
     }
-    case 'research-tijori-market': {
+    case 'research-tijori-market':
+    case 'tijori-market': {
       const root = path.join(ROOT, 'research', 'market-screens', 'tijori');
       const r = await runTijoriMarketScreens(root);
       console.log(JSON.stringify({ schema_version:'1.0', source:'Tijori Finance', root:path.relative(ROOT,root), artifacts:r.artifacts.length, dataGaps:r.gaps.length, warnings:r.warnings.length, index:path.join(root,'index.json'), artifactsDetail:r.artifacts }, null, 2));
+      await publishDatasetFile('tijoriScan', path.join(root, 'index.json'));
       break;
     }
     case 'research-chartink': {
@@ -685,6 +700,8 @@ const cmd = process.argv[2];
       const high52 = await runNse52WeekHigh({ root: root52 });
       const scanQuality = await writeMarketScanQuality(path.join(ROOT,'scans'));
       console.log(JSON.stringify({ schema_version:'1.0', deterministic:true, llmUsed:false, chartink:chart.summary, nse52WeekHigh:high52.summary, scanQuality: { path:scanQuality.out, status:scanQuality.report.status, warnings:scanQuality.report.warnings } }, null, 2));
+      await publishDatasetFile('chartinkScan', path.join(ROOT, 'scans', 'index.json'));
+      await publishDatasetFile('nse52w', path.join(root52, 'raw', 'nse-api', '52-week-high.normalized.json'));
       if (chart.summary.failed > 0 || high52.gaps.length) process.exitCode = 1;
       break;
     }
@@ -694,6 +711,7 @@ const cmd = process.argv[2];
       const r = await runNse52WeekHigh({ root });
       console.log(JSON.stringify({ schema_version:'1.0', source:'NSE India', root:path.relative(ROOT,root), artifacts:r.artifacts.length, dataGaps:r.gaps, warnings:r.warnings, summary:r.summary }, null, 2));
       if (r.gaps.length) process.exitCode = 1;
+      else await publishDatasetFile('nse52w', path.join(root, 'raw', 'nse-api', '52-week-high.normalized.json'));
       break;
     }
     case 'chartink-market-scans':
@@ -707,6 +725,7 @@ const cmd = process.argv[2];
       const scanQuality = await writeMarketScanQuality(path.join(ROOT,'scans'));
       console.log(JSON.stringify({ ...r.summary, scanQuality: { path: scanQuality.out, status: scanQuality.report.status, warnings: scanQuality.report.warnings } }, null, 2));
       if (r.summary.failed > 0) process.exitCode = 1;
+      else await publishDatasetFile('chartinkScan', path.join(r.dateDir, 'index.json'));
       break;
     }
     case 'chartink-top20':
@@ -718,6 +737,7 @@ const cmd = process.argv[2];
       if (!allowed.has(categoryArg)) throw new Error('Usage: npm run chartink:top20 -- swing|long|short|fundamental|candlestick|range-breakouts|bullish|bearish|intraday|all [--refresh]');
       const r = await runChartinkTop20({ root: path.join(ROOT, 'research', 'chartink'), category: categoryArg as any, refresh, projectRoot: ROOT });
       console.log(JSON.stringify(r, null, 2));
+      await publishDatasetFile('chartinkScan', r.indexPath);
       break;
     }
     case 'normalize': { const t=await tickerArg(); const dir=path.join(ROOT,'research',t); const m=JSON.parse(await readFile(path.join(dir,'manifest.json'),'utf8')) as ResearchManifest; const { runNormalization } = await import('./lib/normalize.js'); console.log(JSON.stringify(await runNormalization(dir,m),null,2)); break; }
