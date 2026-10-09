@@ -30,7 +30,7 @@ assert(html.includes('function triggerSheetsSync()'), 'Dashboard must support ma
 assert(html.includes("fetch('/api/trigger/laya'"), 'Run Laya Decisions button must use the publishing-aware endpoint');
 assert(html.includes('GOOGLE_SHEETS_WEBHOOK_TOKEN'), 'Dashboard must explain token configuration without displaying the secret');
 
-assert(publisher.includes('outputs/google-sheets-sync-status.json'), 'Publish state must be persisted for dashboard polling');
+assert(publisher.includes('google-sheets-sync-status.json'), 'Publish state must be persisted for dashboard polling');
 assert(publisher.includes('announceGoogleSheetsStep'), 'Publisher must track the pre-publication stage');
 assert(publisher.includes("'not_configured'"), 'Missing credentials must be surfaced explicitly');
 assert(launcher.includes("announceGoogleSheetsStep('research'"), 'Single research runs must expose the Sheets step');
