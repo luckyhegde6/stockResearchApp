@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process';
-import path from 'node:path';
 import { recordRunStart, recordRunComplete, updateActiveProgress } from './run-history.js';
 import { beginGoogleSheetsCommandStep, completeGoogleSheetsCommandStep } from './google-sheets-publish.js';
 
