@@ -62,6 +62,9 @@ assert(researchTabs.find(item => item.tabName.endsWith('-sources'))?.rows[0]?.pr
 
 const visualRows = buildVisualEvidenceRows('EXAMPLE', []);
 assert(visualRows[0]?.embedding_status === 'not_available', 'Missing screenshots should be explicitly identified');
+const publisher = await readFile(path.join(process.cwd(), 'src', 'lib', 'google-sheets-publish.ts'), 'utf8');
+assert(publisher.includes('GOOGLE_SHEETS_WEBHOOK_URL') && publisher.includes('GOOGLE_SHEETS_WEBHOOK_TOKEN'), 'Auto-publisher must require a configured URL and token');
+assert(publisher.includes('local output remains available'), 'Sheets failure must not invalidate locally saved analysis');
 const appsScript = await readFile(path.join(process.cwd(), 'integrations', 'google-sheets', 'Code.gs'), 'utf8');
 assert(appsScript.includes('function json_('), 'Apps Script sink must expose JSON responses');
 assert(appsScript.includes('function doPost('), 'Apps Script sink must accept export POST requests');
