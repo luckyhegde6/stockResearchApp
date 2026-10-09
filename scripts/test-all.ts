@@ -21,6 +21,7 @@ const TEST_SUITES = [
   'scripts/test-analysis-evidence-pack.ts',
   'scripts/test-analysis-orchestration.ts',
   'scripts/test-investment-reasoning-contract.ts',
+  'scripts/test-google-sheets-transformers.ts',
   'scripts/test-reasoning-readiness-rules.ts',
   'scripts/test-chartink-feature-flag.ts',
   'scripts/test-chartink-no-results.ts',
