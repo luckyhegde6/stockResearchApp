@@ -17,6 +17,7 @@ export type GoogleSheetsDatasetKind =
 
 export type GoogleSheetsRunState =
   | 'waiting'
+  | 'running'
   | 'publishing'
   | 'succeeded'
   | 'failed'
@@ -66,6 +67,8 @@ export interface GoogleSheetsExportOptions {
   append?: boolean;
   trigger?: GoogleSheetsRun['trigger'];
   automatic?: boolean;
+  runId?: string;
+  contextMessage?: string;
 }
 
 export interface StartedGoogleSheetsExport {
@@ -175,7 +178,7 @@ async function executeExport(
 ): Promise<GoogleSheetsRun> {
   const config = configInfo();
   if (options.automatic && !config.autoExportEnabled) {
-    const run = makeRun(runId, kind, symbol, options, 'skipped', 'Automatic Google Sheets export is disabled by GOOGLE_SHEETS_AUTO_EXPORT=false.');
+    const run = makeRun(runId, kind, symbol, options, 'skipped', ['Automatic Google Sheets export is disabled by GOOGLE_SHEETS_AUTO_EXPORT=false.', options.contextMessage].filter(Boolean).join(' '));
     run.completedAt = new Date().toISOString();
     await persistRun(root, run);
     return run;
@@ -184,7 +187,7 @@ async function executeExport(
     const missing: string[] = [];
     if (!config.endpointConfigured) missing.push('GOOGLE_SHEETS_WEBHOOK_URL');
     if (!config.tokenConfigured) missing.push('GOOGLE_SHEETS_WEBHOOK_TOKEN');
-    const run = makeRun(runId, kind, symbol, options, 'not_configured', `Not synced: configure ${missing.join(' and ')} in .env.`);
+    const run = makeRun(runId, kind, symbol, options, 'not_configured', [`Not synced: configure ${missing.join(' and ')} in .env.`, options.contextMessage].filter(Boolean).join(' '));
     run.completedAt = new Date().toISOString();
     await persistRun(root, run);
     console.log(`[sheets] ${run.message}`);
@@ -255,7 +258,7 @@ export function startGoogleSheetsExport(
   options: GoogleSheetsExportOptions = {},
 ): StartedGoogleSheetsExport {
   const root = path.resolve(options.root || process.cwd());
-  const runId = `sheets-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const runId = options.runId || `sheets-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const completion = executeExport(runId, kind, symbol, options, root).catch(async error => {
     const failed = makeRun(runId, kind, symbol, options, 'failed', 'Google Sheets publishing step failed before completion.');
     failed.error = error instanceof Error ? error.message : String(error);
@@ -285,6 +288,92 @@ export async function runGoogleSheetsExport(
 ): Promise<GoogleSheetsRun> {
   const started = startGoogleSheetsExport(kind, symbol, options);
   return started.completion;
+}
+
+export interface GoogleSheetsCommandStep {
+  runId: string;
+  command: string;
+  target?: string;
+  trigger: GoogleSheetsRun['trigger'];
+  root: string;
+  startedAt: string;
+}
+
+export interface GoogleSheetsCommandOutcome {
+  exitCode: number;
+  completedAt?: string;
+  error?: string;
+}
+
+export async function beginGoogleSheetsCommandStep(
+  command: string,
+  target: string | undefined,
+  root = process.cwd(),
+  trigger: GoogleSheetsRun['trigger'] = 'cli',
+): Promise<GoogleSheetsCommandStep> {
+  const resolvedRoot = path.resolve(root);
+  const startedAt = new Date().toISOString();
+  const runId = `command-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const config = configInfo();
+  const run = makeRun(
+    runId,
+    'custom',
+    target || command,
+    { root: resolvedRoot, trigger },
+    'running',
+    config.configured
+      ? `Command/process "${command}" started. The Google Sheets step will publish its run record when the process exits.`
+      : `Command/process "${command}" started. The Google Sheets step is active; connection credentials are not configured yet.`,
+  );
+  run.startedAt = startedAt;
+  await persistRun(resolvedRoot, run);
+  console.log(`[sheets] step started for ${command} (run ${runId})`);
+  return { runId, command, target, trigger, root: resolvedRoot, startedAt };
+}
+
+export async function completeGoogleSheetsCommandStep(
+  step: GoogleSheetsCommandStep,
+  outcome: GoogleSheetsCommandOutcome,
+): Promise<GoogleSheetsRun> {
+  const completedAt = outcome.completedAt || new Date().toISOString();
+  const safeCommand = step.command.replace(/[^A-Za-z0-9:_-]+/g, '-').slice(0, 60) || 'command';
+  const tabDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: process.env.APP_TIMEZONE || 'Asia/Kolkata',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(completedAt));
+  const report = [{
+    runId: step.runId,
+    command: step.command,
+    target: safeId(step.target),
+    trigger: step.trigger,
+    outcome: outcome.exitCode === 0 ? 'succeeded' : 'failed',
+    exitCode: outcome.exitCode,
+    startedAt: step.startedAt,
+    completedAt,
+    durationMs: Math.max(0, new Date(completedAt).getTime() - new Date(step.startedAt).getTime()),
+    error: outcome.error || '',
+  }];
+  const safeTimestamp = step.startedAt.replace(/[:.]/g, '-');
+  const reportPath = path.join(step.root, 'outputs', 'command-runs', `${safeTimestamp}-${safeCommand}.json`);
+  await mkdir(path.dirname(reportPath), { recursive: true });
+  await writeFile(reportPath, JSON.stringify(report, null, 2), 'utf8');
+
+  const result = await runGoogleSheetsExport('custom', undefined, {
+    root: step.root,
+    file: path.relative(step.root, reportPath),
+    tab: `command-runs-${tabDate}`,
+    append: true,
+    trigger: step.trigger,
+    automatic: true,
+    runId: step.runId,
+    contextMessage: `Command/process "${step.command}" ${outcome.exitCode === 0 ? 'completed successfully' : `failed with exit code ${outcome.exitCode}`}; the local run record is ${path.relative(step.root, reportPath)}.`,
+  });
+  if (result.status === 'succeeded') {
+    console.log(`[sheets] command step synced: ${step.command} (run ${step.runId})`);
+  } else {
+    console.log(`[sheets] command step final state: ${result.status} — ${result.message}`);
+  }
+  return result;
 }
 
 export async function announceGoogleSheetsStep(
