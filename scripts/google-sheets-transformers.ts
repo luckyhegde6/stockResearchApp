@@ -1,0 +1,413 @@
+export type SheetRow = Record<string, unknown>;
+
+export interface ResearchSheetTab {
+  tabName: string;
+  dataset: string;
+  rows: SheetRow[];
+}
+
+export interface ScreenshotUpload {
+  tabName: string;
+  rowIndex: number;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  base64: string;
+}
+
+export interface ScreenshotRowInput {
+  fileName: string;
+  relativePath: string;
+  sizeBytes: number;
+  mimeType: string;
+  status: string;
+  rowIndex: number;
+  base64?: string;
+}
+
+function cell(value: unknown): string | number | boolean {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
+  if (Array.isArray(value)) return value.map(item => cell(item)).filter(x => x !== '').join('; ');
+  return JSON.stringify(value);
+}
+
+function list(value: unknown): any[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function tab(base: string, suffix: string): string {
+  return `${base}-${suffix}`.slice(0, 90);
+}
+
+function asConfidence(value: any): unknown {
+  return value === null || value === undefined || value === '' ? '' : value;
+}
+
+function flattenFindings(domain: string, value: any, rows: SheetRow[], prefix = '', inheritedConfidence?: unknown, inheritedSource?: unknown): void {
+  if (value === null || value === undefined) return;
+  if (Array.isArray(value)) {
+    if (!value.length) return;
+    value.forEach((item, index) => {
+      const field = prefix ? `${prefix}[${index + 1}]` : `item[${index + 1}]`;
+      if (item && typeof item === 'object') {
+        flattenFindings(domain, item, rows, field, inheritedConfidence, inheritedSource);
+      } else {
+        rows.push({
+          domain,
+          field,
+          value: cell(item),
+          confidence: asConfidence(inheritedConfidence),
+          source_id: inheritedSource ?? '',
+          finding_type: 'evidence',
+        });
+      }
+    });
+    return;
+  }
+  if (typeof value === 'object') {
+    const confidence = (value as any).confidence ?? inheritedConfidence;
+    const sourceId = (value as any).source_id ?? inheritedSource;
+    const entries = Object.entries(value);
+    for (const [key, child] of entries) {
+      if (key === 'confidence' || key === 'source_id' || key === 'sourceId') continue;
+      const field = prefix ? `${prefix}.${key}` : key;
+      flattenFindings(domain, child, rows, field, confidence, sourceId);
+    }
+    return;
+  }
+  rows.push({
+    domain,
+    field: prefix,
+    value: cell(value),
+    confidence: asConfidence(inheritedConfidence),
+    source_id: inheritedSource ?? '',
+    finding_type: /verdict|assessment|thesis|warning|red_flag|risk/i.test(prefix) ? 'interpretation' : 'metric_or_fact',
+  });
+}
+
+function analysisFindings(a: any): SheetRow[] {
+  const rows: SheetRow[] = [];
+  const sections: Array<[string, unknown]> = [
+    ['Executive Summary', a.executive_summary],
+    ['Fundamentals', a.fundamentals],
+    ['Management', a.management],
+    ['Valuation', a.valuation],
+    ['Technical', a.technical],
+    ['Shareholding', a.shareholding],
+    ['News & Sentiment', a.news_sentiment],
+    ['Contrarian Test', a.contrarian_test],
+    ['Entry Zones', a.entry_zones],
+    ['Portfolio Action', a.portfolio_action],
+  ];
+  for (const [domain, value] of sections) flattenFindings(domain, value, rows);
+
+  list(a.recommendation?.top_three_reasons).forEach((reason, index) => rows.push({
+    domain: 'Recommendation',
+    field: `top_three_reasons[${index + 1}]`,
+    value: cell(reason),
+    finding_type: 'investment_thesis',
+    confidence: a.recommendation?.confidence ?? '',
+    source_id: '',
+  }));
+  list(a.what_would_change_my_mind).forEach((item, index) => rows.push({
+    domain: 'Thesis Invalidation',
+    field: `condition[${index + 1}]`,
+    value: cell(item),
+    finding_type: 'invalidation_condition',
+    confidence: '',
+    source_id: '',
+  }));
+  return rows;
+}
+
+function riskRows(a: any): SheetRow[] {
+  return list(a.risks).map((risk, index) => ({
+    rank: risk?.rank ?? index + 1,
+    risk: cell(risk?.risk),
+    category: cell(risk?.category),
+    probability: cell(risk?.probability),
+    impact: cell(risk?.impact),
+    early_warning_indicator: cell(risk?.early_warning_indicator),
+    priced_in: cell(risk?.priced_in),
+    confidence: risk?.confidence ?? '',
+    source_id: cell(risk?.source_id),
+  }));
+}
+
+function catalystRows(a: any): SheetRow[] {
+  return list(a.catalysts).map((catalyst, index) => ({
+    rank: catalyst?.rank ?? index + 1,
+    catalyst: cell(catalyst?.catalyst),
+    timeframe: cell(catalyst?.timeframe),
+    confirmation_condition: cell(catalyst?.confirmation_condition),
+    potential_impact: cell(catalyst?.potential_impact),
+    confidence: catalyst?.confidence ?? '',
+    source_id: cell(catalyst?.source_id),
+  }));
+}
+
+function sourceRows(a: any): SheetRow[] {
+  return list(a.sources).map(source => ({
+    source_id: cell(source?.source_id),
+    source_name: cell(source?.source_name),
+    source_type: cell(source?.source_type),
+    url: cell(source?.url),
+    retrieved_at: cell(source?.retrieved_at),
+    published_at: cell(source?.published_at),
+    reporting_period: cell(source?.reporting_period),
+    artifact_path: cell(source?.artifact_path),
+    notes: cell(source?.notes),
+  }));
+}
+
+function auditRows(a: any): SheetRow[] {
+  const rows: SheetRow[] = [];
+  const audit = a.audit ?? {};
+  list(audit.facts_without_primary_source).forEach((item, i) => rows.push({
+    audit_type: 'fact_without_primary_source',
+    item: cell(typeof item === 'object' ? item.field ?? item.fact ?? item : item),
+    details: cell(item),
+    source_refs: cell(item?.source_id ?? item?.source_ids),
+    severity: 'review',
+  }));
+  list(audit.conflicts_detected).forEach((item, i) => rows.push({
+    audit_type: 'source_conflict',
+    item: cell(item?.field ?? item?.metric ?? `conflict_${i + 1}`),
+    details: cell(item),
+    source_refs: cell(item?.source_ids ?? item?.sources),
+    severity: 'review',
+  }));
+  list(audit.calculations).forEach((item, i) => rows.push({
+    audit_type: 'calculation',
+    item: cell(item?.metric ?? `calculation_${i + 1}`),
+    details: [item?.formula, item?.calculation_note].filter(Boolean).join(' — '),
+    source_refs: cell(item?.inputs),
+    severity: 'informational',
+  }));
+  return rows;
+}
+
+export function transformAnalysisToSheets(analysis: any, symbol: string, baseTab: string): ResearchSheetTab[] {
+  const ticker = String(analysis?.company?.ticker ?? symbol).toUpperCase();
+  const c = analysis?.company ?? {};
+  const meta = analysis?.analysis_meta ?? {};
+  const market = analysis?.market_snapshot ?? {};
+  const rec = analysis?.recommendation ?? {};
+  const scores = analysis?.scores ?? {};
+  const summary: SheetRow = {
+    symbol: ticker,
+    company: cell(c.name),
+    exchange: cell(c.exchange),
+    isin: cell(c.isin),
+    sector: cell(c.sector),
+    industry: cell(c.industry),
+    analysis_timestamp: cell(meta.analysis_timestamp),
+    latest_reporting_period: cell(meta.latest_reporting_period),
+    financial_basis: cell(meta.financial_basis),
+    data_completeness: meta.data_completeness ?? '',
+    evidence_confidence: meta.overall_confidence ?? rec.confidence ?? '',
+    recommendation: cell(rec.action),
+    conviction_0_to_10: rec.conviction ?? '',
+    recommendation_confidence: rec.confidence ?? '',
+    one_line_thesis: cell(rec.one_line_thesis),
+    top_reasons: list(rec.top_three_reasons).map((x, i) => `${i + 1}. ${cell(x)}`).join(' | '),
+    current_price_inr: market.current_price ?? '',
+    price_timestamp: cell(market.price_timestamp),
+    market_cap: market.market_cap ?? '',
+    pe: market.pe ?? '',
+    pb: market.pb ?? '',
+    ev_ebitda: market.ev_ebitda ?? '',
+    week_52_high: market['52_week_high'] ?? '',
+    week_52_low: market['52_week_low'] ?? '',
+    valuation_classification: cell(analysis?.valuation?.classification),
+    technical_market_phase: cell(analysis?.technical?.market_phase),
+    news_sentiment: cell(analysis?.news_sentiment?.label),
+    overall_score_0_to_10: scores.overall ?? '',
+    fundamentals_score_0_to_10: scores.fundamentals ?? '',
+    management_score_0_to_10: scores.management ?? '',
+    valuation_score_0_to_10: scores.valuation ?? '',
+    technical_score_0_to_10: scores.technical ?? '',
+    risk_reward_score_0_to_10: scores.risk_reward ?? '',
+    key_business_quality: cell(analysis?.executive_summary?.business_quality),
+    key_earnings_quality: cell(analysis?.executive_summary?.earnings_quality),
+    key_risk: cell(analysis?.executive_summary?.key_risk),
+    key_catalyst: cell(analysis?.executive_summary?.key_catalyst),
+    existing_shareholder_action: cell(analysis?.portfolio_action?.existing_shareholder),
+    new_investor_action: cell(analysis?.portfolio_action?.new_investor),
+    investment_horizon: cell(analysis?.portfolio_action?.investment_horizon),
+    data_gaps: cell(meta.data_gaps),
+    schema_version: cell(analysis?.schema_version),
+    report_type: 'LLM investment analysis; validate evidence and assumptions before acting',
+  };
+
+  const scoreRows = Object.entries(scores).map(([category, score]) => ({
+    category,
+    score_0_to_10: typeof score === 'number' ? score : '',
+    scale: '0–10',
+  }));
+
+  const scenarios = ['bull', 'base', 'bear'].map(name => {
+    const scenario = analysis?.scenarios?.[name] ?? {};
+    return {
+      scenario: name.toUpperCase(),
+      thesis: cell(scenario.thesis),
+      assumptions: cell(scenario.assumptions),
+      confidence_0_to_1: scenario.confidence ?? '',
+    };
+  });
+
+  return [
+    { tabName: tab(baseTab, 'summary'), dataset: 'analysis-summary', rows: [summary] },
+    { tabName: tab(baseTab, 'findings'), dataset: 'analysis-findings', rows: analysisFindings(analysis) },
+    { tabName: tab(baseTab, 'scores'), dataset: 'analysis-scores', rows: scoreRows },
+    { tabName: tab(baseTab, 'risks'), dataset: 'analysis-risks', rows: riskRows(analysis) },
+    { tabName: tab(baseTab, 'catalysts'), dataset: 'analysis-catalysts', rows: catalystRows(analysis) },
+    { tabName: tab(baseTab, 'scenarios'), dataset: 'analysis-scenarios', rows: scenarios },
+    { tabName: tab(baseTab, 'sources'), dataset: 'analysis-sources', rows: sourceRows(analysis) },
+    { tabName: tab(baseTab, 'audit'), dataset: 'analysis-audit', rows: auditRows(analysis) },
+  ];
+}
+
+function sourceArtifactRows(manifest: any): SheetRow[] {
+  const artifacts = [...list(manifest?.sourceArtifacts), ...list(manifest?.derivedArtifacts)];
+  return artifacts.map((item: any) => ({
+    artifact_id: cell(item.id),
+    artifact_type: cell(item.type),
+    provider: cell(item.provider),
+    title: cell(item.title),
+    status: cell(item.status),
+    url: cell(item.url),
+    local_path: cell(item.localPath),
+    screenshot_path: cell(item.screenshotPath),
+    reporting_period: cell(item.period),
+    retrieved_at: cell(item.retrievedAt),
+    method: cell(item.method),
+    notes: cell(item.notes),
+  }));
+}
+
+function researchEvidenceRows(pack: any): SheetRow[] {
+  const rows: SheetRow[] = [];
+  for (const [kind, items] of [
+    ['canonical_fact', list(pack?.canonicalFacts)],
+    ['calculated_metric', list(pack?.calculatedMetrics)],
+  ] as Array<[string, any[]]>) {
+    items.forEach(item => rows.push({
+      evidence_type: kind,
+      field: cell(item?.field),
+      value: cell(item?.value),
+      unit: cell(item?.unit),
+      source: cell(item?.source),
+      source_artifact: cell(item?.sourceArtifact),
+      as_of: cell(item?.asOf),
+      reporting_period: cell(item?.period ?? item?.reportingPeriod),
+      notes: cell(item?.notes),
+    }));
+  }
+  return rows;
+}
+
+export function transformResearchToSheets(artifacts: Record<string, any>, symbol: string, baseTab: string): ResearchSheetTab[] {
+  const manifest = artifacts.manifest ?? {};
+  const readiness = artifacts.readiness ?? {};
+  const quality = artifacts.evidenceQuality ?? {};
+  const health = artifacts.sourceHealth ?? {};
+  const pack = artifacts.evidencePack ?? {};
+  const reconciliation = artifacts.reconciliation ?? {};
+  const summary: SheetRow = {
+    symbol: String(manifest.ticker ?? symbol).toUpperCase(),
+    company: cell(manifest.companyName),
+    research_generated_at: cell(manifest.generatedAt),
+    acquisition_only: manifest.acquisitionOnly ?? true,
+    readiness: readiness.ready === true ? 'READY' : 'NOT_READY',
+    blocking_reasons: cell(readiness.blockingReasons),
+    advisory_reasons: cell(readiness.advisoryReasons),
+    quality_status: cell(quality?.report?.status ?? quality?.status),
+    quality_missing_count: quality?.report?.summary?.missing ?? quality?.summary?.missing ?? '',
+    overall_source_health: cell(health?.overall?.status ?? health?.overallStatus ?? health?.status),
+    source_artifacts: list(manifest.sourceArtifacts).length,
+    data_gaps: cell(manifest.dataGaps),
+    warnings: cell(manifest.warnings),
+    evidence_facts: list(pack.canonicalFacts).length,
+    calculated_metrics: list(pack.calculatedMetrics).length,
+    source_conflicts: reconciliation?.conflictCount ?? list(reconciliation?.conflicts).length,
+    report_type: 'Deterministic research evidence; not an LLM recommendation',
+  };
+
+  const findings: SheetRow[] = [];
+  for (const [domain, value] of [
+    ['Fundamentals', pack.fundamentals],
+    ['Valuation', pack.valuation],
+    ['Technical', pack.technicals],
+    ['Ownership', pack.ownership],
+    ['Catalysts', pack.catalysts],
+    ['News & Sentiment', pack.newsSentiment],
+    ['Reconciliation', reconciliation],
+  ] as Array<[string, any]>) {
+    flattenFindings(domain, value, findings);
+  }
+  const qualityRows: SheetRow[] = [];
+  list(readiness.requiredFiles).forEach((item: any) => qualityRows.push({
+    check_type: 'required_file',
+    item: cell(item.file),
+    status: item.ok ? 'present' : 'missing',
+    details: item.ok ? 'Required artifact exists' : 'Required artifact missing',
+  }));
+  list(readiness.missingFiles).forEach(item => qualityRows.push({
+    check_type: 'blocking_gap',
+    item: cell(item),
+    status: 'missing',
+    details: 'Blocks high-confidence analysis readiness',
+  }));
+  list(readiness.actionableWarnings).forEach(item => qualityRows.push({
+    check_type: 'source_warning',
+    item: cell(item),
+    status: 'warning',
+    details: 'Review source-health diagnostics',
+  }));
+  const sourceHealthMap = health?.sources && typeof health.sources === 'object' ? health.sources : {};
+  for (const [source, details] of Object.entries(sourceHealthMap)) qualityRows.push({
+    check_type: 'source_health',
+    item: source,
+    status: cell((details as any)?.status ?? (details as any)?.overallStatus),
+    details: cell((details as any)?.warningDetails ?? (details as any)?.warnings),
+  });
+  list(reconciliation?.conflicts ?? reconciliation?.items?.filter?.((item: any) => item?.conflict)).forEach((item: any, index) => qualityRows.push({
+    check_type: 'source_conflict',
+    item: cell(item?.field ?? item?.metric ?? `conflict_${index + 1}`),
+    status: 'review',
+    details: cell(item),
+  }));
+  return [
+    { tabName: tab(baseTab, 'summary'), dataset: 'research-summary', rows: [summary] },
+    { tabName: tab(baseTab, 'evidence'), dataset: 'research-evidence', rows: researchEvidenceRows(pack) },
+    { tabName: tab(baseTab, 'sources'), dataset: 'research-sources', rows: sourceArtifactRows(manifest) },
+    { tabName: tab(baseTab, 'findings'), dataset: 'research-findings', rows: findings },
+    { tabName: tab(baseTab, 'quality'), dataset: 'research-quality', rows: qualityRows },
+  ];
+}
+
+export function buildVisualEvidenceRows(symbol: string, screenshots: ScreenshotRowInput[]): SheetRow[] {
+  if (!screenshots.length) return [{
+    category: 'Visual Evidence',
+    symbol,
+    status: 'no_screenshots_found',
+    note: 'Run deterministic research/TradingView capture first, then export again.',
+    file_name: '',
+    chart_period: '',
+    size_bytes: '',
+    artifact_path: '',
+    embedding_status: 'not_available',
+  }];
+  return screenshots.map(item => ({
+    category: 'TradingView',
+    symbol,
+    file_name: item.fileName,
+    chart_period: item.fileName.replace(/^tradingview[-_]?/i, '').replace(/\.(png|jpe?g|webp)$/i, ''),
+    size_bytes: item.sizeBytes,
+    artifact_path: item.relativePath,
+    embedding_status: item.status,
+    preview: '',
+  }));
+}
