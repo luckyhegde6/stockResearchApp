@@ -62,6 +62,15 @@ assert(researchTabs.find(item => item.tabName.endsWith('-sources'))?.rows[0]?.pr
 
 const visualRows = buildVisualEvidenceRows('EXAMPLE', []);
 assert(visualRows[0]?.embedding_status === 'not_available', 'Missing screenshots should be explicitly identified');
+const skippedVisual = buildVisualEvidenceRows('EXAMPLE', [{
+  fileName: 'empty-chart.png',
+  relativePath: 'research/EXAMPLE/screenshots/empty-chart.png',
+  sizeBytes: 0,
+  mimeType: 'image/png',
+  status: 'skipped_empty_file',
+  rowIndex: 2,
+}]);
+assert(skippedVisual[0]?.embedding_status === 'skipped_empty_file', 'Empty screenshots must not be represented as embedded');
 const publisher = await readFile(path.join(process.cwd(), 'src', 'lib', 'google-sheets-publish.ts'), 'utf8');
 assert(publisher.includes('GOOGLE_SHEETS_WEBHOOK_URL') && publisher.includes('GOOGLE_SHEETS_WEBHOOK_TOKEN'), 'Auto-publisher must require a configured URL and token');
 assert(publisher.includes('local output remains available'), 'Sheets failure must not invalidate locally saved analysis');
@@ -69,6 +78,7 @@ const appsScript = await readFile(path.join(process.cwd(), 'integrations', 'goog
 assert(appsScript.includes('function json_('), 'Apps Script sink must expose JSON responses');
 assert(appsScript.includes('function doPost('), 'Apps Script sink must accept export POST requests');
 assert(appsScript.includes('function embedScreenshots_('), 'Apps Script sink must embed screenshot images');
+assert(appsScript.includes('item.rowIndex = tabResult.dataStartRow + (Number(item.rowIndex || 2) - 2)'), 'Append mode should adjust screenshot row indexes to the appended block');
 assert(appsScript.includes("const HOME_TAB = 'StockResearch'"), 'Apps Script sink must maintain the StockResearch index');
 assert(appsScript.includes("const name = '_EXPORT_LOG'"), 'Apps Script sink must record export runs');
 
