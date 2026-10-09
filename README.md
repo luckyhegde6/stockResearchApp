@@ -15,6 +15,8 @@ It combines official NSE data, Screener, Tijori, TradingView, optional news/Char
 
 **StockResearch workbook:** [Open StockResearch — Research & Analysis](https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0)
 
+**UI/sync reference:** [Google AI Studio preview](https://aistudio.google.com/apps/bf7ddb4a-486d-46db-9e2a-4cc6cfcfee5c?showPreview=true&showAssistant=true). The app preview was not inspectable through the connected web fetch in this session; see [the staged rollout plan](docs/GOOGLE_SHEETS_PUBLISHING_PLAN.md) for status and acceptance criteria.
+
 
 The pipeline can publish classified research and investment-analysis reports into the linked workbook through the optional Apps Script sink under `integrations/google-sheets/`. Research and analysis exports create dedicated summary, findings/evidence, quality/score, risk, catalyst, scenario, source, audit, and visual-evidence tabs. Chart screenshots are embedded in the visual-evidence tab when file-size limits permit.
 
@@ -54,7 +56,7 @@ ITC-YYYY-MM-DD-news
 ITC-YYYY-MM-DD-laya
 ```
 
-When `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are configured, the standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands publish their results automatically after the local run succeeds. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable automatic publishing; manual exports remain available. The `StockResearch` tab is the workbook's clickable index and `_EXPORT_LOG` records published runs. A Sheets outage never invalidates locally saved research or analysis. A Sheet outage must never invalidate deterministic research. See [Google Sheets Export](integrations/google-sheets/README.md).
+When `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are configured, the standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands publish their results automatically after the local run succeeds. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable automatic publishing; manual exports remain available. The `StockResearch` tab is the workbook's clickable index and `_EXPORT_LOG` records published runs. A Sheets outage never invalidates locally saved research or analysis. See [Google Sheets Export](integrations/google-sheets/README.md).
 
 ## Developer & Agent Operating System
 
