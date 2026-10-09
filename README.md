@@ -61,6 +61,7 @@ chartinkScan-YYYY-MM-DD
 nse52wScan-YYYY-MM-DD
 screenerScan-YYYY-MM-DD
 tijoriScan-YYYY-MM-DD
+command-runs-YYYY-MM-DD
 ITC-YYYY-MM-DD-news
 ITC-YYYY-MM-DD-laya
 ```
