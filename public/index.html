@@ -119,6 +119,79 @@
       box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
 
+    .sheets-sync-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 0.85rem;
+      padding: 0.7rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(10, 14, 23, 0.5);
+      font-size: 0.8rem;
+    }
+    .sheets-sync-strip-main {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      min-width: 0;
+    }
+    .sheets-sync-message {
+      color: var(--text-muted);
+      overflow-wrap: anywhere;
+    }
+    .sheets-sync-layout {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .sheets-config-item {
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.025);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+    }
+    .sheets-help {
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+    .sheets-run-message {
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.025);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      overflow-wrap: anywhere;
+    }
+    .sheets-table-wrap { width: 100%; overflow-x: auto; }
+    .sheets-table-wrap table { min-width: 780px; }
+    .sheets-tab-links { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.8rem; }
+    .sheets-tab-chip {
+      display: inline-flex;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--border-accent);
+      background: rgba(99,102,241,0.08);
+      color: #c7d2fe;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+    }
+    @media (max-width: 1150px) {
+      header { flex-wrap: wrap; gap: 0.75rem; }
+      nav { max-width: 100%; overflow-x: auto; justify-content: flex-start; }
+      .nav-btn { white-space: nowrap; padding: 0.45rem 0.7rem; }
+    }
+
     /* Live Progress Stepper Banner */
     .progress-banner {
       background: rgba(18, 26, 41, 0.9);
@@ -450,6 +523,7 @@
       <button class="nav-btn" onclick="switchTab('scans')">Market Scans</button>
       <button class="nav-btn" onclick="switchTab('tracking')">Performance Tracker</button>
       <button class="nav-btn" onclick="switchTab('history')">Run History</button>
+      <button class="nav-btn" onclick="switchTab('sheets')">Google Sheets Sync</button>
       <button class="nav-btn" onclick="switchTab('laya')">Laya Decisions</button>
       <button class="nav-btn" onclick="switchTab('config')">Settings Config</button>
     </nav>
@@ -484,6 +558,17 @@
       <div class="step-pill" id="step-3">3. Normalization</div>
       <div class="step-pill" id="step-4">4. Reconciliation</div>
       <div class="step-pill" id="step-5">5. Readiness Gate</div>
+    </div>
+    <div class="sheets-sync-strip">
+      <div class="sheets-sync-strip-main">
+        <strong>Google Sheets Publish Step</strong>
+        <span class="pill pill-amber" id="sheets-live-pill">CHECKING</span>
+        <span class="sheets-sync-message" id="sheets-live-message">Checking configuration and most recent publish.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+        <a class="btn btn-secondary" style="padding:0.35rem 0.7rem;font-size:0.75rem;text-decoration:none;" href="https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0" target="_blank" rel="noopener noreferrer">Open StockResearch Sheet ↗</a>
+        <button class="btn btn-secondary" style="padding:0.35rem 0.7rem;font-size:0.75rem;" onclick="switchTab('sheets')">Manage Sync</button>
+      </div>
     </div>
   </div>
 
@@ -764,7 +849,94 @@
         </div>
         <pre id="config-json-editor" contenteditable="true" style="min-height: 400px; color: #a5f3fc; border-color: var(--primary);">Loading configuration...</pre>
       </div>
-    <!-- TAB 8: LAYA DECISION ENGINE -->
+    </div><!-- Close Settings Config tab -->
+
+    <!-- TAB 8: GOOGLE SHEETS SYNC -->
+    <div id="tab-sheets" class="tab-content">
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-title">
+          <span>Google Sheets Sync & Publication</span>
+          <span class="pill pill-amber" id="sheets-status-pill">Loading status...</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.85rem;">
+          <div>
+            <div style="font-size:1rem;font-weight:700;">StockResearch workbook</div>
+            <div class="sheets-help" style="margin-top:0.25rem;">Research evidence, investment analysis, scan results, run IDs and chart screenshots are published here.</div>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <a class="btn btn-emerald" href="https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">Open Workbook ↗</a>
+            <button class="btn btn-secondary" onclick="refreshSheetsStatus()">↻ Refresh Sync Status</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheets-sync-layout">
+        <div class="card">
+          <div class="card-title">Connection & Auto-Publish</div>
+          <div style="display:flex;flex-direction:column;gap:0.65rem;">
+            <div class="sheets-config-item"><span>Apps Script endpoint</span><span class="pill pill-amber" id="sheets-endpoint-state">Checking</span></div>
+            <div class="sheets-config-item"><span>Private token</span><span class="pill pill-amber" id="sheets-token-state">Checking</span></div>
+            <div class="sheets-config-item"><span>Auto-publish after runs</span><span class="pill pill-amber" id="sheets-auto-state">Checking</span></div>
+            <div class="sheets-config-item"><span>Workbook ID</span><code style="font-size:0.72rem;overflow-wrap:anywhere;">1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak</code></div>
+          </div>
+          <div class="sheets-help" style="margin-top:0.9rem;">
+            Credential values are deliberately never shown in the browser. Configure <code>GOOGLE_SHEETS_WEBHOOK_URL</code>, <code>GOOGLE_SHEETS_WEBHOOK_TOKEN</code>, and <code>GOOGLE_SHEETS_AUTO_EXPORT=true</code> in your local <code>.env</code>, then restart the dashboard.
+          </div>
+          <div style="margin-top:0.9rem;">
+            <a href="https://github.com/luckyhegde6/stockResearchApp/blob/init/integrations/google-sheets/README.md" target="_blank" rel="noopener noreferrer" style="color:#a5b4fc;">Open setup guide ↗</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Publish Existing Results</div>
+          <div class="form-group">
+            <label for="sheets-symbol">NSE symbol (for research / analysis / Laya)</label>
+            <input id="sheets-symbol" value="ITC" maxlength="20" autocomplete="off" placeholder="e.g. ITC or RELIANCE" onchange="refreshSheetsStatus()">
+          </div>
+          <div class="form-group">
+            <label for="sheets-kind">Dataset to publish</label>
+            <select id="sheets-kind">
+              <option value="research">Research evidence package</option>
+              <option value="analysis">Final investment analysis</option>
+              <option value="laya">Laya decisions</option>
+              <option value="chartinkScan">Latest Chartink market scan</option>
+              <option value="nse52w">NSE 52-week-high scan</option>
+              <option value="screenerScan">Screener market screens</option>
+              <option value="tijoriScan">Tijori market screens</option>
+            </select>
+          </div>
+          <button class="btn btn-emerald" id="sheets-publish-btn" onclick="triggerSheetsSync()">⇧ Publish to Google Sheets</button>
+          <div id="sheets-manual-message" class="sheets-run-message" style="margin-top:0.9rem;">Choose a dataset and publish. The operation's actual result will appear below and in Run History.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-title">Last Google Sheets Step <button class="btn btn-secondary" style="padding:0.35rem 0.7rem;font-size:0.75rem;" onclick="refreshSheetsStatus()">Refresh</button></div>
+        <div id="sheets-last-run" class="sheets-run-message">No publishing status loaded yet.</div>
+        <div id="sheets-last-tabs" class="sheets-tab-links"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-title">Recent Publish Attempts</div>
+        <div class="sheets-table-wrap">
+          <table>
+            <thead><tr><th>Started</th><th>Symbol / Target</th><th>Dataset</th><th>Status</th><th>Rows</th><th>Images</th><th>Result</th></tr></thead>
+            <tbody id="sheets-history-body">
+              <tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Loading publishing history...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">What happens when a run is triggered?</div>
+        <div class="sheets-help">
+          The dashboard shows the publishing phase separately from the five research stages. Research and batch runs publish deterministic evidence; analysis publishes the refreshed evidence package and the validated analysis; Laya and market scans publish their generated artifacts. If credentials are missing, the UI shows <strong>NOT CONFIGURED</strong>. If a pipeline fails before creating an artifact, the sheet step is shown as skipped or failed. Local research outputs remain available if Google Sheets is unavailable.
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 9: LAYA DECISION ENGINE -->
     <div id="tab-laya" class="tab-content">
       <div class="card" style="margin-bottom: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
@@ -894,6 +1066,156 @@
       if (tabId === 'history') fetchHistoryData();
       if (tabId === 'scans') loadScanType(document.getElementById('scan-dropdown').value);
       if (tabId === 'laya') loadLayaDecisions(document.getElementById('laya-ticker-select').value);
+      if (tabId === 'sheets') refreshSheetsStatus();
+    }
+
+    const STOCKRESEARCH_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0';
+    let sheetsStatusRefreshInFlight = false;
+
+    function sheetsEscape(value) {
+      return String(value === null || value === undefined ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function sheetsStatusClass(status) {
+      if (status === 'succeeded') return 'pill-green';
+      if (status === 'failed') return 'pill-rose';
+      if (status === 'publishing') return 'pill-blue';
+      if (status === 'not_configured' || status === 'skipped') return 'pill-amber';
+      return 'pill-blue';
+    }
+
+    function sheetsStatusLabel(status) {
+      return ({
+        succeeded: 'SYNCED',
+        failed: 'FAILED',
+        publishing: 'PUBLISHING',
+        not_configured: 'NOT CONFIGURED',
+        skipped: 'SKIPPED',
+      })[status] || 'NOT RUN';
+    }
+
+    function renderSheetsPill(elementId, status, label) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      el.className = 'pill ' + sheetsStatusClass(status);
+      el.textContent = label || sheetsStatusLabel(status);
+    }
+
+    function formatSheetsTime(value) {
+      if (!value) return '—';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+    }
+
+    function renderSheetsHistory(runs) {
+      const tbody = document.getElementById('sheets-history-body');
+      if (!tbody) return;
+      if (!runs || !runs.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No Google Sheets publish attempts recorded yet. Trigger a research run or publish an existing result.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = runs.map(run => {
+        const status = sheetsEscape(run.status || 'unknown');
+        const message = sheetsEscape(run.message || run.error || '');
+        const imageCount = (run.screenshotsEmbedded || 0) + (run.screenshotsFailed || 0);
+        return '<tr>' +
+          '<td>' + sheetsEscape(formatSheetsTime(run.startedAt)) + '</td>' +
+          '<td><strong>' + sheetsEscape(run.symbol || 'Market dataset') + '</strong><div style="color:var(--text-muted);font-size:0.72rem;">' + sheetsEscape(run.runId || '') + '</div></td>' +
+          '<td>' + sheetsEscape(run.kind || '') + '<div style="color:var(--text-muted);font-size:0.72rem;">' + sheetsEscape(run.trigger || '') + '</div></td>' +
+          '<td><span class="pill ' + sheetsStatusClass(status) + '">' + sheetsEscape(sheetsStatusLabel(status)) + '</span></td>' +
+          '<td>' + (run.rowCount === undefined ? '—' : sheetsEscape(run.rowCount)) + '</td>' +
+          '<td>' + (imageCount ? sheetsEscape((run.screenshotsEmbedded || 0) + ' embedded / ' + (run.screenshotsFailed || 0) + ' failed') : (run.screenshotsSent ? sheetsEscape(run.screenshotsSent + ' sent') : '—')) + '</td>' +
+          '<td style="min-width:230px;max-width:380px;white-space:normal;overflow-wrap:anywhere;">' + message + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    async function refreshSheetsStatus() {
+      if (sheetsStatusRefreshInFlight) return;
+      sheetsStatusRefreshInFlight = true;
+      const symbol = (document.getElementById('sheets-symbol')?.value || 'ITC').trim().toUpperCase();
+      try {
+        const res = await fetch('/api/sheets/status?symbol=' + encodeURIComponent(symbol), { cache: 'no-store' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not read sync status.');
+
+        const endpointOk = Boolean(data.endpointConfigured);
+        const tokenOk = Boolean(data.tokenConfigured);
+        const autoOk = Boolean(data.autoExportEnabled);
+        const configured = Boolean(data.configured);
+        const last = data.lastRun;
+        const currentStatus = last?.status || (configured ? 'skipped' : 'not_configured');
+        const mainLabel = last ? sheetsStatusLabel(currentStatus) : (configured ? 'READY' : 'NOT CONFIGURED');
+        renderSheetsPill('sheets-status-pill', currentStatus, mainLabel);
+        renderSheetsPill('sheets-live-pill', currentStatus, 'SHEETS: ' + mainLabel);
+        document.getElementById('sheets-live-message').textContent = last
+          ? (last.symbol ? last.symbol + ' · ' : '') + (last.message || last.error || 'Last publish status updated.')
+          : (configured ? 'Credentials are configured. No publish attempt has been recorded yet.' : 'Add the webhook URL and token to .env; details are in the setup guide.');
+        document.getElementById('sheets-endpoint-state').className = 'pill ' + (endpointOk ? 'pill-green' : 'pill-rose');
+        document.getElementById('sheets-endpoint-state').textContent = endpointOk ? 'Configured' : 'Missing';
+        document.getElementById('sheets-token-state').className = 'pill ' + (tokenOk ? 'pill-green' : 'pill-rose');
+        document.getElementById('sheets-token-state').textContent = tokenOk ? 'Configured · hidden' : 'Missing';
+        document.getElementById('sheets-auto-state').className = 'pill ' + (autoOk ? 'pill-green' : 'pill-amber');
+        document.getElementById('sheets-auto-state').textContent = autoOk ? 'Enabled' : 'Disabled';
+
+        const lastEl = document.getElementById('sheets-last-run');
+        const lastTabs = document.getElementById('sheets-last-tabs');
+        if (!last) {
+          lastEl.innerHTML = '<strong>' + sheetsEscape(mainLabel) + '</strong><div style="margin-top:0.4rem;">' + sheetsEscape(configured ? 'Configuration is ready. Trigger a run or use Publish Existing Results.' : 'No webhook configuration is loaded. Set both required values in .env and restart the Node server.') + '</div>';
+          lastTabs.innerHTML = '';
+        } else {
+          const details = [
+            last.message || '',
+            last.startedAt ? 'Started: ' + formatSheetsTime(last.startedAt) : '',
+            last.completedAt ? 'Completed: ' + formatSheetsTime(last.completedAt) : '',
+            last.rowCount !== undefined ? 'Rows: ' + last.rowCount : '',
+            last.runId ? 'Run ID: ' + last.runId : '',
+            last.error ? 'Error: ' + last.error : '',
+          ].filter(Boolean).map(sheetsEscape);
+          lastEl.innerHTML = '<span class="pill ' + sheetsStatusClass(currentStatus) + '">' + sheetsEscape(mainLabel) + '</span><div style="margin-top:0.6rem;line-height:1.6;">' + details.join('<br>') + '</div>';
+          lastTabs.innerHTML = (last.tabs || []).map(item => '<span class="sheets-tab-chip">' + sheetsEscape(item.tabName) + ' · ' + sheetsEscape(item.rows) + ' rows</span>').join('');
+        }
+        renderSheetsHistory(data.recentRuns || []);
+      } catch (err) {
+        const message = err && err.message ? err.message : String(err);
+        renderSheetsPill('sheets-status-pill', 'failed', 'STATUS ERROR');
+        renderSheetsPill('sheets-live-pill', 'failed', 'SHEETS: STATUS ERROR');
+        document.getElementById('sheets-live-message').textContent = message;
+        document.getElementById('sheets-last-run').textContent = message;
+      } finally {
+        sheetsStatusRefreshInFlight = false;
+      }
+    }
+
+    async function triggerSheetsSync() {
+      const button = document.getElementById('sheets-publish-btn');
+      const kind = document.getElementById('sheets-kind').value;
+      const symbol = (document.getElementById('sheets-symbol').value || '').trim().toUpperCase();
+      const message = document.getElementById('sheets-manual-message');
+      button.disabled = true;
+      button.textContent = 'Publishing...';
+      message.textContent = 'Starting Google Sheets publish. This status updates while the exporter runs.';
+      try {
+        const res = await fetch('/api/sheets/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind, symbol })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not start publishing.');
+        message.textContent = (data.message || 'Publishing started.') + ' Run ID: ' + (data.runId || 'pending');
+        showToast('Google Sheets publishing started');
+        await refreshSheetsStatus();
+      } catch (err) {
+        message.textContent = err && err.message ? err.message : String(err);
+        showToast('Sheets sync could not start');
+        await refreshSheetsStatus();
+      } finally {
+        button.disabled = false;
+        button.textContent = '⇧ Publish to Google Sheets';
+      }
     }
 
     let lastCompletedTarget = null;
@@ -961,6 +1283,8 @@
         const data = await res.json();
         showToast(data.message || `Started research for ${symbol}`);
         pollProgress();
+    refreshSheetsStatus();
+    setInterval(refreshSheetsStatus, 2500);
       } catch (err) {
         showToast('Trigger failed: ' + err.message);
       }
