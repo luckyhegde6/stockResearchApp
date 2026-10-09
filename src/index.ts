@@ -412,11 +412,7 @@ async function acquire(ticker: string) {
     await publishDatasetFile('tijoriScan', path.join(marketRoot, 'index.json'));
   }
 
-  if (hasFlag('--analyze')) {
-    await analyze(ticker);
-    return;
-  }
-
+  console.log(JSON.stringify(acquisitionReport, null, 2));
   console.log(JSON.stringify(acquisitionReport, null, 2));
 }
 
