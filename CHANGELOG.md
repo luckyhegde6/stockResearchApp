@@ -4,10 +4,16 @@ Canonical release history for repository behavior. Older detail remains in docs/
 
 ## [Unreleased]
 
+### Google Sheets publishing
+- Linked the StockResearch workbook from the README and integration guide.
+- Added classified research and analysis transformer methods with dedicated summary, evidence/findings, scores, risks, catalysts, scenarios, sources, quality, audit, and visual-evidence tabs.
+- Added embedded chart screenshot publishing, a clickable StockResearch workbook index, and an _EXPORT_LOG audit trail.
+- Added deterministic transformer tests and documented local deployment/configuration requirements.
+
 ### Research roadmap
 - Added a roadmap for Kronos forecasting/backtesting, Pine Script strategy research, Lightweight Charts visualization, and future OpenAlgo integration.
 
-### Integrations\n- Added an optional Google Sheets export boundary with dated, per-dataset tabs and an Apps Script sink.\n\n### Developer experience
+### Developer experience
 - Added an agent-neutral repository operating contract.
 - Added stable memory, current handoff, prioritized TODOs, architecture decisions, contributing guidance, product requirements, and GitHub templates.
 - Added machine-readable agent-manifest.json.
