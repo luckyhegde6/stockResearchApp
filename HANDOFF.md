@@ -14,7 +14,8 @@ Completed in code:
 - The local dashboard has a **Google Sheets Sync** tab, a live status strip and a dynamic sixth **Google Sheets Sync** step after the five research stages.
 - The dashboard can show `waiting`, `publishing`, `succeeded`, `failed`, `not_configured` and `skipped` states, plus recent attempts, row counts, tab names and screenshot counts.
 - `GET /api/sheets/status` reports config booleans and local export history without revealing secrets. `POST /api/sheets/sync` allows controlled manual republishing of supported local artifacts and rejects non-local browser origins.
-- Dashboard-triggered research, batch, market-scan and analysis processes announce the Sheets step. The CLI owns successful publication for research/analysis and supported scan/market-screen commands to avoid duplicate exports.
+- All npm scripts are wrapped unless the command enters `src/index.ts`, which instruments its own CLI lifecycle. Every completed CLI/process writes a local command report and appends a command-run audit row to `command-runs-YYYY-MM-DD` when Sheets credentials are configured.
+- Dashboard-triggered research, batch, market-scan and analysis processes announce the Sheets step and finalize an audit record on child exit. They also retain specialized exports for research/analysis/scan outputs.
 - Dashboard Laya execution writes `research/<SYMBOL>/normalized/laya-decisions.json` and attempts publication.
 - Google Sheets transformer and dashboard contract tests are included in `npm run test:all`.
 - Task list/acceptance criteria live in [docs/GOOGLE_SHEETS_PUBLISHING_PLAN.md](docs/GOOGLE_SHEETS_PUBLISHING_PLAN.md).
