@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import { access, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { access, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 
 export type GoogleSheetsDatasetKind =
   | 'research'
@@ -112,15 +112,44 @@ async function readState(root: string): Promise<SyncStateFile> {
 
 async function persistRun(root: string, run: GoogleSheetsRun): Promise<void> {
   const file = statusPath(root);
-  await mkdir(path.dirname(file), { recursive: true });
-  const current = await readState(root);
-  const recentRuns = [run, ...current.recentRuns.filter(item => item.runId !== run.runId)].slice(0, 30);
-  const next: SyncStateFile = {
-    schema_version: '1.0',
-    updatedAt: new Date().toISOString(),
-    recentRuns,
-  };
-  await writeFile(file, JSON.stringify(next, null, 2), 'utf8');
+  const directory = path.dirname(file);
+  const lockPath = `${file}.lock`;
+  await mkdir(directory, { recursive: true });
+
+  let lock: Awaited<ReturnType<typeof open>> | undefined;
+  const deadline = Date.now() + 10_000;
+  while (!lock) {
+    try {
+      lock = await open(lockPath, 'wx');
+    } catch (error: any) {
+      if (error?.code !== 'EEXIST') throw error;
+      const lockInfo = await stat(lockPath).catch(() => null);
+      if (lockInfo && Date.now() - lockInfo.mtimeMs > 30_000) {
+        await rm(lockPath, { force: true }).catch(() => {});
+        continue;
+      }
+      if (Date.now() >= deadline) throw new Error('Timed out waiting to write Google Sheets sync status.');
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+  }
+
+  try {
+    const current = await readState(root);
+    const recentRuns = [run, ...current.recentRuns.filter(item => item.runId !== run.runId)]
+      .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+      .slice(0, 30);
+    const next: SyncStateFile = {
+      schema_version: '1.0',
+      updatedAt: new Date().toISOString(),
+      recentRuns,
+    };
+    const temp = `${file}.${process.pid}.${run.runId.replace(/[^A-Za-z0-9_-]/g, '-')}.tmp`;
+    await writeFile(temp, JSON.stringify(next, null, 2), 'utf8');
+    await rename(temp, file);
+  } finally {
+    await lock.close().catch(() => {});
+    await rm(lockPath, { force: true }).catch(() => {});
+  }
 }
 
 export async function getGoogleSheetsSyncStatus(root = process.cwd()): Promise<GoogleSheetsStatus> {
