@@ -514,7 +514,7 @@ async function promptOnly(ticker: string) {
 const cmd = process.argv[2];
 (async () => {
   switch (cmd) {
-    case 'research': { const ticker = await tickerArg(); await acquire(ticker); if (hasFlag('--analyze')) await analyze(ticker); else await publishAfterPipelineRun('research', ticker, ROOT); break; }
+    case 'research': { const ticker = await tickerArg(); if (hasFlag('--analyze')) await analyze(ticker); else { await acquire(ticker); await publishAfterPipelineRun('research', ticker, ROOT); } break; }
     case 'research-screener-screens': {
       const root = path.join(ROOT, 'research', 'market-screens', 'screener');
       const r = await runScreenerMarketScreens(root);
