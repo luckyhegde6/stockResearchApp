@@ -275,3 +275,7 @@ function logExport_(ss, entry) {
   ]);
   sheet.autoResizeColumns(1, LOG_HEADERS.length);
 }
+
+function json_(value) {
+  return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
+}
