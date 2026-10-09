@@ -81,7 +81,7 @@ const smoke = spawnSync('npx', [
   },
 });
 assert(smoke.status === 0, 'Universal wrapper must preserve child exit status for a successful command');
-assert(String(smoke.stdout || '') + String(smoke.stderr || '').includes('[sheets]'), 'Wrapper must report its Sheets step');
+assert((String(smoke.stdout || '') + String(smoke.stderr || '')).includes('[sheets]'), 'Wrapper must report its Sheets step');
 const syncState = JSON.parse(await readFile(path.join(root, 'outputs', 'google-sheets-sync-status.json'), 'utf8'));
 assert(
   syncState.recentRuns.some((run: any) => run.symbol === 'TEST:UNIVERSAL-WRAPPER-SMOKE' && run.status === 'skipped'),
