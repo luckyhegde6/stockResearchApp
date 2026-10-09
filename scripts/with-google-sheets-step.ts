@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { spawn, type ChildProcess } from 'node:child_process';
+import path from 'node:path';
 import {
   beginGoogleSheetsCommandStep,
   completeGoogleSheetsCommandStep,
@@ -42,9 +43,21 @@ async function run() {
 
 
   try {
-    child = shellCommand
-      ? spawn(shellCommand, [], { cwd: ROOT, shell: true, stdio: ['inherit', 'pipe', 'pipe'], env: process.env })
-      : spawn(executable!, commandArgs, { cwd: ROOT, shell: true, stdio: ['inherit', 'pipe', 'pipe'], env: process.env });
+    if (shellCommand) {
+      child = spawn(shellCommand, [], { cwd: ROOT, shell: true, stdio: ['inherit', 'pipe', 'pipe'], env: process.env });
+    } else if (executable === 'tsx') {
+      // Use the Node entry point directly so SIGINT/SIGTERM can stop long-running children on Windows too.
+      const tsxCli = path.join(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+      child = spawn(process.execPath, [tsxCli, ...commandArgs], {
+        cwd: ROOT, shell: false, stdio: ['inherit', 'pipe', 'pipe'], env: process.env,
+      });
+    } else if (executable === 'node') {
+      child = spawn(process.execPath, commandArgs, {
+        cwd: ROOT, shell: false, stdio: ['inherit', 'pipe', 'pipe'], env: process.env,
+      });
+    } else {
+      child = spawn(executable!, commandArgs, { cwd: ROOT, shell: true, stdio: ['inherit', 'pipe', 'pipe'], env: process.env });
+    }
 
     const forwardSignal = (signal: NodeJS.Signals) => {
       signalReceived = signal;
