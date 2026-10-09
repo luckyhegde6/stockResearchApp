@@ -71,6 +71,7 @@ Set the following values in `stockResearchApp/.env`:
 GOOGLE_SHEETS_WEBHOOK_URL=https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec
 GOOGLE_SHEETS_WEBHOOK_TOKEN=<same private token as Apps Script API_TOKEN>
 GOOGLE_SHEETS_ID=1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak
+GOOGLE_SHEETS_AUTO_EXPORT=true
 
 # Optional screenshot publish limits
 GOOGLE_SHEETS_MAX_SCREENSHOT_BYTES=1500000
@@ -78,11 +79,11 @@ GOOGLE_SHEETS_MAX_SCREENSHOT_TOTAL_BYTES=5000000
 GOOGLE_SHEETS_MAX_SCREENSHOTS=8
 ~~~
 
-The first two keys already appear blank in `.env.example`. Configure the real values only in your local `.env` or your secret manager. Never add them to `.env.example`, GitHub, the agent manifest, issues, or pull-request text.
+The first two keys already appear blank in `.env.example`. Configure the real values only in your local `.env` or your secret manager. With both URL and token populated, the standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands auto-publish after the primary run succeeds. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to opt out. Manual `npm run sheets:export` commands remain useful for retries and re-publishing older artifacts. Never add them to `.env.example`, GitHub, the agent manifest, issues, or pull-request text.
 
 ## 4. Export and verify a research run
 
-Run research first if needed, then publish:
+With webhook URL/token configured, a research command automatically exports its results. You can still invoke the exporter manually to retry or re-publish:
 
 ~~~powershell
 npm run research -- ITC
@@ -102,7 +103,7 @@ ITC-YYYY-MM-DD-research-quality
 ITC-YYYY-MM-DD-research-visual-evidence
 ~~~
 
-If an analysis JSON exists, export it separately:
+The standard analysis command auto-exports its detailed report after schema validation; the manual command below is for retries or re-publishing:
 
 ~~~powershell
 npm run analyze -- ITC
