@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import http from 'node:http';
 import path from 'node:path';
 import { readFile, readdir, stat } from 'node:fs/promises';
@@ -8,6 +9,7 @@ import { loadRunHistory, recordRunStart, recordRunComplete, getActiveProgress } 
 import { launchResearchProcess, launchBatchResearchProcess, launchScanProcess, launchAnalyzeProcess } from './lib/process-launcher.js';
 import { renderLayaReportMarkdown, LayaDecisionReport } from './lib/laya-decision-engine.js';
 import { runStockDecisions } from './lib/laya-stock-questions.js';
+import { getAvailableSheetArtifacts, getGoogleSheetsSyncStatus, startGoogleSheetsExport, writeGoogleSheetsStatusMessage, type GoogleSheetsDatasetKind } from './lib/google-sheets-publish.js';
 
 const ROOT = process.cwd();
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -53,6 +55,101 @@ export async function startDashboardServer() {
     // Static Assets
     if (pathname === '/' || pathname === '/index.html') {
       return serveFile(res, path.join(PUBLIC_DIR, 'index.html'), 'text/html');
+    }
+
+    // API: Google Sheets sync status and explicit publish trigger
+    if (pathname === '/api/sheets/status' && req.method === 'GET') {
+      const symbol = (url.searchParams.get('symbol') || '').trim().toUpperCase();
+      const status = await getGoogleSheetsSyncStatus(ROOT);
+      const availableArtifacts = await getAvailableSheetArtifacts(ROOT, /^[A-Z0-9&-]{1,20}$/.test(symbol) ? symbol : undefined);
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({ ...status, availableArtifacts, requestedSymbol: symbol || null }, null, 2));
+      return;
+    }
+
+    if (pathname === '/api/sheets/sync') {
+      if (req.method !== 'POST') {
+        res.writeHead(405, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Method not allowed' }));
+        return;
+      }
+      let body = '';
+      req.on('data', chunk => { body += chunk.toString(); });
+      req.on('end', async () => {
+        try {
+          const payload = body ? JSON.parse(body) : {};
+          const allowedKinds = new Set<GoogleSheetsDatasetKind>([
+            'research', 'analysis', 'laya', 'chartinkScan', 'nse52w', 'screenerScan', 'tijoriScan'
+          ]);
+          const kind = String(payload.kind || 'research') as GoogleSheetsDatasetKind;
+          const symbol = String(payload.symbol || '').trim().toUpperCase();
+          if (!allowedKinds.has(kind)) throw new Error('Unsupported Sheets dataset requested.');
+          if (['research', 'analysis', 'laya'].includes(kind) && !/^[A-Z0-9&-]{1,20}$/.test(symbol)) {
+            throw new Error('Enter a valid NSE ticker symbol before publishing this dataset.');
+          }
+
+          const status = await getGoogleSheetsSyncStatus(ROOT);
+          if (!status.configured) {
+            await writeGoogleSheetsStatusMessage('not_configured', 'Google Sheets sync needs the webhook URL and token in .env.', {
+              root: ROOT, trigger: 'dashboard', kind, symbol
+            });
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              ok: false,
+              status: 'not_configured',
+              error: 'Configure GOOGLE_SHEETS_WEBHOOK_URL and GOOGLE_SHEETS_WEBHOOK_TOKEN in .env, then restart the dashboard.',
+            }));
+            return;
+          }
+
+          const dateSlug = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric'
+          }).format(new Date()).replace(/\\//g, '-');
+          const scanFiles: Partial<Record<GoogleSheetsDatasetKind, string>> = {
+            chartinkScan: 'scans/index.json',
+            nse52w: path.join('scans', `52-Week-High-${dateSlug}`, 'raw', 'nse-api', '52-week-high.normalized.json'),
+            screenerScan: path.join('research', 'market-screens', 'screener', 'index.json'),
+            tijoriScan: path.join('research', 'market-screens', 'tijori', 'index.json'),
+          };
+          const file = scanFiles[kind];
+          const isAvailable = await getAvailableSheetArtifacts(ROOT, symbol || undefined);
+          if (file && !isAvailable[kind]) {
+            await writeGoogleSheetsStatusMessage('skipped', `No local artifact is available for ${kind}; run that scan first.`, {
+              root: ROOT, trigger: 'dashboard', kind, symbol
+            });
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, status: 'missing_artifact', error: `No local result file found for ${kind}. Run the matching scan first.` }));
+            return;
+          }
+          if (!file && !isAvailable[kind]) {
+            await writeGoogleSheetsStatusMessage('skipped', `No local ${kind} artifact is available for ${symbol}; run the pipeline first.`, {
+              root: ROOT, trigger: 'dashboard', kind, symbol
+            });
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, status: 'missing_artifact', error: `No local ${kind} artifact found for ${symbol}. Run the matching command first.` }));
+            return;
+          }
+
+          const started = startGoogleSheetsExport(kind, symbol || undefined, {
+            root: ROOT,
+            file,
+            trigger: 'dashboard',
+          });
+          res.writeHead(202, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            ok: true,
+            status: 'publishing',
+            runId: started.runId,
+            message: `Google Sheets publish queued for ${kind}${symbol ? ' / ' + symbol : ''}.`,
+            spreadsheetUrl: status.spreadsheetUrl,
+          }));
+          void started.completion;
+        } catch (error: any) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: error?.message || 'Could not start Google Sheets publish.' }));
+        }
+      });
+      return;
     }
 
     // API: Config Read / Update
