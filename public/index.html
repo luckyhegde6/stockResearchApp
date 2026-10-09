@@ -91,6 +91,9 @@
 
     nav {
       display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: min(100%, calc(100vw - 470px));
       gap: 0.5rem;
       background: rgba(255, 255, 255, 0.03);
       padding: 0.25rem;
@@ -189,6 +192,7 @@
     @media (max-width: 1150px) {
       header { flex-wrap: wrap; gap: 0.75rem; }
       nav { max-width: 100%; overflow-x: auto; justify-content: flex-start; }
+      nav { max-width: 100%; }
       .nav-btn { white-space: nowrap; padding: 0.45rem 0.7rem; }
     }
 
