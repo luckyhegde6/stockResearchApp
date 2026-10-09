@@ -68,6 +68,19 @@ export async function startDashboardServer() {
     }
 
     if (pathname === '/api/sheets/sync') {
+      const origin = req.headers.origin;
+      if (origin) {
+        let localOrigin = false;
+        try {
+          const originUrl = new URL(origin);
+          localOrigin = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(originUrl.hostname);
+        } catch {}
+        if (!localOrigin) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: 'Sheets sync is only available to a local dashboard origin.' }));
+          return;
+        }
+      }
       if (req.method !== 'POST') {
         res.writeHead(405, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Method not allowed' }));
