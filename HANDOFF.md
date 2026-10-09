@@ -11,7 +11,7 @@ The Google Sheets publishing boundary now has a visible local Control Center sur
 Completed in code:
 - Structured transformer methods separate research and final analysis into classified workbook tabs.
 - Apps Script receiver maintains a clickable `StockResearch` index, an `_EXPORT_LOG`, formatted rows and embedded chart screenshots.
-- The local dashboard has a **Google Sheets Sync** tab and a live status strip under the pipeline stepper.
+- The local dashboard has a **Google Sheets Sync** tab, a live status strip and a dynamic sixth **Google Sheets Sync** step after the five research stages.
 - The dashboard can show `waiting`, `publishing`, `succeeded`, `failed`, `not_configured` and `skipped` states, plus recent attempts, row counts, tab names and screenshot counts.
 - `GET /api/sheets/status` reports config booleans and local export history without revealing secrets. `POST /api/sheets/sync` allows controlled manual republishing of supported local artifacts and rejects non-local browser origins.
 - Dashboard-triggered research, batch, market-scan and analysis processes announce the Sheets step. The CLI owns successful publication for research/analysis and supported scan/market-screen commands to avoid duplicate exports.
