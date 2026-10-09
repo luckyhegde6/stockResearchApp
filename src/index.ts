@@ -393,6 +393,7 @@ async function acquire(ticker: string) {
     const marketRoot = path.join(ROOT, 'research', 'market-screens', 'screener');
     const market = await runScreenerMarketScreens(marketRoot);
     await debug.emit('SOURCE/SCREENER_MARKET_SCREENS', market.gaps.length ? 'WARN' : (market.warnings.length ? 'OK_WITH_FALLBACK' : 'OK'), 'Optional market-wide Screener screens collected', { root: path.relative(ROOT, marketRoot), artifacts: market.artifacts.length, dataGaps: market.gaps.length, warnings: market.warnings.length });
+    await publishDatasetFile('screenerScan', path.join(marketRoot, 'index.json'));
   }
 
   if (hasFlag('--with-nse-market')) {
@@ -408,6 +409,7 @@ async function acquire(ticker: string) {
     const marketRoot = path.join(ROOT, 'research', 'market-screens', 'tijori');
     const market = await runTijoriMarketScreens(marketRoot);
     await debug.emit('SOURCE/TIJORI_MARKET', market.gaps.length ? 'WARN' : (market.warnings.length ? 'OK_WITH_FALLBACK' : 'OK'), 'Optional Tijori market datasets collected', { root: path.relative(ROOT, marketRoot), artifacts: market.artifacts.length, dataGaps: market.gaps.length, warnings: market.warnings.length });
+    await publishDatasetFile('tijoriScan', path.join(marketRoot, 'index.json'));
   }
 
   if (hasFlag('--analyze')) {
