@@ -8,6 +8,7 @@ Canonical release history for repository behavior. Older detail remains in docs/
 - Linked the StockResearch workbook from the README and integration guide.
 - Added classified research and analysis transformer methods with dedicated summary, evidence/findings, scores, risks, catalysts, scenarios, sources, quality, audit, and visual-evidence tabs.
 - Added embedded chart screenshot publishing, a clickable StockResearch workbook index, and an _EXPORT_LOG audit trail.
+- Added best-effort automatic publication after successful `research`/`analyze` runs when webhook credentials are configured; Sheet failures do not invalidate local output.
 - Added deterministic transformer tests and documented local deployment/configuration requirements.
 
 ### Research roadmap
