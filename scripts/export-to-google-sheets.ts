@@ -1,12 +1,29 @@
 import 'dotenv/config';
 import path from 'node:path';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
+import {
+  buildVisualEvidenceRows,
+  transformAnalysisToSheets,
+  transformResearchToSheets,
+  type ScreenshotRowInput,
+  type ScreenshotUpload,
+  type ResearchSheetTab,
+} from './google-sheets-transformers.js';
 
 const ROOT = process.cwd();
 const SHEET_URL = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
 const SHEET_TOKEN = process.env.GOOGLE_SHEETS_WEBHOOK_TOKEN;
+const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID || '1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak';
 
 type Kind = 'research' | 'analysis' | 'fullscan' | 'chartinkScan' | 'nse52w' | 'screenerScan' | 'tijoriScan' | 'news' | 'laya' | 'custom';
+
+interface ParsedArgs {
+  kind: Kind;
+  symbol?: string;
+  file?: string;
+  tab?: string;
+  append: boolean;
+}
 
 function usage(): never {
   throw new Error(
@@ -15,27 +32,34 @@ function usage(): never {
   );
 }
 
-function flag(name: string): string | undefined {
-  const i = process.argv.indexOf(name);
-  return i >= 0 ? process.argv[i + 1] : undefined;
-}
+function parseArgs(): ParsedArgs {
+  const argv = process.argv.slice(2);
+  const positional: string[] = [];
+  let file: string | undefined;
+  let tab: string | undefined;
+  let append = false;
 
-function hasFlag(name: string): boolean {
-  return process.argv.includes(name);
-}
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--append') {
+      append = true;
+    } else if (arg === '--file') {
+      file = argv[++i];
+      if (!file) throw new Error('--file requires a path');
+    } else if (arg === '--tab') {
+      tab = argv[++i];
+      if (!tab) throw new Error('--tab requires a tab name');
+    } else if (arg.startsWith('--')) {
+      throw new Error(`Unknown option: ${arg}`);
+    } else {
+      positional.push(arg);
+    }
+  }
 
-function args() {
-  const positional = process.argv.slice(2).filter(v => !v.startsWith('--'));
   const kind = positional[0] as Kind | undefined;
-  if (!kind) usage();
-  const symbol = positional[1]?.toUpperCase();
-  return {
-    kind,
-    symbol,
-    file: flag('--file'),
-    tab: flag('--tab'),
-    append: hasFlag('--append'),
-  };
+  const allowed: Kind[] = ['research', 'analysis', 'fullscan', 'chartinkScan', 'nse52w', 'screenerScan', 'tijoriScan', 'news', 'laya', 'custom'];
+  if (!kind || !allowed.includes(kind)) usage();
+  return { kind, symbol: positional[1]?.toUpperCase(), file, tab, append };
 }
 
 function isoDate() {
@@ -59,9 +83,8 @@ function defaultTab(kind: Kind, symbol?: string) {
   }
 }
 
-async function loadJson(file: string) {
-  const text = await readFile(file, 'utf8');
-  return JSON.parse(text);
+async function loadJson(file: string): Promise<any> {
+  return JSON.parse(await readFile(file, 'utf8'));
 }
 
 function scalar(value: unknown): string | number | boolean {
@@ -72,7 +95,7 @@ function scalar(value: unknown): string | number | boolean {
 
 function objectToRows(value: any, source: string, symbol?: string): Record<string, unknown>[] {
   if (Array.isArray(value)) {
-    if (value.length === 0) return [{ source, symbol, row: 0 }];
+    if (value.length === 0) return [{ source, symbol, status: 'empty_dataset' }];
     return value.map((item, index) => {
       if (item && typeof item === 'object' && !Array.isArray(item)) {
         return { source, symbol, row: index + 1, ...item };
@@ -80,22 +103,20 @@ function objectToRows(value: any, source: string, symbol?: string): Record<strin
       return { source, symbol, row: index + 1, value: scalar(item) };
     });
   }
-
   if (value && typeof value === 'object') {
     return Object.entries(value).map(([key, item]) => ({
       source,
       symbol,
-      key,
+      field: key,
       value: scalar(item),
     }));
   }
-
   return [{ source, symbol, value: scalar(value) }];
 }
 
-async function buildResearchRows(symbol: string) {
+async function loadResearchArtifacts(symbol: string): Promise<Record<string, any>> {
   const root = path.join(ROOT, 'research', symbol);
-  const files = [
+  const files: Array<[string, string]> = [
     ['manifest', 'manifest.json'],
     ['readiness', 'analysis-readiness.json'],
     ['analysisInputs', 'normalized/analysis-inputs.json'],
@@ -103,24 +124,94 @@ async function buildResearchRows(symbol: string) {
     ['reconciliation', 'normalized/reconciliation.json'],
     ['sourceHealth', 'source-health.json'],
     ['evidenceQuality', 'evidence-quality.json'],
-  ] as const;
-
-  const rows: Record<string, unknown>[] = [];
-  for (const [name, rel] of files) {
+  ];
+  const artifacts: Record<string, any> = {};
+  for (const [key, relative] of files) {
     try {
-      const value = await loadJson(path.join(root, rel));
-      rows.push(...objectToRows(value, rel, symbol).map(row => ({ section: name, ...row })));
+      artifacts[key] = await loadJson(path.join(root, relative));
     } catch {
-      rows.push({ section: name, source: rel, symbol, status: 'missing' });
+      artifacts[key] = null;
     }
   }
-  return rows;
+  if (!artifacts.manifest) {
+    throw new Error(`Missing research manifest: ${path.join(root, 'manifest.json')}. Run research first.`);
+  }
+  return artifacts;
 }
 
-async function buildRows(kind: Kind, symbol: string | undefined, file?: string) {
+function screenshotOrder(a: string, b: string): number {
+  const preferred = ['tradingview-1d.png', 'tradingview-fullchart-5y.png', 'tradingview-fullchart-all.png'];
+  const ai = preferred.indexOf(a.toLowerCase());
+  const bi = preferred.indexOf(b.toLowerCase());
+  if (ai >= 0 || bi >= 0) {
+    if (ai < 0) return 1;
+    if (bi < 0) return -1;
+    return ai - bi;
+  }
+  return a.localeCompare(b);
+}
+
+async function collectScreenshots(symbol: string, baseTab: string): Promise<{ tab: ResearchSheetTab; uploads: ScreenshotUpload[]; count: number }> {
+  const screenshotDir = path.join(ROOT, 'research', symbol, 'screenshots');
+  const maxFileBytes = Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOT_BYTES || 1_500_000);
+  const maxTotalBytes = Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOT_TOTAL_BYTES || 5_000_000);
+  const maxFiles = Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOTS || 8);
+  let files: string[] = [];
+  try {
+    files = (await readdir(screenshotDir)).filter(name => /\.(png|jpe?g|webp)$/i.test(name)).sort(screenshotOrder).slice(0, maxFiles);
+  } catch {
+    files = [];
+  }
+
+  const rows: ScreenshotRowInput[] = [];
+  const uploads: ScreenshotUpload[] = [];
+  let totalBytes = 0;
+  for (const fileName of files) {
+    const fullPath = path.join(screenshotDir, fileName);
+    const info = await stat(fullPath);
+    const relativePath = path.relative(ROOT, fullPath).replaceAll(path.sep, '/');
+    const mimeType = /\.jpe?g$/i.test(fileName) ? 'image/jpeg' : /\.webp$/i.test(fileName) ? 'image/webp' : 'image/png';
+    let status = 'embedded';
+    let base64: string | undefined;
+    if (info.size > maxFileBytes) {
+      status = `skipped_file_over_limit_${maxFileBytes}_bytes`;
+    } else if (totalBytes + info.size > maxTotalBytes) {
+      status = `skipped_total_over_limit_${maxTotalBytes}_bytes`;
+    } else {
+      base64 = (await readFile(fullPath)).toString('base64');
+      totalBytes += info.size;
+    }
+    const rowIndex = rows.length + 2;
+    rows.push({ fileName, relativePath, sizeBytes: info.size, mimeType, status, rowIndex, base64 });
+    if (base64) {
+      uploads.push({
+        tabName: `${baseTab}-visual-evidence`.slice(0, 90),
+        rowIndex,
+        fileName,
+        mimeType,
+        sizeBytes: info.size,
+        base64,
+      });
+    }
+  }
+
+  const visualTab: ResearchSheetTab = {
+    tabName: `${baseTab}-visual-evidence`.slice(0, 90),
+    dataset: 'visual-evidence',
+    rows: buildVisualEvidenceRows(symbol, rows),
+  };
+  return { tab: visualTab, uploads, count: uploads.length };
+}
+
+async function buildExport(parsed: ParsedArgs, baseTab: string): Promise<{ tabs: ResearchSheetTab[]; screenshots: ScreenshotUpload[] }> {
+  const { kind, symbol, file } = parsed;
+
   if (kind === 'research') {
     if (!symbol) usage();
-    return buildResearchRows(symbol);
+    const artifacts = await loadResearchArtifacts(symbol);
+    const tabs = transformResearchToSheets(artifacts, symbol, baseTab);
+    const visuals = await collectScreenshots(symbol, baseTab);
+    return { tabs: [...tabs, visuals.tab], screenshots: visuals.uploads };
   }
 
   let sourceFile = file;
@@ -130,46 +221,69 @@ async function buildRows(kind: Kind, symbol: string | undefined, file?: string) 
   if (!sourceFile) {
     throw new Error('This dataset requires --file. For research/analysis, a symbol can be supplied.');
   }
-
   const resolved = path.resolve(ROOT, sourceFile);
   const value = await loadJson(resolved);
-  return objectToRows(value, path.relative(ROOT, resolved), symbol);
+
+  if (kind === 'analysis') {
+    if (!symbol && !value?.company?.ticker) throw new Error('Analysis export requires SYMBOL or company.ticker in the analysis JSON.');
+    const ticker = String(value?.company?.ticker ?? symbol).toUpperCase();
+    const tabs = transformAnalysisToSheets(value, ticker, baseTab);
+    const visuals = await collectScreenshots(ticker, baseTab);
+    return { tabs: [...tabs, visuals.tab], screenshots: visuals.uploads };
+  }
+
+  return {
+    tabs: [{
+      tabName: baseTab.slice(0, 90),
+      dataset: kind,
+      rows: objectToRows(value, path.relative(ROOT, resolved), symbol),
+    }],
+    screenshots: [],
+  };
 }
 
 async function main() {
-  if (!SHEET_URL) {
-    throw new Error('GOOGLE_SHEETS_WEBHOOK_URL is not configured in .env');
-  }
+  if (!SHEET_URL) throw new Error('GOOGLE_SHEETS_WEBHOOK_URL is not configured in .env');
+  if (!SHEET_TOKEN) throw new Error('GOOGLE_SHEETS_WEBHOOK_TOKEN is not configured in .env');
 
-  const { kind, symbol, file, tab, append } = args();
-  const rows = await buildRows(kind, symbol, file);
-  const tabName = tab || defaultTab(kind, symbol);
-
+  const parsed = parseArgs();
+  const baseTab = parsed.tab || defaultTab(parsed.kind, parsed.symbol);
+  const { tabs, screenshots } = await buildExport(parsed, baseTab);
+  const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const dataset = parsed.kind;
   const response = await fetch(SHEET_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      token: SHEET_TOKEN || '',
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID || '',
-      tabName,
-      dataset: kind,
-      mode: append ? 'append' : 'replace',
-      rows,
+      token: SHEET_TOKEN,
+      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`,
+      runId,
+      symbol: parsed.symbol || '',
+      dataset,
+      mode: parsed.append ? 'append' : 'replace',
+      tabs,
+      screenshots,
     }),
   });
 
-  const text = await response.text();
-  if (!response.ok) throw new Error(`Google Sheets sink HTTP ${response.status}: ${text}`);
-
+  const responseText = await response.text();
+  if (!response.ok) throw new Error(`Google Sheets sink HTTP ${response.status}: ${responseText}`);
   let result: any;
-  try { result = JSON.parse(text); } catch { result = { raw: text }; }
+  try { result = JSON.parse(responseText); } catch { result = { raw: responseText }; }
   if (result?.ok === false) throw new Error(`Google Sheets sink rejected export: ${result.error || 'unknown error'}`);
 
   console.log(JSON.stringify({
     ok: true,
-    kind,
-    tabName,
-    rows: rows.length,
+    runId,
+    kind: dataset,
+    symbol: parsed.symbol || '',
+    spreadsheetUrl: result.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`,
+    tabs: tabs.map(item => ({ tabName: item.tabName, dataset: item.dataset, rows: item.rows.length })),
+    rowCount: tabs.reduce((sum, item) => sum + item.rows.length, 0),
+    screenshotsSent: screenshots.length,
+    screenshotsEmbedded: result.screenshotsEmbedded ?? 0,
+    screenshotsFailed: result.screenshotsFailed ?? 0,
     response: result,
   }, null, 2));
 }
