@@ -394,7 +394,7 @@ async function buildExport(parsed: ParsedArgs, baseTab: string): Promise<{ tabs:
     const visuals = await collectScreenshots(symbol);
     const screenshotTab = prepareScreenshotTab(symbol, baseTab, visuals.rows, visuals.uploads);
     const briefTab = buildInvestorBriefTab(artifacts, symbol, baseTab);
-    return { tabs: [screenshotTab, ...briefTab, ...researchTabs], screenshots: visuals.uploads };
+    return { tabs: [...briefTab, screenshotTab, ...researchTabs], screenshots: visuals.uploads };
   }
 
   let sourceFile = file;
@@ -430,7 +430,7 @@ async function buildExport(parsed: ParsedArgs, baseTab: string): Promise<{ tabs:
       news: value?.news_sentiment ? { summary: value.news_sentiment, headlines: [] } : {},
     };
     const briefTab = buildInvestorBriefTab(briefArtifacts, ticker, baseTab);
-    return { tabs: [screenshotTab, ...briefTab, ...analysisTabs], screenshots: visuals.uploads };
+    return { tabs: [...briefTab, screenshotTab, ...analysisTabs], screenshots: visuals.uploads };
   }
 
   return {
