@@ -311,19 +311,20 @@ async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRow
           if (safeSize.width !== normalized.width || safeSize.height !== normalized.height) {
             throw new Error('Normalized screenshot dimensions exceed the 900,000-pixel safety limit.');
           }
+          uploadSizeBytes = normalized.sizeBytes;
+          outputWidth = normalized.width;
+          outputHeight = normalized.height;
+          originalWidth = normalized.originalWidth;
+          originalHeight = normalized.originalHeight;
+          compressionQuality = normalized.quality;
+          optimizationOccurred = sourceMimeType !== 'image/jpeg' || normalized.width !== normalized.originalWidth || normalized.height !== normalized.originalHeight || normalized.sizeBytes < info.size;
+
           if (normalized.sizeBytes > maxUploadBytes) {
             rowStatus = `skipped_compressed_over_limit_${maxUploadBytes}_bytes`;
           } else if (totalBytes + normalized.sizeBytes > maxTotalBytes) {
             rowStatus = `skipped_total_over_limit_${maxTotalBytes}_bytes`;
           } else {
             base64 = normalized.base64;
-            uploadSizeBytes = normalized.sizeBytes;
-            outputWidth = normalized.width;
-            outputHeight = normalized.height;
-            originalWidth = normalized.originalWidth;
-            originalHeight = normalized.originalHeight;
-            compressionQuality = normalized.quality;
-            optimizationOccurred = sourceMimeType !== 'image/jpeg' || normalized.width !== normalized.originalWidth || normalized.height !== normalized.originalHeight || normalized.sizeBytes < info.size;
             totalBytes += normalized.sizeBytes;
             rowStatus = 'pending_embedding';
           }
