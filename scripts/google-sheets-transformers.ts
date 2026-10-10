@@ -602,7 +602,7 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = catalystRows.filter((x: any) => x?.date && String(x.date) >= today).slice(0, 8);
 
-  const push = (section: string, field: string, value: unknown, source = '', period = '', notes = '') => {
+  const push = (section: string, field: string, value: unknown, source = '', period = '', notes = '', sourceUrl = '') => {
     rows.push({
       section,
       record_type: 'brief',
@@ -612,6 +612,7 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
       source: exportedValue(source),
       period: exportedValue(period),
       notes: exportedValue(notes),
+      source_url: exportedValue(sourceUrl),
     });
   };
 
@@ -651,11 +652,11 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
   push('NEWS', 'headline_count', news.summary?.headlineCount ?? headlineRows.length, 'news-sentiment');
   push('NEWS', 'sentiment', news.summary?.label ?? '', 'news-sentiment');
   push('NEWS', 'weighted_score', news.summary?.weightedScore ?? '', 'news-sentiment');
-  for (const item of headlineRows) push('NEWS', item.title ?? '', item.url ?? '', item.source ?? item.provider ?? 'news', item.publishedAt ?? '', item.sentiment?.label ?? '');
+  for (const item of headlineRows) push('NEWS', 'headline', item.title ?? '', item.source ?? item.provider ?? 'news', item.publishedAt ?? '', item.sentiment?.label ?? '', item.url ?? '');
 
   rows.push({ section: 'CORPORATE ANNOUNCEMENTS & ACTIONS', record_type: 'section_header', symbol: ticker, field: 'CORPORATE ANNOUNCEMENTS & ACTIONS', value: '' });
   for (const item of catalystRows.filter((x: any) => ['announcement', 'corporate_action'].includes(x?.type))) {
-    push('CORPORATE ANNOUNCEMENTS & ACTIONS', item.type ?? 'event', item.title ?? '', 'NSE', item.date ?? '', item.raw?.attchmntFile ?? item.raw?.link ?? '');
+    push('CORPORATE ANNOUNCEMENTS & ACTIONS', item.type ?? 'event', item.title ?? '', 'NSE', item.date ?? '', '', item.raw?.attchmntFile ?? item.raw?.attchmntUrl ?? item.raw?.link ?? '');
   }
 
   rows.push({ section: 'UPCOMING EVENTS', record_type: 'section_header', symbol: ticker, field: 'UPCOMING EVENTS', value: '' });
@@ -664,7 +665,7 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
 
   rows.push({ section: 'DOCUMENTS & SOURCES', record_type: 'section_header', symbol: ticker, field: 'DOCUMENTS & SOURCES', value: '' });
   for (const source of list(manifest.sourceArtifacts).filter((x: any) => x?.url).slice(0, 30)) {
-    push('DOCUMENTS & SOURCES', source.title ?? source.id ?? 'source', source.url, source.provider ?? source.type ?? '', source.retrievedAt ?? '', source.status ?? '');
+    push('DOCUMENTS & SOURCES', source.title ?? source.id ?? 'source', source.title ?? source.id ?? 'source', source.provider ?? source.type ?? '', source.retrievedAt ?? '', source.status ?? '', source.url);
   }
 
   rows.push({ section: 'DATA QUALITY', record_type: 'section_header', symbol: ticker, field: 'DATA QUALITY', value: '' });
