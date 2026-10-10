@@ -52,7 +52,7 @@ ITC-YYYY-MM-DD-HHMMSSmmm-news
 ITC-YYYY-MM-DD-HHMMSSmmm-laya
 ```
 
-When `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are configured, standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands publish their results automatically after local output is generated, and other commands append a command-run audit row. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable automatic publishing; manual exports remain available. The `StockResearch` tab is the workbook's clickable index. Command audits remain local; no `_EXPORT_LOG` sheet is created. A Sheets outage never invalidates locally saved research or analysis. See [Google Sheets Export](integrations/google-sheets/README.md).
+When `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are configured, standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands publish their results automatically after local output is generated; supported dataset commands publish their data where available. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable automatic publishing; manual exports remain available. The `StockResearch` tab is the workbook's clickable index. Command audits remain local; no `_EXPORT_LOG` or `command-runs-*` sheet is created. Screenshot rows include original and optimized image metadata, and the deployed Apps Script enforces byte/pixel limits and reports insertion status consistently. Run `npm run sheets:doctor` after deploying the current Apps Script; a `serviceVersion` of `2` is required. A Sheets outage never invalidates locally saved research or analysis. See [Google Sheets Export](integrations/google-sheets/README.md).
 
 ## Developer & Agent Operating System
 
