@@ -675,7 +675,7 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
   push('DATA QUALITY', 'data_gaps', manifest.dataGaps ?? [], 'manifest');
   push('DATA QUALITY', 'warnings', manifest.warnings ?? [], 'manifest');
 
-  return [{ tabName: tab(baseTab, 'brief'), dataset: 'investor-brief', rows }];
+  return [{ tabName: tab(baseTab, 'dashboard'), dataset: 'investor-dashboard', rows }];
 }
 
 export function buildScreenshotTab(symbol: string, screenshots: ScreenshotRowInput[], baseTab: string): ResearchSheetTab {
