@@ -52,7 +52,7 @@ assert(rowsIn('AUDIT').some(row => String(row.details).includes('source_conflict
 assert(analysisTab.rows.every(row => !Object.keys(row).some(key => /local.?path|artifact.?path|screenshot.?path/i.test(key))), 'Consolidated analysis must not expose local path columns');
 
 const researchTabs = transformResearchToSheets({
-  manifest: { ticker: 'EXAMPLE', companyName: 'Example Ltd', generatedAt: '2026-10-09T09:00:00Z', acquisitionOnly: true, sourceArtifacts: [{ id: 'nse-1', provider: 'NSE', type: 'market_data', title: 'Quote', status: 'ok', url: 'https://example.com' }], dataGaps: [], warnings: [] },
+  manifest: { ticker: 'EXAMPLE', companyName: 'Example Ltd', generatedAt: '2026-10-09T09:00:00Z', acquisitionOnly: true, sourceArtifacts: [{ id: 'nse-1', provider: 'NSE', type: 'market_data', title: 'Quote', status: 'ok', url: 'https://example.com', localPath: 'research/EXAMPLE/raw/quote.json', screenshotPath: 'C:\\Local\\research\\chart.png' }], dataGaps: ['research/EXAMPLE/raw/gap.json'], warnings: [] },
   readiness: { ready: true, blockingReasons: [], advisoryReasons: [], requiredFiles: [{ file: 'manifest.json', ok: true }], missingFiles: [], actionableWarnings: [] },
   evidencePack: { canonicalFacts: [{ field: 'revenue', value: 100, unit: 'INR crore', source: 'NSE', sourceArtifact: 'nse-1', asOf: 'Jun-2026' }], calculatedMetrics: [{ field: 'revenue_growth', value: 14, unit: '%', source: 'calculated' }], fundamentals: { trend: 'positive' }, catalysts: { items: [] }, newsSentiment: { label: 'NEUTRAL' }, valuation: { pe: 18 }, technicals: { rsi: 58 }, ownership: { promoter: 52 } },
   sourceHealth: { overall: { status: 'ok' }, sources: { NSE: { status: 'ok', warningDetails: [] } } },
