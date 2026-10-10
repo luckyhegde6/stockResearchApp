@@ -285,20 +285,24 @@ async function main() {
     }
     throw new Error(`Google Sheets sink HTTP ${response.status}: ${responseText.slice(0, 500)}`);
   }
-  let result: unknown;
+  let parsedPayload: unknown;
   try {
-    result = JSON.parse(responseText);
+    parsedPayload = JSON.parse(responseText);
   } catch {
     if (looksLikeHtml) {
       throw new Error('Google Sheets webhook returned HTML instead of JSON. Check that GOOGLE_SHEETS_WEBHOOK_URL is the current deployed Apps Script /exec URL, then run "npm run sheets:doctor".');
     }
     throw new Error(`Google Sheets webhook returned invalid JSON: ${responseText.slice(0, 500)}`);
   }
-  if (result && typeof result === 'object' && 'ok' in result && result.ok === false) {
-    const error = 'error' in result ? String(result.error) : 'unknown error';
+  if (!parsedPayload || typeof parsedPayload !== 'object' || Array.isArray(parsedPayload)) {
+    throw new Error('Google Sheets webhook returned an unexpected JSON value; expected an object.');
+  }
+  const result = parsedPayload as Record<string, unknown>;
+  if (result.ok === false) {
+    const error = typeof result.error === 'string' ? result.error : 'unknown error';
     throw new Error(`Google Sheets sink rejected export: ${error}`);
   }
-  if (!result || typeof result !== 'object' || !('ok' in result) || result.ok !== true) {
+  if (result.ok !== true) {
     throw new Error('Google Sheets webhook response did not contain ok: true; verify the deployed Apps Script version.');
   }
 
