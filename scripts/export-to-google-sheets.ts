@@ -87,31 +87,55 @@ async function loadJson(file: string): Promise<any> {
   return JSON.parse(await readFile(file, 'utf8'));
 }
 
+function isPathLikeKey(key: string): boolean {
+  return /(?:localPath|relativePath|artifactPath|screenshotPath|evidencePath|reportPath|filePath|local_path|relative_path|artifact_path|screenshot_path|evidence_path|report_path|file_path)/i.test(key);
+}
+
+function isPathLikeValue(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  const text = value.trim();
+  return /^[A-Za-z]:[\\\\/]/.test(text) ||
+    text.startsWith('\\\\\\\\') ||
+    /^\\/(?:Users|home|mnt)\\//i.test(text) ||
+    /^(?:research|outputs)[\\\\/]/i.test(text);
+}
+
 function scalar(value: unknown): string | number | boolean {
   if (value === null || value === undefined) return '';
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
-  return JSON.stringify(value);
+  return JSON.stringify(value, (key, item) => isPathLikeKey(key) ? undefined : item);
+}
+
+function stripLocalPaths(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stripLocalPaths);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+      .filter(([key, item]) => !isPathLikeKey(key) && !isPathLikeValue(item))
+      .map(([key, item]) => [key, stripLocalPaths(item)]));
+  }
+  return value;
 }
 
 function objectToRows(value: any, source: string, symbol?: string): Record<string, unknown>[] {
-  if (Array.isArray(value)) {
-    if (value.length === 0) return [{ source, symbol, status: 'empty_dataset' }];
-    return value.map((item, index) => {
+  const clean = stripLocalPaths(value) as any;
+  if (Array.isArray(clean)) {
+    if (clean.length === 0) return [{ source, symbol, status: 'empty_dataset' }];
+    return clean.map((item, index) => {
       if (item && typeof item === 'object' && !Array.isArray(item)) {
         return { source, symbol, row: index + 1, ...item };
       }
       return { source, symbol, row: index + 1, value: scalar(item) };
     });
   }
-  if (value && typeof value === 'object') {
-    return Object.entries(value).map(([key, item]) => ({
+  if (clean && typeof clean === 'object') {
+    return Object.entries(clean).map(([key, item]) => ({
       source,
       symbol,
       field: key,
       value: scalar(item),
     }));
   }
-  return [{ source, symbol, value: scalar(value) }];
+  return [{ source, symbol, value: scalar(clean) }];
 }
 
 async function loadResearchArtifacts(symbol: string): Promise<Record<string, any>> {
@@ -151,14 +175,17 @@ function screenshotOrder(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
-async function collectScreenshots(symbol: string, baseTab: string): Promise<{ tab: ResearchSheetTab; uploads: ScreenshotUpload[]; count: number }> {
+async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRowInput[]; uploads: ScreenshotUpload[] }> {
   const screenshotDir = path.join(ROOT, 'research', symbol, 'screenshots');
   const maxFileBytes = Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOT_BYTES || 1_500_000);
   const maxTotalBytes = Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOT_TOTAL_BYTES || 5_000_000);
   const maxFiles = Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOTS || 8);
   let files: string[] = [];
   try {
-    files = (await readdir(screenshotDir)).filter(name => /\.(png|jpe?g|webp)$/i.test(name)).sort(screenshotOrder).slice(0, maxFiles);
+    files = (await readdir(screenshotDir))
+      .filter(name => /\\.(png|jpe?g|webp)$/i.test(name))
+      .sort(screenshotOrder)
+      .slice(0, maxFiles);
   } catch {
     files = [];
   }
@@ -169,9 +196,8 @@ async function collectScreenshots(symbol: string, baseTab: string): Promise<{ ta
   for (const fileName of files) {
     const fullPath = path.join(screenshotDir, fileName);
     const info = await stat(fullPath);
-    const relativePath = path.relative(ROOT, fullPath).replaceAll(path.sep, '/');
-    const mimeType = /\.jpe?g$/i.test(fileName) ? 'image/jpeg' : /\.webp$/i.test(fileName) ? 'image/webp' : 'image/png';
-    let status = 'embedded';
+    const mimeType = /\\.jpe?g$/i.test(fileName) ? 'image/jpeg' : /\\.webp$/i.test(fileName) ? 'image/webp' : 'image/png';
+    let status = 'pending_embedding';
     let base64: string | undefined;
     if (info.size === 0) {
       status = 'skipped_empty_file';
@@ -183,12 +209,19 @@ async function collectScreenshots(symbol: string, baseTab: string): Promise<{ ta
       base64 = (await readFile(fullPath)).toString('base64');
       totalBytes += info.size;
     }
-    const rowIndex = rows.length + 2;
-    rows.push({ fileName, relativePath, sizeBytes: info.size, mimeType, status, rowIndex, base64 });
+    rows.push({
+      fileName,
+      relativePath: '',
+      sizeBytes: info.size,
+      mimeType,
+      status: base64 ? 'pending_embedding' : status,
+      rowIndex: 0,
+      base64,
+    });
     if (base64) {
       uploads.push({
-        tabName: `${baseTab}-visual-evidence`.slice(0, 90),
-        rowIndex,
+        tabName: '',
+        rowIndex: 0,
         fileName,
         mimeType,
         sizeBytes: info.size,
@@ -196,13 +229,67 @@ async function collectScreenshots(symbol: string, baseTab: string): Promise<{ ta
       });
     }
   }
+  return { rows, uploads };
+}
 
-  const visualTab: ResearchSheetTab = {
-    tabName: `${baseTab}-visual-evidence`.slice(0, 90),
-    dataset: 'visual-evidence',
-    rows: buildVisualEvidenceRows(symbol, rows),
-  };
-  return { tab: visualTab, uploads, count: uploads.length };
+function appendScreenshotSection(
+  tab: ResearchSheetTab,
+  symbol: string,
+  screenshots: ScreenshotRowInput[],
+  uploads: ScreenshotUpload[],
+): void {
+  tab.rows.push({
+    section: 'SCREENSHOTS',
+    record_type: 'section_header',
+    symbol: symbol.toUpperCase(),
+    domain: 'TradingView',
+    field: 'SCREENSHOTS',
+    value: '',
+  });
+  if (!screenshots.length) {
+    tab.rows.push({
+      section: 'SCREENSHOTS',
+      record_type: 'visual_evidence',
+      symbol: symbol.toUpperCase(),
+      domain: 'TradingView',
+      field: 'screenshots',
+      value: 'no_screenshots_found',
+      status: 'not_available',
+      notes: 'No chart images were found in this research run.',
+      file_name: '',
+      size_bytes: '',
+      embedding_status: 'not_available',
+      preview: '',
+    });
+    return;
+  }
+
+  for (const screenshot of screenshots) {
+    const rowIndex = tab.rows.length + 2;
+    const chartPeriod = screenshot.fileName
+      .replace(/^tradingview[-_]?/i, '')
+      .replace(/\\.(png|jpe?g|webp)$/i, '');
+    const upload = uploads.find(item => item.fileName === screenshot.fileName);
+    const embeddingStatus = screenshot.base64 ? 'pending_embedding' : screenshot.status;
+    tab.rows.push({
+      section: 'SCREENSHOTS',
+      record_type: 'visual_evidence',
+      symbol: symbol.toUpperCase(),
+      domain: 'TradingView',
+      field: chartPeriod,
+      value: screenshot.status,
+      file_name: screenshot.fileName,
+      size_bytes: screenshot.sizeBytes,
+      status: screenshot.status,
+      embedding_status: embeddingStatus,
+      notes: screenshot.base64 ? 'Image is attached to this export and should be embedded in this row.' : screenshot.status,
+      preview: '',
+    });
+    if (upload) {
+      upload.tabName = tab.tabName;
+      upload.rowIndex = rowIndex;
+    }
+  }
 }
 
 async function buildExport(parsed: ParsedArgs, baseTab: string): Promise<{ tabs: ResearchSheetTab[]; screenshots: ScreenshotUpload[] }> {
@@ -212,8 +299,9 @@ async function buildExport(parsed: ParsedArgs, baseTab: string): Promise<{ tabs:
     if (!symbol) usage();
     const artifacts = await loadResearchArtifacts(symbol);
     const tabs = transformResearchToSheets(artifacts, symbol, baseTab);
-    const visuals = await collectScreenshots(symbol, baseTab);
-    return { tabs: [...tabs, visuals.tab], screenshots: visuals.uploads };
+    const visuals = await collectScreenshots(symbol);
+    appendScreenshotSection(tabs[0], symbol, visuals.rows, visuals.uploads);
+    return { tabs, screenshots: visuals.uploads };
   }
 
   let sourceFile = file;
@@ -233,15 +321,16 @@ async function buildExport(parsed: ParsedArgs, baseTab: string): Promise<{ tabs:
     if (!symbol && !value?.company?.ticker) throw new Error('Analysis export requires SYMBOL or company.ticker in the analysis JSON.');
     const ticker = String(value?.company?.ticker ?? symbol).toUpperCase();
     const tabs = transformAnalysisToSheets(value, ticker, baseTab);
-    const visuals = await collectScreenshots(ticker, baseTab);
-    return { tabs: [...tabs, visuals.tab], screenshots: visuals.uploads };
+    const visuals = await collectScreenshots(ticker);
+    appendScreenshotSection(tabs[0], ticker, visuals.rows, visuals.uploads);
+    return { tabs, screenshots: visuals.uploads };
   }
 
   return {
     tabs: [{
       tabName: baseTab.slice(0, 90),
       dataset: kind,
-      rows: objectToRows(value, path.relative(ROOT, resolved), symbol),
+      rows: objectToRows(value, 'provided_dataset', symbol),
     }],
     screenshots: [],
   };
