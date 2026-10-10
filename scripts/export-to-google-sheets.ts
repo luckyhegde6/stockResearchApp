@@ -164,6 +164,14 @@ async function loadResearchArtifacts(symbol: string): Promise<Record<string, any
     ['sourceHealth', 'source-health.json'],
     ['evidenceQuality', 'evidence-quality.json'],
     ['news', 'normalized/news-sentiment.json'],
+    ['technicals', 'normalized/technicals.json'],
+    ['financialPeriods', 'normalized/financial-periods.json'],
+    ['financials', 'normalized/financials.json'],
+    ['catalysts', 'normalized/catalysts.json'],
+    ['corporateAnnouncements', 'raw/nse-api/nextapi/corporate/corporate-announcements-normalized.json'],
+    ['boardMeetings', 'raw/nse-api/nextapi/corporate/board-meetings-normalized.json'],
+    ['corporateActions', 'raw/nse-api/nextapi/corporate/corporate-actions-normalized.json'],
+    ['eventCalendar', 'raw/nse-api/nextapi/corporate/event-calendar-normalized.json'],
   ];
   const artifacts: Record<string, any> = {};
   for (const [key, relative] of files) {
