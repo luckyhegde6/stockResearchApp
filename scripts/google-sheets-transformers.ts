@@ -24,6 +24,10 @@ export interface ScreenshotRowInput {
   originalSizeBytes?: number;
   width?: number;
   height?: number;
+  originalWidth?: number;
+  originalHeight?: number;
+  optimizationOccurred?: boolean;
+  compressionQuality?: number;
   mimeType: string;
   status: string;
   rowIndex: number;
@@ -84,8 +88,17 @@ function isLikelyLocalPath(value: unknown): boolean {
     text.startsWith('outputs/') || text.startsWith('outputs\\');
 }
 
+function redactEmbeddedLocalPaths(text: string): string {
+  return text
+    .replace(/(?:[A-Za-z]:[\\/])(?:[^\\/\s"'<>|,;)}\]]+[\\/])*[^\\/\s"'<>|,;)}\]]*/g, '[local path redacted]')
+    .replace(/\\\\[^\\/\s"'<>|]+\\[^\\/\s"'<>|]+(?:\\[^\s"'<>|,;)}\]]*)?/g, '[local path redacted]')
+    .replace(/(^|[\s=:([{])(?:research|outputs)[\\/][^\s"'<>|,;)}\]]+/g, '$1[local path redacted]')
+    .replace(/(^|[\s=:([{])\/(?:Users|home|mnt|tmp)\/[^\s"'<>|,;)}\]]+/g, '$1[local path redacted]');
+}
+
 function sanitizePathValues(value: unknown, key = ''): unknown {
   if (isLocalPathField(key) || isLikelyLocalPath(value)) return undefined;
+  if (typeof value === 'string') return redactEmbeddedLocalPaths(value);
   if (Array.isArray(value)) {
     return value.map(item => sanitizePathValues(item)).filter(item => item !== undefined);
   }
@@ -142,6 +155,10 @@ function oneRow(section: string, row: SheetRow, symbol: string): SheetRow {
     original_size_bytes: exportedValue(row.original_size_bytes ?? row.originalSizeBytes ?? ''),
     image_width: exportedValue(row.image_width ?? row.width ?? ''),
     image_height: exportedValue(row.image_height ?? row.height ?? ''),
+    original_image_width: exportedValue(row.original_image_width ?? row.originalWidth ?? ''),
+    original_image_height: exportedValue(row.original_image_height ?? row.originalHeight ?? ''),
+    optimization_occurred: exportedValue(row.optimization_occurred ?? row.optimizationOccurred ?? ''),
+    compression_quality: exportedValue(row.compression_quality ?? row.compressionQuality ?? ''),
     embedding_status: exportedValue(row.embedding_status ?? ''),
     preview: '',
     details: exportedValue(details),
@@ -499,8 +516,8 @@ export function transformResearchToSheets(artifacts: Record<string, any>, symbol
     source_artifacts: list(manifest.sourceArtifacts).length,
     data_gaps: cell(manifest.dataGaps),
     warnings: cell(manifest.warnings),
-    evidence_facts: list(pack.canonicalFacts).length,
-    calculated_metrics: list(pack.calculatedMetrics).length,
+    evidence_facts: list(pack.canonicalFacts).length || list(canonicalValues.facts).length || list(individualEvidence?.canonicalValues?.facts).length || list(individualEvidence?.facts).length,
+    calculated_metrics: list(pack.calculatedMetrics).length || list(canonicalValues.calculatedMetrics).length || list(individualEvidence?.canonicalValues?.calculatedMetrics).length || list(individualEvidence?.calculatedMetrics ?? individualEvidence?.metrics).length,
     source_conflicts: reconciliation?.conflictCount ?? list(reconciliation?.conflicts).length,
     report_type: 'Deterministic research evidence; not an LLM recommendation',
   };
@@ -551,7 +568,7 @@ export function transformResearchToSheets(artifacts: Record<string, any>, symbol
   }));
   return consolidateRunTabs(symbol, baseTab, [
     { tabName: tab(baseTab, 'summary'), dataset: 'research-summary', rows: [summary] },
-    { tabName: tab(baseTab, 'evidence'), dataset: 'research-evidence', rows: researchEvidenceRows(pack, individualEvidence) },
+    { tabName: tab(baseTab, 'evidence'), dataset: 'research-evidence', rows: researchEvidenceRows(pack, { canonicalValues, ...individualEvidence }) },
     { tabName: tab(baseTab, 'sources'), dataset: 'research-sources', rows: sourceArtifactRows(manifest) },
     { tabName: tab(baseTab, 'findings'), dataset: 'research-findings', rows: findings },
     { tabName: tab(baseTab, 'quality'), dataset: 'research-quality', rows: qualityRows },
