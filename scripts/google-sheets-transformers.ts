@@ -138,6 +138,18 @@ function consolidateRunTabs(
       field: section,
       value: '',
     });
+    if (tab.rows.length === 0) {
+      rows.push({
+        section,
+        record_type: 'notice',
+        symbol: symbol.toUpperCase(),
+        domain: '',
+        field: 'No data available',
+        value: `No ${section.toLowerCase()} rows were present in the local artifact package for this run.`,
+        notes: 'Check the corresponding normalized research/analysis artifact if this section is expected to contain records.',
+      });
+      continue;
+    }
     for (const row of tab.rows) {
       if (section === 'SUMMARY') {
         for (const [key, value] of Object.entries(row)) {
