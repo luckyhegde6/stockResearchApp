@@ -60,10 +60,24 @@ function isLikelyLocalPath(value: unknown): boolean {
     text.startsWith('outputs/') || text.startsWith('outputs\\');
 }
 
+function sanitizePathValues(value: unknown, key = ''): unknown {
+  if (isLocalPathField(key) || isLikelyLocalPath(value)) return undefined;
+  if (Array.isArray(value)) {
+    return value.map(item => sanitizePathValues(item)).filter(item => item !== undefined);
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+      .map(([childKey, child]) => [childKey, sanitizePathValues(child, childKey)])
+      .filter(([, child]) => child !== undefined));
+  }
+  return value;
+}
+
 function exportedValue(value: unknown): string | number | boolean {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
-  return JSON.stringify(value, (key, item) => isLocalPathField(key) ? undefined : item) ?? '';
+  const clean = sanitizePathValues(value);
+  if (clean === null || clean === undefined) return '';
+  if (typeof clean === 'string' || typeof clean === 'number' || typeof clean === 'boolean') return clean;
+  return JSON.stringify(clean) ?? '';
 }
 
 function oneRow(section: string, row: SheetRow, symbol: string): SheetRow {
@@ -80,7 +94,7 @@ function oneRow(section: string, row: SheetRow, symbol: string): SheetRow {
   const details: Record<string, unknown> = {};
   for (const [key, item] of Object.entries(row)) {
     if (mapped.has(key) || isLocalPathField(key) || isLikelyLocalPath(item)) continue;
-    details[key] = item;
+    details[key] = sanitizePathValues(item);
   }
   return {
     section,
