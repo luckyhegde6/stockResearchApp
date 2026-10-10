@@ -85,7 +85,7 @@ export async function captureLiveMarketPage(session: string, debug: DebugLogger,
     };
   });
 
-  const symbols = extractSymbolsFromPage(payload.links, payload.rows, payload.symbolAttributes, payload.bodyText);
+  const symbols = extractSymbolsFromPage(payload.links, payload.rows, payload.symbolAttributes);
   const out = {
     capturedAt: new Date().toISOString(),
     requestedUrl: LIVE_PAGE,

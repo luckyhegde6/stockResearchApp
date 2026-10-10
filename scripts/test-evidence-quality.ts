@@ -8,8 +8,8 @@ async function main(){
   const dir=path.join(process.cwd(),'fixtures','research',ticker);
   const manifest=JSON.parse(await readFile(path.join(dir,'manifest.json'),'utf8')) as ResearchManifest;
   const report=await buildEvidenceQuality(dir,manifest);
-  const summary = report.report?.summary || report.summary || { missing: 0 };
-  const bySource = report.report?.bySource || report.bySource || {};
+  const summary = report.report.summary;
+  const bySource = report.report.bySource;
   console.log(JSON.stringify({ticker,status:report.status,summary,bySource},null,2));
   if(report.status !== 'ok' || summary.missing > 0) process.exitCode=1;
 }

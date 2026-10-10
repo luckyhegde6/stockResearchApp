@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import path from 'node:path';
 import { readFile, writeFile } from 'node:fs/promises';
-import Ajv from 'ajv';
+import { Ajv } from 'ajv';
 import { runNse } from './adapters/nse.js';
 import { runScreener } from './adapters/screener.js';
 import { runTijori } from './adapters/tijori.js';
@@ -206,7 +206,6 @@ async function acquire(ticker: string) {
     ticker,
     companyName: ctx.companyName,
     isin: ctx.isin,
-    bseScrip: ctx.bseScrip,
     runId,
     input: { raw: process.argv.slice(3).find(v => !v.startsWith('--')) ?? ticker, normalized: ticker, exchange: 'NSE', instrumentType: 'equity' },
     features: { chartinkEnabled: RESEARCH_CONFIG.chartinkEnabled },
@@ -296,7 +295,7 @@ async function acquire(ticker: string) {
   await debug.emit('SOURCE/QUALITY', evidenceQuality.report.status === 'ok' ? 'OK' : 'WARN', 'Deterministic source and evidence validation complete', {
     sourceHealth: path.relative(ROOT, sourceHealthPath), evidenceQuality: path.relative(ROOT, evidenceQuality.out),
     evidenceContract: path.relative(ROOT, contractResult.out),
-    qualityStatus: evidenceQuality.report.status, checks: evidenceQuality.report.summary,
+    qualityStatus: evidenceQuality.report.status, checks: evidenceQuality.report.report.summary,
     contractEntries: contractResult.contract.entryCount
   });
 
@@ -308,7 +307,7 @@ async function acquire(ticker: string) {
     PROMPT,
     researchDir,
     manifest.sourceArtifacts,
-    { name: ctx.companyName, ticker, isin: ctx.isin, bseScrip: ctx.bseScrip }
+    { name: ctx.companyName, ticker, isin: ctx.isin }
   );
 
   const evidenceBundlePath = await writeEvidenceBundle(researchDir, manifest);
@@ -369,7 +368,6 @@ async function acquire(ticker: string) {
     ticker,
     companyName: ctx.companyName,
     isin: ctx.isin,
-    bseScrip: ctx.bseScrip,
     generatedAt: manifest.generatedAt,
     artifactCount: manifest.sourceArtifacts.length,
     dataGapCount: manifest.dataGaps.length,
@@ -431,7 +429,7 @@ async function ensureAnalysisPrepared(ticker:string){
   const analysisInputs=await writeAnalysisInputs(researchDir,mf);
   const evidencePack=await writeAnalysisEvidencePack(researchDir,mf);
   const bundleBefore=await writeEvidenceBundle(researchDir,mf);
-  const prompt=await buildAnalysisPrompt(SKILL,PROMPT,researchDir,mf.sourceArtifacts,{name:mf.companyName,ticker,isin:mf.isin,bseScrip:mf.bseScrip});
+  const prompt=await buildAnalysisPrompt(SKILL,PROMPT,researchDir,mf.sourceArtifacts,{name:mf.companyName,ticker,isin:mf.isin});
   // Readiness is evaluated only after every deterministic artifact required by the LLM handoff exists.
   const readiness=await writeAnalysisReadiness(researchDir,mf);
   const bundle=await writeEvidenceBundle(researchDir,mf);
@@ -515,7 +513,7 @@ async function validate(ticker: string) {
 async function promptOnly(ticker: string) {
   const researchDir = path.join(ROOT, 'research', ticker);
   const mf = JSON.parse(await readFile(path.join(researchDir, 'manifest.json'), 'utf8')) as ResearchManifest;
-  const p = await buildAnalysisPrompt(SKILL, PROMPT, researchDir, mf.sourceArtifacts, { name: mf.companyName, ticker, isin: mf.isin, bseScrip: mf.bseScrip });
+  const p = await buildAnalysisPrompt(SKILL, PROMPT, researchDir, mf.sourceArtifacts, { name: mf.companyName, ticker, isin: mf.isin });
   console.log(p.out);
 }
 
@@ -671,7 +669,7 @@ const cmd = process.argv[2] || 'unknown';
       const contract=await writeEvidenceContract(dir,mf);
       const analysisInputs=await writeAnalysisInputs(dir,mf);
       const bundle=await writeEvidenceBundle(dir,mf);
-      const prompt=await buildAnalysisPrompt(SKILL,PROMPT,dir,mf.sourceArtifacts,{name:mf.companyName,ticker:t,isin:mf.isin,bseScrip:mf.bseScrip});
+      const prompt=await buildAnalysisPrompt(SKILL,PROMPT,dir,mf.sourceArtifacts,{name:mf.companyName,ticker:t,isin:mf.isin});
       const readiness=await writeAnalysisReadiness(dir,mf);
       const finalBundle=await writeEvidenceBundle(dir,mf);
       await writeText(path.join(dir,'analysis-prep.json'),JSON.stringify({schema_version:'1.2',ticker:t,preparedAt:new Date().toISOString(),ingestion:{allEvidence:ing.allEvidence,structuredEvidence:ing.structuredEvidence,mdaEvidence:ing.mdaEvidence,visualEvidence:ing.visualEvidence},readiness:readiness.report,evidenceContract:contract,evidenceBundle:finalBundle,prompt:prompt.out,deterministic:true,llmUsed:false},null,2));
@@ -765,7 +763,7 @@ const cmd = process.argv[2] || 'unknown';
     process.exitCode = 1;
   } finally {
     await completeGoogleSheetsCommandStep(commandStep, {
-      exitCode: process.exitCode ?? 0,
+      exitCode: Number(process.exitCode ?? 0),
       completedAt: new Date().toISOString(),
       error: commandError,
     });

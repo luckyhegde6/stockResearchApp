@@ -66,6 +66,19 @@ function normalizeRow(row: ChartinkRow, category: ChartinkCategory, strategy: St
   };
 }
 
+
+function optionalString(value: unknown): string | undefined {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return undefined;
+}
+
+function optionalScalar(value: unknown): string | number | undefined {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  return undefined;
+}
+
 function extractScanClause(html: string): string | null {
   const patterns = [
     /<textarea[^>]+name=["']scan_clause["'][^>]*>([\s\S]*?)<\/textarea>/i,
@@ -152,15 +165,15 @@ function rowsFromDelimitedTable(text: string): ChartinkRow[] {
     });
     const normalized: ChartinkRow = {
       ...obj,
-      name: obj.name ?? obj['Stock Name'] ?? obj['Stock'] ?? obj['Name'],
-      symbol: obj.symbol ?? obj['Symbol'] ?? obj['NSE Code'],
-      nsecode: obj.nsecode ?? obj['NSE Code'],
-      bsecode: obj.bsecode ?? obj['BSE Code'],
-      close: obj.close ?? obj['Close'],
-      per_chg: obj.per_chg ?? obj['%_change'] ?? obj['% Change'],
-      volume: obj.volume ?? obj['Volume'],
-      market_cap: obj.market_cap ?? obj['Marketcap'] ?? obj['Market Cap'],
-      sector: obj.sector ?? obj['Sector'],
+      name: optionalString(obj.name ?? obj['Stock Name'] ?? obj['Stock'] ?? obj['Name']),
+      symbol: optionalString(obj.symbol ?? obj['Symbol'] ?? obj['NSE Code']),
+      nsecode: optionalString(obj.nsecode ?? obj['NSE Code']),
+      bsecode: optionalString(obj.bsecode ?? obj['BSE Code']),
+      close: optionalScalar(obj.close ?? obj['Close']),
+      per_chg: optionalScalar(obj.per_chg ?? obj['%_change'] ?? obj['% Change']),
+      volume: optionalScalar(obj.volume ?? obj['Volume']),
+      market_cap: optionalScalar(obj.market_cap ?? obj['Marketcap'] ?? obj['Market Cap']),
+      sector: optionalString(obj.sector ?? obj['Sector']),
     };
     return normalized;
   }).filter(row => cleanText(row.symbol || row.nsecode || row.name));
@@ -173,15 +186,15 @@ function tableRowsToObjects(table: { headers: string[]; rows: string[][] }): Cha
     headers.forEach((h, i) => { if (h) obj[h] = values[i] ?? ''; });
     return {
       ...obj,
-      name: obj.name ?? obj['Stock Name'] ?? obj['Stock'] ?? obj['Name'],
-      symbol: obj.symbol ?? obj['Symbol'] ?? obj['NSE Code'],
-      nsecode: obj.nsecode ?? obj['NSE Code'],
-      bsecode: obj.bsecode ?? obj['BSE Code'],
-      close: obj.close ?? obj['Close'],
-      per_chg: obj.per_chg ?? obj['%_change'] ?? obj['% Change'],
-      volume: obj.volume ?? obj['Volume'],
-      market_cap: obj.market_cap ?? obj['Marketcap'] ?? obj['Market Cap'],
-      sector: obj.sector ?? obj['Sector'],
+      name: optionalString(obj.name ?? obj['Stock Name'] ?? obj['Stock'] ?? obj['Name']),
+      symbol: optionalString(obj.symbol ?? obj['Symbol'] ?? obj['NSE Code']),
+      nsecode: optionalString(obj.nsecode ?? obj['NSE Code']),
+      bsecode: optionalString(obj.bsecode ?? obj['BSE Code']),
+      close: optionalScalar(obj.close ?? obj['Close']),
+      per_chg: optionalScalar(obj.per_chg ?? obj['%_change'] ?? obj['% Change']),
+      volume: optionalScalar(obj.volume ?? obj['Volume']),
+      market_cap: optionalScalar(obj.market_cap ?? obj['Marketcap'] ?? obj['Market Cap']),
+      sector: optionalString(obj.sector ?? obj['Sector']),
     };
   }).filter(row => cleanText(row.symbol || row.nsecode || row.name));
 }
