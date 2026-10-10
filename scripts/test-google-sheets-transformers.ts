@@ -145,6 +145,10 @@ assert(appsScript.includes("const HOME_TAB = 'StockResearch'"), 'Apps Script sin
 assert(!appsScript.includes("const name = '_EXPORT_LOG'"), 'Apps Script must not create an _EXPORT_LOG tab');
 assert(appsScript.includes('cleanupLegacyManagedTabs_'), 'Apps Script must remove old command-run and split research tabs');
 assert(appsScript.includes('sanitizeRowsForSheet_'), 'Apps Script must filter local path references before writing data');
+assert(appsScript.includes('function redactEmbeddedLocalPaths_'), 'Apps Script sink must redact local paths embedded inside serialized text');
+assert(appsScript.includes('const byteLimit = 1800000'), 'Apps Script must defensively enforce an image size below the 2 MB Blob limit');
+assert(appsScript.includes('width * height > 1000000'), 'Apps Script must defensively enforce the image pixel ceiling');
+assert(appsScript.includes("['value', 'status', 'embedding_status']"), 'Apps Script must synchronize screenshot insertion status columns');
 assert(publisher.includes('publishAudit: options.publishAudit ?? false'), 'Command-run audit publishing must be disabled by default');
 
 console.log(JSON.stringify({ ok: true, analysisTabs: analysisTabs.length, researchTabs: researchTabs.length, coverage: ['summary', 'findings', 'scores', 'risks', 'catalysts', 'scenarios', 'sources', 'audit'] }, null, 2));
