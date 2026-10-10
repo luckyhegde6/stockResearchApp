@@ -7,7 +7,7 @@ function assert(condition: unknown, message: string): asserts condition {
 }
 
 const root = process.cwd();
-const [server, html, launcher, publisher, index, laya, exporter, wrapper, packageSource] = await Promise.all([
+const [server, html, launcher, publisher, index, laya, exporter, wrapper, packageSource, doctor] = await Promise.all([
   readFile(path.join(root, 'src', 'server.ts'), 'utf8'),
   readFile(path.join(root, 'public', 'index.html'), 'utf8'),
   readFile(path.join(root, 'src', 'lib', 'process-launcher.ts'), 'utf8'),
@@ -17,6 +17,7 @@ const [server, html, launcher, publisher, index, laya, exporter, wrapper, packag
   readFile(path.join(root, 'scripts', 'export-to-google-sheets.ts'), 'utf8'),
   readFile(path.join(root, 'scripts', 'with-google-sheets-step.ts'), 'utf8'),
   readFile(path.join(root, 'package.json'), 'utf8'),
+  readFile(path.join(root, 'scripts', 'google-sheets-doctor.ts'), 'utf8'),
 ]);
 
 assert(server.includes("pathname === '/api/sheets/status'"), 'Dashboard must expose GET /api/sheets/status');
@@ -55,9 +56,18 @@ assert(laya.includes("publishAfterPipelineRun('laya'"), 'CLI Laya decisions must
 assert(exporter.includes("kind === 'laya'"), 'Laya export must resolve its generated JSON by default');
 assert(wrapper.includes('beginGoogleSheetsCommandStep'), 'Non-central npm commands must use the universal Sheets lifecycle wrapper');
 assert(wrapper.includes('completeGoogleSheetsCommandStep'), 'Every wrapped process must finalize its Sheets status after exit');
+
+assert(publisher.includes("spawn(process.execPath, [tsxCli, ...args]"), 'Sheets publisher must launch TSX directly through Node');
+assert(publisher.includes('shell: false'), 'Sheets publisher must not spawn npx through a shell on Windows');
+assert(exporter.includes('received HTTP') && exporter.includes('HTML'), 'Exporter must identify HTML error pages without dumping full HTML');
+assert(doctor.includes("method: 'GET'") && doctor.includes('stock-research-sheet-sink'), 'Sheets doctor must verify the Apps Script GET health response');
+assert(doctor.includes("parsedUrl.pathname") && doctor.includes("'/exec' URL"), 'Sheets doctor must validate the deployed /exec endpoint');
+assert(wrapper.includes("publishAudit: !args.includes('--no-publish-audit')"), 'Wrapper must support diagnostic commands that do not recursively publish their own audit');
+
 assert(index.includes('beginGoogleSheetsCommandStep'), 'Every central CLI command must announce the Sheets step');
 assert(index.includes('completeGoogleSheetsCommandStep(commandStep'), 'Every central CLI command must finalize the Sheets step');
 const packageScripts = JSON.parse(packageSource).scripts as Record<string, string>;
+assert(packageScripts['sheets:doctor']?.includes('--no-publish-audit'), 'Sheets doctor must not trigger a second POST while diagnosing the webhook');
 for (const [name, command] of Object.entries(packageScripts)) {
   const handledByCentralCli = command.includes('src/index.ts');
   const handledByWrapper = command.includes('scripts/with-google-sheets-step.ts');
