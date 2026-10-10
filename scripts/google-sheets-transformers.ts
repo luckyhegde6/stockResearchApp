@@ -588,6 +588,14 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
   const news = artifacts.news ?? {};
   const manifest = artifacts.manifest ?? {};
   const rows: SheetRow[] = [];
+  const records = (value: any): any[] => {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== 'object') return [];
+    for (const key of ['items', 'rows', 'data', 'events', 'announcements', 'periods', 'records']) {
+      if (Array.isArray(value[key])) return value[key];
+    }
+    return [];
+  };
   const allFacts = [
     ...list(evidence.facts),
     ...list(market.facts),
@@ -620,7 +628,7 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
     return match?.asOf ?? match?.period ?? '';
   };
   const findMetric = (fields: string[]) => allMetrics.find((x: any) => fields.includes(String(x?.field ?? '').toLowerCase()));
-  const latestFinancial = list(financials.nsePeriods).at(-1) ?? list(artifacts.financialPeriods?.periods).at(-1) ?? {};
+  const latestFinancial = list(financials.nsePeriods).at(-1) ?? records(artifacts.financialPeriods).at(-1) ?? {};
   const latestMetrics = latestFinancial.metrics ?? latestFinancial.values ?? {};
   const headlineRows = [
     ...list(news.headlines),
@@ -630,14 +638,10 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
   const catalystRows = [
     ...list(catalysts.items),
     ...list(catalysts.events),
-    ...list(artifacts.corporateAnnouncements?.data),
-    ...list(artifacts.corporateAnnouncements?.rows),
-    ...list(artifacts.boardMeetings?.data),
-    ...list(artifacts.boardMeetings?.rows),
-    ...list(artifacts.corporateActions?.data),
-    ...list(artifacts.corporateActions?.rows),
-    ...list(artifacts.eventCalendar?.data),
-    ...list(artifacts.eventCalendar?.rows),
+    ...records(artifacts.corporateAnnouncements),
+    ...records(artifacts.boardMeetings),
+    ...records(artifacts.corporateActions),
+    ...records(artifacts.eventCalendar),
   ].slice(0, 50);
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = catalystRows.filter((x: any) => {
