@@ -44,6 +44,107 @@ function asConfidence(value: any): unknown {
   return value === null || value === undefined || value === '' ? '' : value;
 }
 
+
+const PATH_FIELD_PATTERN = /(?:^|[_ .-])(?:local|relative|artifact|screenshot|evidence|report|file)[_ .-]*path(?:$|[_ .-])/i;
+
+function isLocalPathField(key: string): boolean {
+  return /(?:localPath|relativePath|artifactPath|screenshotPath|evidencePath|reportPath|filePath|local_path|relative_path|artifact_path|screenshot_path|evidence_path|report_path|file_path)/i.test(key);
+}
+
+function isLikelyLocalPath(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  return /^(?:[A-Za-z]:\\\\|\\\\\\\\|\\/Users\\/|\\/home\\/|\\/mnt\\/|research[\\\\/]|outputs[\\\\/])/i.test(value.trim());
+}
+
+function exportedValue(value: unknown): string | number | boolean {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
+  return JSON.stringify(value, (key, item) => isLocalPathField(key) ? undefined : item);
+}
+
+function oneRow(section: string, row: SheetRow, symbol: string): SheetRow {
+  const sourceUrl = row.source_url ?? row.url;
+  const field = row.field ?? row.item ?? row.metric ?? row.artifact_id ?? row.file_name ?? row.scenario ?? row.title ?? row.check_type ?? '';
+  const value = row.value ?? row.status ?? row.details ?? row.assessment ?? row.thesis ?? row.notes ?? row.title ?? '';
+  const mapped = new Set([
+    'section','record_type','symbol','domain','category','field','item','metric','artifact_id','file_name',
+    'scenario','title','check_type','value','status','details','assessment','thesis','notes','unit','source',
+    'source_url','url','period','reporting_period','as_of','confidence','provider','artifact_type','retrieved_at',
+    'method','size_bytes','sizeBytes','mimeType','mime_type','embedding_status','preview','source_id','source_artifact',
+    'evidence_type','finding_type','scale','severity','row','symbol',
+  ]);
+  const details: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(row)) {
+    if (mapped.has(key) || isLocalPathField(key) || isLikelyLocalPath(item)) continue;
+    details[key] = item;
+  }
+  return {
+    section,
+    record_type: 'data',
+    symbol,
+    domain: exportedValue(row.domain ?? row.category ?? row.scenario ?? row.check_type ?? row.artifact_type ?? ''),
+    field: exportedValue(field),
+    value: exportedValue(value),
+    unit: exportedValue(row.unit ?? ''),
+    source: exportedValue(row.source ?? row.provider ?? row.source_id ?? row.source_artifact ?? ''),
+    source_url: exportedValue(sourceUrl ?? ''),
+    period: exportedValue(row.period ?? row.reporting_period ?? row.as_of ?? ''),
+    status: exportedValue(row.status ?? ''),
+    confidence: exportedValue(row.confidence ?? ''),
+    notes: exportedValue(row.notes ?? ''),
+    artifact_id: exportedValue(row.artifact_id ?? row.source_artifact ?? ''),
+    provider: exportedValue(row.provider ?? ''),
+    title: exportedValue(row.title ?? ''),
+    file_name: exportedValue(row.file_name ?? ''),
+    size_bytes: exportedValue(row.size_bytes ?? row.sizeBytes ?? ''),
+    embedding_status: exportedValue(row.embedding_status ?? ''),
+    preview: '',
+    details: exportedValue(details),
+  };
+}
+
+function consolidateRunTabs(
+  symbol: string,
+  baseTab: string,
+  tabs: ResearchSheetTab[],
+  dataset: 'research-run' | 'analysis-run',
+): ResearchSheetTab[] {
+  const rows: SheetRow[] = [];
+  for (const tab of tabs) {
+    const section = tab.dataset.replace(/^research-/, '').replace(/^analysis-/, '').replace(/-/g, ' ').toUpperCase();
+    rows.push({
+      section,
+      record_type: 'section_header',
+      symbol: symbol.toUpperCase(),
+      domain: '',
+      field: section,
+      value: '',
+    });
+    for (const row of tab.rows) {
+      if (section === 'SUMMARY') {
+        for (const [key, value] of Object.entries(row)) {
+          if (isLocalPathField(key) || isLikelyLocalPath(value)) continue;
+          rows.push({
+            section,
+            record_type: 'summary',
+            symbol: symbol.toUpperCase(),
+            field: key,
+            value: exportedValue(value),
+            notes: '',
+          });
+        }
+      } else {
+        rows.push(oneRow(section, row, symbol.toUpperCase()));
+      }
+    }
+  }
+  return [{
+    tabName: baseTab.slice(0, 90),
+    dataset,
+    rows,
+  }];
+}
+
 function flattenFindings(domain: string, value: any, rows: SheetRow[], prefix = '', inheritedConfidence?: unknown, inheritedSource?: unknown): void {
   if (value === null || value === undefined) return;
   if (Array.isArray(value)) {
@@ -70,7 +171,7 @@ function flattenFindings(domain: string, value: any, rows: SheetRow[], prefix = 
     const sourceId = (value as any).source_id ?? inheritedSource;
     const entries = Object.entries(value);
     for (const [key, child] of entries) {
-      if (key === 'confidence' || key === 'source_id' || key === 'sourceId') continue;
+      if (key === 'confidence' || key === 'source_id' || key === 'sourceId' || isLocalPathField(key)) continue;
       const field = prefix ? `${prefix}.${key}` : key;
       flattenFindings(domain, child, rows, field, confidence, sourceId);
     }
@@ -257,7 +358,7 @@ export function transformAnalysisToSheets(analysis: any, symbol: string, baseTab
     };
   });
 
-  return [
+  return consolidateRunTabs(ticker, baseTab, [
     { tabName: tab(baseTab, 'summary'), dataset: 'analysis-summary', rows: [summary] },
     { tabName: tab(baseTab, 'findings'), dataset: 'analysis-findings', rows: analysisFindings(analysis) },
     { tabName: tab(baseTab, 'scores'), dataset: 'analysis-scores', rows: scoreRows },
@@ -266,7 +367,7 @@ export function transformAnalysisToSheets(analysis: any, symbol: string, baseTab
     { tabName: tab(baseTab, 'scenarios'), dataset: 'analysis-scenarios', rows: scenarios },
     { tabName: tab(baseTab, 'sources'), dataset: 'analysis-sources', rows: sourceRows(analysis) },
     { tabName: tab(baseTab, 'audit'), dataset: 'analysis-audit', rows: auditRows(analysis) },
-  ];
+  ], 'analysis-run');
 }
 
 function sourceArtifactRows(manifest: any): SheetRow[] {
@@ -278,8 +379,6 @@ function sourceArtifactRows(manifest: any): SheetRow[] {
     title: cell(item.title),
     status: cell(item.status),
     url: cell(item.url),
-    local_path: cell(item.localPath),
-    screenshot_path: cell(item.screenshotPath),
     reporting_period: cell(item.period),
     retrieved_at: cell(item.retrievedAt),
     method: cell(item.method),
@@ -379,13 +478,13 @@ export function transformResearchToSheets(artifacts: Record<string, any>, symbol
     status: 'review',
     details: cell(item),
   }));
-  return [
+  return consolidateRunTabs(symbol, baseTab, [
     { tabName: tab(baseTab, 'summary'), dataset: 'research-summary', rows: [summary] },
     { tabName: tab(baseTab, 'evidence'), dataset: 'research-evidence', rows: researchEvidenceRows(pack) },
     { tabName: tab(baseTab, 'sources'), dataset: 'research-sources', rows: sourceArtifactRows(manifest) },
     { tabName: tab(baseTab, 'findings'), dataset: 'research-findings', rows: findings },
     { tabName: tab(baseTab, 'quality'), dataset: 'research-quality', rows: qualityRows },
-  ];
+  ], 'research-run');
 }
 
 export function buildVisualEvidenceRows(symbol: string, screenshots: ScreenshotRowInput[]): SheetRow[] {
@@ -397,7 +496,6 @@ export function buildVisualEvidenceRows(symbol: string, screenshots: ScreenshotR
     file_name: '',
     chart_period: '',
     size_bytes: '',
-    artifact_path: '',
     embedding_status: 'not_available',
   }];
   return screenshots.map(item => ({
@@ -406,7 +504,6 @@ export function buildVisualEvidenceRows(symbol: string, screenshots: ScreenshotR
     file_name: item.fileName,
     chart_period: item.fileName.replace(/^tradingview[-_]?/i, '').replace(/\.(png|jpe?g|webp)$/i, ''),
     size_bytes: item.sizeBytes,
-    artifact_path: item.relativePath,
     embedding_status: item.status,
     preview: '',
   }));
