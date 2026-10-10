@@ -234,10 +234,14 @@ async function executeExport(
   if (options.tab) args.push('--tab', options.tab);
   if (options.append) args.push('--append');
 
-  const result = await new Promise<{ code: number; stdout: string; stderr: string }>((resolve, reject) => {
-    const child = spawn('npx', ['tsx', ...args], {
+  const result = await new Promise<{ code: number; stdout: string; stderr: string }>((resolve) => {
+    // Invoke the local TSX entry point through Node instead of spawning npx.cmd via shell.
+    // This avoids shell quoting issues and the Windows libuv child-process shutdown crash.
+    const tsxCli = path.join(root, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+    const child = spawn(process.execPath, [tsxCli, ...args], {
       cwd: root,
-      shell: true,
+      shell: false,
+      windowsHide: true,
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -245,9 +249,9 @@ async function executeExport(
     let stderr = '';
     child.stdout?.on('data', chunk => { stdout += chunk.toString(); });
     child.stderr?.on('data', chunk => { stderr += chunk.toString(); });
-    child.on('close', code => resolve({ code: code ?? 1, stdout, stderr }));
-    child.on('error', reject);
-  }).catch(error => ({ code: 1, stdout: '', stderr: error instanceof Error ? error.message : String(error) }));
+    child.once('close', code => resolve({ code: code ?? 1, stdout, stderr }));
+    child.once('error', error => resolve({ code: 127, stdout, stderr: error.message }));
+  });
 
   if (result.code === 0) {
     try {
