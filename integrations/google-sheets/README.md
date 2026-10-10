@@ -8,8 +8,8 @@ The ID in the link matches the default `GOOGLE_SHEETS_ID`. Publishing is optiona
 
 | Export | Published tabs | Contents |
 |---|---|---|
-| `research SYMBOL` | **One** run tab: `SYMBOL-YYYY-MM-DD-research` | Summary/readiness, canonical facts and calculations, source provenance and URLs, all research findings, quality checks, and screenshots embedded into the same tab |
-| `analysis SYMBOL` | **One** run tab: `SYMBOL-YYYY-MM-DD-analysis` | Investment summary, findings, scores, risks, catalysts, scenarios, source URLs, reconciliation/calculation audit, and screenshots embedded into the same tab |
+| `research SYMBOL` | **One** run tab: `SYMBOL-YYYY-MM-DD-HHMMSSmmm-research` | Summary/readiness, canonical facts and calculations, source provenance and URLs, all research findings, quality checks, and screenshots embedded into the same tab |
+| `analysis SYMBOL` | **One** run tab: `SYMBOL-YYYY-MM-DD-HHMMSSmmm-analysis` | Investment summary, findings, scores, risks, catalysts, scenarios, source URLs, reconciliation/calculation audit, and screenshots embedded into the same tab |
 | scans/news/custom | One requested dataset tab per export | One record per row with local-path fields removed |
 
 Each research or analysis run is consolidated vertically in a common, filterable table with a `section` column. Sections include `SUMMARY`, `EVIDENCE`, `SOURCES`, `FINDINGS`, `QUALITY`, and `SCREENSHOTS` (analysis also includes scores, risks, catalysts, scenarios and audit). Section-header rows are visually distinguished, and the standard header stays frozen. Source URLs are retained; local filesystem paths are never published.
@@ -189,7 +189,7 @@ Open the [StockResearch workbook](https://docs.google.com/spreadsheets/d/1YMKesB
 Expected research tab:
 
 ~~~text
-ITC-YYYY-MM-DD-research
+ITC-YYYY-MM-DD-HHMMSSmmm-HHMMSSmmm-research
 ~~~
 
 Within that one tab, filter the `section` column to review `SUMMARY`, `EVIDENCE`, `SOURCES`, `FINDINGS`, `QUALITY`, or `SCREENSHOTS`.
@@ -204,7 +204,7 @@ npm run sheets:export -- analysis ITC
 Expected analysis tab:
 
 ~~~text
-ITC-YYYY-MM-DD-analysis
+ITC-YYYY-MM-DD-HHMMSSmmm-HHMMSSmmm-analysis
 ~~~
 
 Use the `section` column to filter analysis summary, findings, scores, risks, catalysts, scenarios, sources, audit, and screenshots.
