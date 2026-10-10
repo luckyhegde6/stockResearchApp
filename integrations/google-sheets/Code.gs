@@ -7,6 +7,7 @@ function doGet() {
   return json_({
     ok: true,
     service: 'stock-research-sheet-sink',
+    serviceVersion: '2',
     workbookUrl: SHEET_ID ? 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit' : ''
   });
 }
@@ -108,20 +109,42 @@ function isLocalPathValue_(value) {
     text.indexOf('outputs/') === 0 || text.indexOf('outputs\\') === 0;
 }
 
+function redactEmbeddedLocalPaths_(text) {
+  return String(text)
+    .replace(/(?:[A-Za-z]:[\\/])(?:[^\\/\s"'<>|,;)}\]]+[\\/])*[^\\/\s"'<>|,;)}\]]*/g, '[local path redacted]')
+    .replace(/\\\\[^\\/\s"'<>|]+\\[^\\/\s"'<>|]+(?:\\[^\s"'<>|,;)}\]]*)?/g, '[local path redacted]')
+    .replace(/(^|[\s=:([{])(?:research|outputs)[\\/][^\s"'<>|,;)}\]]+/g, '$1[local path redacted]')
+    .replace(/(^|[\s=:([{])\/(?:Users|home|mnt|tmp)\/[^\s"'<>|,;)}\]]+/g, '$1[local path redacted]');
+}
+
+function sanitizeNestedValue_(value, key) {
+  if (isLocalPathKey_(key || '') || isLocalPathValue_(value)) return undefined;
+  if (typeof value === 'string') return redactEmbeddedLocalPaths_(value);
+  if (Array.isArray(value)) {
+    return value.map(function(item) { return sanitizeNestedValue_(item, ''); })
+      .filter(function(item) { return item !== undefined; });
+  }
+  if (value && typeof value === 'object') {
+    var clean = {};
+    Object.keys(value).forEach(function(childKey) {
+      var child = sanitizeNestedValue_(value[childKey], childKey);
+      if (child !== undefined) clean[childKey] = child;
+    });
+    return clean;
+  }
+  return value;
+}
+
 function sanitizeRowsForSheet_(rows) {
   return rows.map(function(row) {
-    if (!row || typeof row !== 'object' || Array.isArray(row)) return { value: row };
+    if (!row || typeof row !== 'object' || Array.isArray(row)) {
+      var scalar = sanitizeNestedValue_(row, '');
+      return { value: scalar === undefined ? '' : scalar };
+    }
     var clean = {};
     Object.keys(row).forEach(function(key) {
-      var value = row[key];
-      if (isLocalPathKey_(key) || isLocalPathValue_(value)) return;
-      if (value && typeof value === 'object') {
-        clean[key] = JSON.parse(JSON.stringify(value, function(childKey, childValue) {
-          return isLocalPathKey_(childKey) || isLocalPathValue_(childValue) ? undefined : childValue;
-        }));
-      } else {
-        clean[key] = value;
-      }
+      var value = sanitizeNestedValue_(row[key], key);
+      if (value !== undefined) clean[key] = value;
     });
     return clean;
   });
@@ -252,6 +275,15 @@ function toCell_(value) {
   return value;
 }
 
+function setScreenshotOutcome_(sheet, rowIndex, headers, status, note) {
+  ['value', 'status', 'embedding_status'].forEach(function(key) {
+    const column = headers.indexOf(key) + 1;
+    if (column > 0) sheet.getRange(rowIndex, column).setValue(status);
+  });
+  const notesColumn = headers.indexOf('notes') + 1;
+  if (notesColumn > 0) sheet.getRange(rowIndex, notesColumn).setValue(note);
+}
+
 function embedScreenshots_(ss, screenshots) {
   const result = { embedded: 0, failed: 0, skipped: 0, errors: [] };
   screenshots.forEach(function(item) {
@@ -260,33 +292,62 @@ function embedScreenshots_(ss, screenshots) {
       result.skipped += 1;
       return;
     }
+
+    const rowIndex = Number(item.rowIndex);
+    let insertedImage = null;
     try {
       const bytes = Utilities.base64Decode(item.base64);
-      const blob = Utilities.newBlob(bytes, item.mimeType || 'image/png', item.fileName || 'chart.png');
+      const byteLimit = 1800000; // Keep a clear margin below Apps Script's 2 MB Blob limit.
+      if (bytes.length > byteLimit) {
+        throw new Error('Optimized image is ' + bytes.length + ' bytes; upload limit is ' + byteLimit + ' bytes.');
+      }
+
       const headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(String);
-      const statusColumn = headers.indexOf('embedding_status') + 1;
+      const widthColumn = headers.indexOf('image_width') + 1;
+      const heightColumn = headers.indexOf('image_height') + 1;
+      if (widthColumn > 0 && heightColumn > 0) {
+        const width = Number(sheet.getRange(rowIndex, widthColumn).getValue());
+        const height = Number(sheet.getRange(rowIndex, heightColumn).getValue());
+        if (!(width > 0) || !(height > 0) || width * height > 1000000) {
+          throw new Error('Optimized image dimensions are invalid or exceed the 1,000,000-pixel limit.');
+        }
+      }
+
+      const blob = Utilities.newBlob(bytes, item.mimeType || 'image/jpeg', item.fileName || 'chart.jpg');
       const previewColumn = headers.indexOf('preview') + 1 || headers.length + 1;
-      const image = sheet.insertImage(blob, previewColumn, Number(item.rowIndex));
-      image.setWidth(480);
-      image.setHeight(220);
-      if (image.setAltTextTitle) image.setAltTextTitle(String(item.fileName || 'Research screenshot'));
-      if (image.setAltTextDescription) image.setAltTextDescription('Embedded visual evidence from StockResearch; source: ' + String(item.fileName || 'chart'));
-      if (statusColumn > 0) sheet.getRange(Number(item.rowIndex), statusColumn).setValue('embedded_in_sheet');
+      insertedImage = sheet.insertImage(blob, previewColumn, rowIndex);
+      if (insertedImage.setAltTextTitle) insertedImage.setAltTextTitle(String(item.fileName || 'Research screenshot'));
+      if (insertedImage.setAltTextDescription) insertedImage.setAltTextDescription('Embedded visual evidence from StockResearch; filename is preserved in the row.');
+
+      // Preserve aspect ratio. Tall full-page captures remain tall/narrow instead of being distorted.
+      const width = widthColumn > 0 ? Number(sheet.getRange(rowIndex, widthColumn).getValue()) : 480;
+      const height = heightColumn > 0 ? Number(sheet.getRange(rowIndex, heightColumn).getValue()) : 220;
+      const scale = Math.min(480 / width, 320 / height);
+      const displayWidth = Math.max(1, Math.round(width * scale));
+      const displayHeight = Math.max(1, Math.round(height * scale));
+      insertedImage.setWidth(displayWidth);
+      insertedImage.setHeight(displayHeight);
       sheet.setColumnWidth(previewColumn, 500);
-      sheet.setRowHeight(Number(item.rowIndex), 230);
+      sheet.setRowHeight(rowIndex, Math.max(80, displayHeight));
+
+      setScreenshotOutcome_(sheet, rowIndex, headers, 'embedded_in_sheet',
+        'Image inserted successfully. Original filename and optimization metadata are retained in this row.');
       result.embedded += 1;
     } catch (err) {
+      if (insertedImage) {
+        try { insertedImage.remove(); } catch (ignoredImageRemove) {}
+      }
       result.failed += 1;
-      const errorMessage = String(err && err.message ? err.message : err).slice(0, 500);
+      const errorMessage = String(err && err.message ? err.message : err).slice(0, 450);
       result.errors.push({
         fileName: String(item.fileName || 'unknown'),
         message: errorMessage
       });
       try {
         const headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(String);
-        const statusColumn = headers.indexOf('embedding_status') + 1;
-        if (statusColumn > 0) sheet.getRange(Number(item.rowIndex), statusColumn).setValue('embed_failed: ' + errorMessage.slice(0, 300));
-      } catch (ignored) {}
+        setScreenshotOutcome_(sheet, rowIndex, headers, 'embed_failed: ' + errorMessage.slice(0, 240),
+          'Embedding failed: ' + errorMessage.slice(0, 300));
+      } catch (ignoredStatusUpdate) {}
     }
   });
   return result;
