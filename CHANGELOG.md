@@ -7,12 +7,12 @@ Canonical release history for repository behavior. Older detail remains in docs/
 ### Google Sheets publishing
 - Linked the StockResearch workbook from the README and integration guide.
 - Added classified research and analysis transformer methods with dedicated summary, evidence/findings, scores, risks, catalysts, scenarios, sources, quality, audit, and visual-evidence tabs.
-- Added embedded chart screenshot publishing, a clickable StockResearch workbook index, and an _EXPORT_LOG audit trail.
+- Added a clickable StockResearch workbook index and one consolidated data tab per research/analysis run; command lifecycle records stay local and no `_EXPORT_LOG` or `command-runs-*` tabs are created.
 - Added best-effort automatic publication after successful `research`/`analyze` runs when webhook credentials are configured; Sheet failures do not invalidate local output.
 - Added a universal process lifecycle: all `src/index.ts` CLI commands, all npm scripts, and dashboard-launched research/batch/analysis/scan jobs create a start/final Sheets status record.
-- Appended a compact execution-audit row to `command-runs-YYYY-MM-DD` for each completed command/process when the Sheet connection is configured; command-specific outputs still publish to their own tabs.
+- Kept process lifecycle state and execution reports local while publishing supported research/analysis/scan datasets through the consolidated Sheets exporter.
 - Added an explicit running state and CI contract checks ensuring no npm script bypasses the shared Sheets lifecycle.
-- Added deterministic transformer tests and documented local deployment/configuration requirements.
+- Added screenshot optimization (JPEG re-encoding, below 900,000 pixels and byte threshold), original/optimized image metadata, receiver-side size/pixel checks, consistent embedding statuses, and recursive local-path redaction.\n- Added deterministic evidence fallback from `normalized/canonical-values.json` when the optional analysis evidence pack is missing, plus regression tests and versioned Apps Script health checks.\n- Documented local deployment/configuration requirements and the need to redeploy Apps Script separately.
 
 ### Research roadmap
 - Added a roadmap for Kronos forecasting/backtesting, Pine Script strategy research, Lightweight Charts visualization, and future OpenAlgo integration.
