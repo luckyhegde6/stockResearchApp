@@ -93,16 +93,17 @@ function doPost(e) {
 }
 
 function isLocalPathKey_(key) {
-  return /(?:localPath|relativePath|artifactPath|screenshotPath|evidencePath|reportPath|filePath|local_path|relative_path|artifact_path|screenshot_path|evidence_path|report_path|file_path)/i.test(String(key || ''));
+  return /^(?:path|localPath|relativePath|artifactPath|screenshotPath|evidencePath|reportPath|filePath|sourcePath|local_path|relative_path|artifact_path|screenshot_path|evidence_path|report_path|file_path|source_path)$/i.test(String(key || '')) ||
+    /(?:local|relative|artifact|screenshot|evidence|report|file|source)[_-]?path/i.test(String(key || ''));
 }
 
 function isLocalPathValue_(value) {
   if (typeof value !== 'string') return false;
   var text = value.trim();
-  return /^[A-Za-z]:[\\\\/]/.test(text) ||
-    text.indexOf('\\\\\\\\') === 0 ||
-    /^\\/(?:Users|home|mnt)\\//i.test(text) ||
-    /^(?:research|outputs)[\\\\/]/i.test(text);
+  return /^[A-Za-z]:[\\/]/.test(text) ||
+    text.indexOf('\\\\') === 0 ||
+    /^\/(?:Users|home|mnt)\//i.test(text) ||
+    /^(?:research|outputs)[\\/]/i.test(text);
 }
 
 function sanitizeRowsForSheet_(rows) {
@@ -127,7 +128,7 @@ function sanitizeRowsForSheet_(rows) {
 function isLegacyManagedTab_(name) {
   return name === '_EXPORT_LOG' ||
     /^command-runs-/i.test(name) ||
-    /^[A-Z0-9&-]+-\\d{4}-\\d{2}-\\d{2}-(?:research|analysis)-(?:summary|evidence|sources|findings|quality|visual-evidence|scores|risks|catalysts|scenarios|audit)$/i.test(name);
+    /^[A-Z0-9&-]+-\d{4}-\d{2}-\d{2}-(?:research|analysis)-(?:summary|evidence|sources|findings|quality|visual-evidence|scores|risks|catalysts|scenarios|audit)$/i.test(name);
 }
 
 function cleanupLegacyManagedTabs_(ss, indexSheet) {
