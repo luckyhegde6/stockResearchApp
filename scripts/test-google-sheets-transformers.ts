@@ -70,6 +70,15 @@ assert(researchSection('FINDINGS').some(row => row.domain === 'Fundamentals' && 
 assert(researchSection('QUALITY').some(row => row.field === 'manifest.json' && row.status === 'present'), 'Research quality checks must be included in the single run sheet');
 assert(researchRows.every(row => !Object.keys(row).some(key => /local.?path|artifact.?path|screenshot.?path|relative.?path/i.test(key))), 'Research sheet must not expose local path columns');
 assert(!JSON.stringify(researchRows).includes('research/EXAMPLE'), 'Research sheet values must not expose local filesystem paths');
+const emptyEvidenceTabs = transformResearchToSheets({
+  manifest: { ticker: 'EMPTY', companyName: 'Empty Example', generatedAt: '2026-10-09T09:00:00Z', acquisitionOnly: true, sourceArtifacts: [], dataGaps: [], warnings: [] },
+  evidencePack: {},
+}, 'EMPTY', 'EMPTY-2026-10-09-research');
+assert(
+  emptyEvidenceTabs[0]?.rows.some(row => row.section === 'EVIDENCE' && row.record_type === 'notice' && String(row.value).includes('No evidence rows')),
+  'An empty canonical evidence section should be explicit instead of appearing silently blank',
+);
+
 
 const visualRows = buildVisualEvidenceRows('EXAMPLE', []);
 assert(visualRows[0]?.embedding_status === 'not_available', 'Missing screenshots should be explicitly identified');
