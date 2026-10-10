@@ -107,7 +107,8 @@
     "sheets:export": "tsx scripts/with-google-sheets-step.ts --name \"sheets:export\" --exec \"tsx\" -- scripts/export-to-google-sheets.ts",
     "test:google-sheets-transformers": "tsx scripts/with-google-sheets-step.ts --name \"test:google-sheets-transformers\" --exec \"tsx\" -- scripts/test-google-sheets-transformers.ts",
     "test:google-sheets-dashboard": "tsx scripts/with-google-sheets-step.ts --name \"test:google-sheets-dashboard\" --exec \"tsx\" -- scripts/test-google-sheets-dashboard.ts",
-    "test:fixture": "tsx scripts/with-google-sheets-step.ts --name \"test:fixture\" --exec \"tsx\" -- scripts/ensure-test-research-fixture.ts"
+    "test:fixture": "tsx scripts/with-google-sheets-step.ts --name \"test:fixture\" --exec \"tsx\" -- scripts/ensure-test-research-fixture.ts",
+    "typecheck": "tsx scripts/with-google-sheets-step.ts --name \"typecheck\" --exec \"tsc\" -- --noEmit"
   },
   "engines": {
     "node": ">=20"

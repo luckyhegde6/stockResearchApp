@@ -2,7 +2,7 @@ import path from 'node:path';
 import { appendFile, writeFile } from 'node:fs/promises';
 import { ensureDir } from './fs.js';
 
-export type CheckpointStatus = 'START' | 'OK' | 'OK_WITH_FALLBACK' | 'WARN' | 'FAIL' | 'SKIP';
+export type CheckpointStatus = 'START' | 'OK' | 'OK_WITH_FALLBACK' | 'WARN' | 'FAIL' | 'SKIP' | 'INFO' | 'ERROR';
 
 export interface CheckpointEvent {
   seq: number;

@@ -48,7 +48,7 @@ export function cleanText(value: unknown): string | null {
   return s || null;
 }
 
-export function findKeyDeep(obj: unknown, keys: string[]): unknown {
+export function findKeyDeep(obj: unknown, keys: readonly string[]): unknown {
   if (obj === null || obj === undefined) return undefined;
   const wanted = new Set(keys.map(k => k.toLowerCase()));
   if (Array.isArray(obj)) {
