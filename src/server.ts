@@ -4,6 +4,7 @@ import path from 'node:path';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { loadAppConfig, saveAppConfig } from './lib/config-manager.js';
 import { loadNseEquityUniverse, resolveNseSecurity } from './lib/nse-securities.js';
+import { CHARTINK_SCAN_TYPES, getScansByType, type ScanType } from './lib/chartink-scan-registry.js';
 import { loadPerformanceTracker, recordScannedStockList, updatePricesAndPerformance } from './lib/performance-tracker.js';
 import { loadRunHistory, recordRunStart, recordRunComplete, getActiveProgress } from './lib/run-history.js';
 import { launchResearchProcess, launchBatchResearchProcess, launchScanProcess, launchAnalyzeProcess } from './lib/process-launcher.js';
@@ -289,17 +290,32 @@ export async function startDashboardServer() {
         return;
       }
       const matched = cachedUniverse
-        .filter((r) => r.symbol.startsWith(q) || r.companyName.toUpperCase().includes(q))
-        .slice(0, 15)
-        .map((r) => ({
-          symbol: r.symbol,
-          companyName: r.companyName,
-          series: r.series,
-          isin: r.isin,
-          preferred: r.preferredForStockResearch,
-        }));
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ query: q, totalMatches: matched.length, results: matched }));
+        .filter((r) => r.equityEligible && (
+          r.symbol.startsWith(q) ||
+          r.companyName.toUpperCase().startsWith(q) ||
+          r.symbol.includes(q) ||
+          r.companyName.toUpperCase().includes(q)
+        ))
+        .map((r) => {
+          const symbol = r.symbol.toUpperCase();
+          const companyName = r.companyName.toUpperCase();
+          const matchRank = symbol === q ? 0
+            : symbol.startsWith(q) ? 1
+            : companyName.startsWith(q) ? 2
+            : symbol.includes(q) ? 3
+            : 4;
+          return { record: r, matchRank, seriesRank: r.preferredForStockResearch ? 0 : 1 };
+        })
+        .sort((a, b) => a.matchRank - b.matchRank || a.seriesRank - b.seriesRank || a.record.symbol.localeCompare(b.record.symbol));
+      const results = matched.slice(0, 15).map(({ record: r }) => ({
+        symbol: r.symbol,
+        companyName: r.companyName,
+        series: r.series,
+        isin: r.isin,
+        preferred: r.preferredForStockResearch,
+      }));
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({ query: q, totalMatches: matched.length, results }));
       return;
     }
 
@@ -515,6 +531,25 @@ export async function startDashboardServer() {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
       }
+      return;
+    }
+
+    // API: Chartink public screener catalog
+    if (pathname === '/api/chartink/scans' && req.method === 'GET') {
+      const requestedType = (url.searchParams.get('type') || 'swing') as ScanType | 'all';
+      if (requestedType !== 'all' && !CHARTINK_SCAN_TYPES.includes(requestedType)) {
+        res.writeHead(400, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ error: 'Unknown Chartink scan category.', availableTypes: CHARTINK_SCAN_TYPES }));
+        return;
+      }
+      const scans = getScansByType(requestedType).map((scan) => ({
+        name: scan.name,
+        url: scan.url,
+        scanType: scan.scanType,
+        tags: scan.tags || [],
+      }));
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({ scanType: requestedType, count: scans.length, scans }));
       return;
     }
 
