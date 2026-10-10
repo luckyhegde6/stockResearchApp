@@ -578,6 +578,124 @@ export function transformResearchToSheets(artifacts: Record<string, any>, symbol
   ], 'research-run');
 }
 
+export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: string, baseTab: string): ResearchSheetTab {
+  const ticker = String(symbol).toUpperCase();
+  const evidence = artifacts.individualEvidence ?? {};
+  const market = evidence.market ?? {};
+  const technicals = evidence.technicals ?? {};
+  const financials = evidence.financials ?? {};
+  const catalysts = evidence.catalysts ?? {};
+  const news = artifacts.news ?? {};
+  const manifest = artifacts.manifest ?? {};
+  const rows: SheetRow[] = [];
+
+  const fact = (field: string): any => list(market.facts).find((x: any) => x?.field === field)?.value
+    ?? market.quote?.[field]
+    ?? '';
+  const factPeriod = (field: string): any => list(market.facts).find((x: any) => x?.field === field)?.asOf
+    ?? list(market.facts).find((x: any) => x?.field === field)?.period
+    ?? '';
+  const latestFinancial = list(financials.nsePeriods).at(-1) ?? {};
+  const latestMetrics = latestFinancial.metrics ?? {};
+  const headlineRows = list(news.headlines).slice(0, 8);
+  const catalystRows = list(catalysts.items).slice(0, 12);
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = catalystRows.filter((x: any) => x?.date && String(x.date) >= today).slice(0, 8);
+
+  const push = (section: string, field: string, value: unknown, source = '', period = '', notes = '') => {
+    rows.push({
+      section,
+      record_type: 'brief',
+      symbol: ticker,
+      field,
+      value: exportedValue(value),
+      source: exportedValue(source),
+      period: exportedValue(period),
+      notes: exportedValue(notes),
+    });
+  };
+
+  rows.push({ section: 'INVESTOR BRIEF', record_type: 'section_header', symbol: ticker, field: 'INVESTOR BRIEF', value: '' });
+  push('INVESTOR BRIEF', 'company', manifest.companyName ?? '', 'manifest');
+  push('INVESTOR BRIEF', 'research_generated_at', manifest.generatedAt ?? '', 'manifest');
+  push('INVESTOR BRIEF', 'data_status', manifest.acquisitionOnly === true ? 'RESEARCH_ONLY / NO CALL' : 'RESEARCH', 'manifest', '', 'Research export is evidence, not an investment recommendation.');
+
+  rows.push({ section: 'TODAY MARKET', record_type: 'section_header', symbol: ticker, field: 'TODAY MARKET', value: '' });
+  for (const [field, label] of [
+    ['last_price', 'last_price'], ['previous_close', 'previous_close'], ['open', 'open'],
+    ['day_high', 'day_high'], ['day_low', 'day_low'], ['percent_change', 'day_change_pct'],
+    ['volume', 'volume'], ['52_week_high_price', '52_week_high'], ['52_week_low_price', '52_week_low'],
+  ] as Array<[string, string]>) push('TODAY MARKET', label, fact(field), 'NSE', factPeriod(field));
+  push('TODAY MARKET', '52_week_high_membership', market.latest52WeekHigh?.row ? true : '', 'NSE');
+  push('TODAY MARKET', 'price_vs_ema50', technicals.signals?.priceVsEma50 ?? '', 'deterministic');
+  push('TODAY MARKET', 'price_vs_ema200', technicals.signals?.priceVsEma200 ?? '', 'deterministic');
+
+  rows.push({ section: 'TECHNICALS', record_type: 'section_header', symbol: ticker, field: 'TECHNICALS', value: '' });
+  const latestTech = technicals.latest ?? {};
+  for (const [field, value] of Object.entries({
+    close: latestTech.close, ema50: latestTech.ema50, ema200: latestTech.ema200,
+    rsi14: latestTech.rsi14, rsi_state: technicals.signals?.rsiState,
+    trend_price_above_ema50: technicals.signals?.priceVsEma50,
+    trend_price_above_ema200: technicals.signals?.priceVsEma200,
+    ema50_above_ema200: technicals.signals?.ema50VsEma200,
+  })) push('TECHNICALS', field, value, 'deterministic', latestTech.date ?? '');
+
+  rows.push({ section: 'LATEST EARNINGS', record_type: 'section_header', symbol: ticker, field: 'LATEST EARNINGS', value: '' });
+  push('LATEST EARNINGS', 'reporting_period', latestFinancial.period ?? '', 'NSE');
+  for (const [field, value] of Object.entries({
+    revenue: latestMetrics.revenue, operating_profit: latestMetrics.operating_profit,
+    ebitda: latestMetrics.ebitda, profit_after_tax: latestMetrics.profit_after_tax, eps: latestMetrics.eps,
+  })) push('LATEST EARNINGS', field, value, 'NSE', latestFinancial.period ?? '');
+
+  rows.push({ section: 'NEWS', record_type: 'section_header', symbol: ticker, field: 'NEWS', value: '' });
+  push('NEWS', 'headline_count', news.summary?.headlineCount ?? headlineRows.length, 'news-sentiment');
+  push('NEWS', 'sentiment', news.summary?.label ?? '', 'news-sentiment');
+  push('NEWS', 'weighted_score', news.summary?.weightedScore ?? '', 'news-sentiment');
+  for (const item of headlineRows) push('NEWS', item.title ?? '', item.url ?? '', item.source ?? item.provider ?? 'news', item.publishedAt ?? '', item.sentiment?.label ?? '');
+
+  rows.push({ section: 'CORPORATE ANNOUNCEMENTS & ACTIONS', record_type: 'section_header', symbol: ticker, field: 'CORPORATE ANNOUNCEMENTS & ACTIONS', value: '' });
+  for (const item of catalystRows.filter((x: any) => ['announcement', 'corporate_action'].includes(x?.type))) {
+    push('CORPORATE ANNOUNCEMENTS & ACTIONS', item.type ?? 'event', item.title ?? '', 'NSE', item.date ?? '', item.raw?.attchmntFile ?? item.raw?.link ?? '');
+  }
+
+  rows.push({ section: 'UPCOMING EVENTS', record_type: 'section_header', symbol: ticker, field: 'UPCOMING EVENTS', value: '' });
+  if (!upcoming.length) push('UPCOMING EVENTS', 'status', 'not_confirmed', 'catalysts', '', 'No future-dated event was confirmed in the captured catalyst dataset.');
+  for (const item of upcoming) push('UPCOMING EVENTS', item.type ?? 'event', item.title ?? '', 'catalysts', item.date ?? '');
+
+  rows.push({ section: 'DOCUMENTS & SOURCES', record_type: 'section_header', symbol: ticker, field: 'DOCUMENTS & SOURCES', value: '' });
+  for (const source of list(manifest.sourceArtifacts).filter((x: any) => x?.url).slice(0, 30)) {
+    push('DOCUMENTS & SOURCES', source.title ?? source.id ?? 'source', source.url, source.provider ?? source.type ?? '', source.retrievedAt ?? '', source.status ?? '');
+  }
+
+  rows.push({ section: 'DATA QUALITY', record_type: 'section_header', symbol: ticker, field: 'DATA QUALITY', value: '' });
+  push('DATA QUALITY', 'readiness', artifacts.readiness?.ready === true ? 'READY' : 'NOT_READY', 'readiness');
+  push('DATA QUALITY', 'quality_status', artifacts.evidenceQuality?.report?.status ?? artifacts.evidenceQuality?.status ?? '', 'evidence-quality');
+  push('DATA QUALITY', 'source_health', artifacts.sourceHealth?.overall?.status ?? artifacts.sourceHealth?.status ?? '', 'source-health');
+  push('DATA QUALITY', 'data_gaps', manifest.dataGaps ?? [], 'manifest');
+  push('DATA QUALITY', 'warnings', manifest.warnings ?? [], 'manifest');
+
+  return [{ tabName: tab(baseTab, 'brief'), dataset: 'investor-brief', rows }];
+}
+
+export function buildScreenshotTab(symbol: string, screenshots: ScreenshotRowInput[], baseTab: string): ResearchSheetTab {
+  const ticker = String(symbol).toUpperCase();
+  const rows: SheetRow[] = [{
+    section: 'SCREENSHOTS',
+    record_type: 'section_header',
+    symbol: ticker,
+    domain: 'Visual evidence',
+    field: 'SCREENSHOTS',
+    value: '',
+  }];
+  rows.push(...buildVisualEvidenceRows(ticker, screenshots).map(row => ({
+    section: 'SCREENSHOTS',
+    record_type: 'visual_evidence',
+    symbol: ticker,
+    ...row,
+  })));
+  return { tabName: tab(baseTab, 'screenshots'), dataset: 'visual-evidence', rows };
+}
+
 export function buildVisualEvidenceRows(symbol: string, screenshots: ScreenshotRowInput[]): SheetRow[] {
   if (!screenshots.length) return [{
     category: 'Visual Evidence',
