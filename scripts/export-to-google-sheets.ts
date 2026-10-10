@@ -156,6 +156,8 @@ async function loadResearchArtifacts(symbol: string): Promise<Record<string, any
     ['readiness', 'analysis-readiness.json'],
     ['analysisInputs', 'normalized/analysis-inputs.json'],
     ['evidencePack', 'normalized/analysis-evidence-pack.json'],
+    ['canonicalValues', 'normalized/canonical-values.json'],
+    ['individualEvidence', 'normalized/individual-stock-evidence.json'],
     ['reconciliation', 'normalized/reconciliation.json'],
     ['sourceHealth', 'source-health.json'],
     ['evidenceQuality', 'evidence-quality.json'],
@@ -273,7 +275,11 @@ async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRow
       let base64: string | undefined;
       let uploadSizeBytes = info.size;
       let outputWidth: number | undefined;
-      let outputHeight: number | undefined;\n      let originalWidth: number | undefined;\n      let originalHeight: number | undefined;\n      let compressionQuality: number | undefined;\n      let optimizationOccurred = false;
+      let outputHeight: number | undefined;
+      let originalWidth: number | undefined;
+      let originalHeight: number | undefined;
+      let compressionQuality: number | undefined;
+      let optimizationOccurred = false;
 
       if (info.size === 0) {
         rowStatus = 'skipped_empty_file';
@@ -314,6 +320,10 @@ async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRow
             uploadSizeBytes = normalized.sizeBytes;
             outputWidth = normalized.width;
             outputHeight = normalized.height;
+            originalWidth = normalized.originalWidth;
+            originalHeight = normalized.originalHeight;
+            compressionQuality = normalized.quality;
+            optimizationOccurred = sourceMimeType !== 'image/jpeg' || normalized.width !== normalized.originalWidth || normalized.height !== normalized.originalHeight || normalized.sizeBytes < info.size;
             totalBytes += normalized.sizeBytes;
             rowStatus = 'pending_embedding';
           }
@@ -329,6 +339,10 @@ async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRow
         originalSizeBytes: info.size,
         width: outputWidth,
         height: outputHeight,
+        originalWidth,
+        originalHeight,
+        optimizationOccurred,
+        compressionQuality,
         mimeType: base64 ? 'image/jpeg' : sourceMimeType,
         status: base64 ? 'pending_embedding' : rowStatus,
         rowIndex: 0,
@@ -361,7 +375,7 @@ function appendScreenshotSection(
     section: 'SCREENSHOTS',
     record_type: 'section_header',
     symbol: symbol.toUpperCase(),
-    domain: 'TradingView',
+    domain: 'Visual evidence',
     field: 'SCREENSHOTS',
     value: '',
   });
@@ -370,7 +384,7 @@ function appendScreenshotSection(
       section: 'SCREENSHOTS',
       record_type: 'visual_evidence',
       symbol: symbol.toUpperCase(),
-      domain: 'TradingView',
+      domain: 'Visual evidence',
       field: 'screenshots',
       value: 'no_screenshots_found',
       status: 'not_available',
@@ -386,25 +400,32 @@ function appendScreenshotSection(
   for (const screenshot of screenshots) {
     const rowIndex = tab.rows.length + 2;
     const chartPeriod = screenshot.fileName
-      .replace(/^tradingview[-_]?/i, '')
+      .replace(/^(?:tradingview|screener|tijori)[-_]?/i, '')
       .replace(/\.(png|jpe?g|webp)$/i, '');
     const upload = uploads.find(item => item.fileName === screenshot.fileName);
-    const embeddingStatus = screenshot.base64 ? 'pending_embedding' : screenshot.status;
+    const domain = /^screener/i.test(screenshot.fileName) ? 'Screener.in'
+      : /^tijori/i.test(screenshot.fileName) ? 'Tijori Finance'
+      : /^tradingview/i.test(screenshot.fileName) ? 'TradingView' : 'Visual evidence';
+    const status = screenshot.base64 ? 'pending_embedding' : screenshot.status;
     tab.rows.push({
       section: 'SCREENSHOTS',
       record_type: 'visual_evidence',
       symbol: symbol.toUpperCase(),
-      domain: 'TradingView',
+      domain,
       field: chartPeriod,
-      value: screenshot.status,
+      value: status,
       file_name: screenshot.fileName,
       size_bytes: screenshot.sizeBytes,
       original_size_bytes: screenshot.originalSizeBytes ?? screenshot.sizeBytes,
       image_width: screenshot.width ?? '',
       image_height: screenshot.height ?? '',
-      status: screenshot.status,
-      embedding_status: embeddingStatus,
-      notes: screenshot.base64 ? 'Optimized image payload is attached; final status is set by Apps Script after insertion.' : screenshot.status,
+      original_image_width: screenshot.originalWidth ?? '',
+      original_image_height: screenshot.originalHeight ?? '',
+      optimization_occurred: screenshot.optimizationOccurred === undefined ? '' : screenshot.optimizationOccurred,
+      compression_quality: screenshot.compressionQuality ?? '',
+      status,
+      embedding_status: status,
+      notes: screenshot.base64 ? 'Optimized image payload is attached; Apps Script will record the final insertion status.' : screenshot.status,
       preview: '',
     });
     if (upload) {
