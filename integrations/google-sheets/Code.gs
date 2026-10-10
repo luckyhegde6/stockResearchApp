@@ -270,7 +270,7 @@ function styleInvestorDashboard_(sheet, rows, symbol) {
   if (tableRows >= tableHeader) {
     sheet.getRange(tableHeader, 1, 1, Math.max(sheet.getLastColumn(), 1))
       .setBackground('#17365D').setFontColor('#FFFFFF').setFontWeight('bold').setWrap(true);
-    sheet.setFrozenRows(tableHeader);
+    sheet.setFrozenRows(3);
     for (var r = tableHeader + 1; r <= tableRows; r++) {
       var type = String(sheet.getRange(r, 2).getValue() || '');
       if (type === 'section_header') {
