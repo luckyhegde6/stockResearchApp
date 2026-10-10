@@ -87,26 +87,32 @@ async function loadJson(file: string): Promise<any> {
 }
 
 function isPathLikeKey(key: string): boolean {
-  return /(?:localPath|relativePath|artifactPath|screenshotPath|evidencePath|reportPath|filePath|local_path|relative_path|artifact_path|screenshot_path|evidence_path|report_path|file_path)/i.test(key);
+  return /^(?:path|localPath|relativePath|artifactPath|screenshotPath|evidencePath|reportPath|filePath|sourcePath|local_path|relative_path|artifact_path|screenshot_path|evidence_path|report_path|file_path|source_path)$/i.test(key) ||
+    /(?:local|relative|artifact|screenshot|evidence|report|file|source)[_-]?path/i.test(key);
 }
 
 function isPathLikeValue(value: unknown): boolean {
   if (typeof value !== 'string') return false;
   const text = value.trim();
-  return /^[A-Za-z]:[\\\\/]/.test(text) ||
-    text.startsWith('\\\\\\\\') ||
-    /^\\/(?:Users|home|mnt)\\//i.test(text) ||
-    /^(?:research|outputs)[\\\\/]/i.test(text);
+  return /^[A-Za-z]:[\\/]/.test(text) ||
+    text.startsWith('\\\\') ||
+    /^\/(?:Users|home|mnt)\//i.test(text) ||
+    /^(?:research|outputs)[\\/]/i.test(text);
 }
 
 function scalar(value: unknown): string | number | boolean {
   if (value === null || value === undefined) return '';
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
-  return JSON.stringify(value, (key, item) => isPathLikeKey(key) ? undefined : item);
+  return JSON.stringify(value, (key, item) =>
+    isPathLikeKey(key) || isPathLikeValue(item) ? undefined : item
+  ) ?? '';
 }
 
 function stripLocalPaths(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(stripLocalPaths);
+  if (Array.isArray(value)) {
+    return value.filter(item => !isPathLikeValue(item)).map(stripLocalPaths);
+  }
+  if (typeof value === 'string') return isPathLikeValue(value) ? '' : value;
   if (value && typeof value === 'object') {
     return Object.fromEntries(Object.entries(value as Record<string, unknown>)
       .filter(([key, item]) => !isPathLikeKey(key) && !isPathLikeValue(item))
