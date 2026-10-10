@@ -9,6 +9,8 @@ import {
   type ScreenshotRowInput,
   type ScreenshotUpload,
   type ResearchSheetTab,
+  buildInvestorBriefTab,
+  buildScreenshotTab,
 } from './google-sheets-transformers.js';
 
 const ROOT = process.cwd();
@@ -161,6 +163,7 @@ async function loadResearchArtifacts(symbol: string): Promise<Record<string, any
     ['reconciliation', 'normalized/reconciliation.json'],
     ['sourceHealth', 'source-health.json'],
     ['evidenceQuality', 'evidence-quality.json'],
+    ['news', 'normalized/news-sentiment.json'],
   ];
   const artifacts: Record<string, any> = {};
   for (const [key, relative] of files) {
@@ -366,74 +369,19 @@ async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRow
   return { rows, uploads };
 }
 
-function appendScreenshotSection(
-  tab: ResearchSheetTab,
+function prepareScreenshotTab(
   symbol: string,
+  baseTab: string,
   screenshots: ScreenshotRowInput[],
   uploads: ScreenshotUpload[],
-): void {
-  tab.rows.push({
-    section: 'SCREENSHOTS',
-    record_type: 'section_header',
-    symbol: symbol.toUpperCase(),
-    domain: 'Visual evidence',
-    field: 'SCREENSHOTS',
-    value: '',
-  });
-  if (!screenshots.length) {
-    tab.rows.push({
-      section: 'SCREENSHOTS',
-      record_type: 'visual_evidence',
-      symbol: symbol.toUpperCase(),
-      domain: 'Visual evidence',
-      field: 'screenshots',
-      value: 'no_screenshots_found',
-      status: 'not_available',
-      notes: 'No chart images were found in this research run.',
-      file_name: '',
-      size_bytes: '',
-      embedding_status: 'not_available',
-      preview: '',
-    });
-    return;
+): ResearchSheetTab {
+  const tab = buildScreenshotTab(symbol, screenshots, baseTab);
+  for (const upload of uploads) {
+    const rowIndex = tab.rows.findIndex(row => row.record_type === 'visual_evidence' && row.file_name === upload.fileName) + 2;
+    upload.tabName = tab.tabName;
+    upload.rowIndex = rowIndex;
   }
-
-  for (const screenshot of screenshots) {
-    const rowIndex = tab.rows.length + 2;
-    const chartPeriod = screenshot.fileName
-      .replace(/^(?:tradingview|screener|tijori)[-_]?/i, '')
-      .replace(/\.(png|jpe?g|webp)$/i, '');
-    const upload = uploads.find(item => item.fileName === screenshot.fileName);
-    const domain = /^screener/i.test(screenshot.fileName) ? 'Screener.in'
-      : /^tijori/i.test(screenshot.fileName) ? 'Tijori Finance'
-      : /^tradingview/i.test(screenshot.fileName) ? 'TradingView' : 'Visual evidence';
-    const status = screenshot.base64 ? 'pending_embedding' : screenshot.status;
-    tab.rows.push({
-      section: 'SCREENSHOTS',
-      record_type: 'visual_evidence',
-      symbol: symbol.toUpperCase(),
-      domain,
-      field: chartPeriod,
-      value: status,
-      file_name: screenshot.fileName,
-      size_bytes: screenshot.sizeBytes,
-      original_size_bytes: screenshot.originalSizeBytes ?? screenshot.sizeBytes,
-      image_width: screenshot.width ?? '',
-      image_height: screenshot.height ?? '',
-      original_image_width: screenshot.originalWidth ?? '',
-      original_image_height: screenshot.originalHeight ?? '',
-      optimization_occurred: screenshot.optimizationOccurred === undefined ? '' : screenshot.optimizationOccurred,
-      compression_quality: screenshot.compressionQuality ?? '',
-      status,
-      embedding_status: status,
-      notes: screenshot.base64 ? 'Optimized image payload is attached; Apps Script will record the final insertion status.' : screenshot.status,
-      preview: '',
-    });
-    if (upload) {
-      upload.tabName = tab.tabName;
-      upload.rowIndex = rowIndex;
-    }
-  }
+  return tab;
 }
 
 async function buildExport(parsed: ParsedArgs, baseTab: string): Promise<{ tabs: ResearchSheetTab[]; screenshots: ScreenshotUpload[] }> {
@@ -442,10 +390,11 @@ async function buildExport(parsed: ParsedArgs, baseTab: string): Promise<{ tabs:
   if (kind === 'research') {
     if (!symbol) usage();
     const artifacts = await loadResearchArtifacts(symbol);
-    const tabs = transformResearchToSheets(artifacts, symbol, baseTab);
+    const researchTabs = transformResearchToSheets(artifacts, symbol, baseTab);
     const visuals = await collectScreenshots(symbol);
-    appendScreenshotSection(tabs[0], symbol, visuals.rows, visuals.uploads);
-    return { tabs, screenshots: visuals.uploads };
+    const screenshotTab = prepareScreenshotTab(symbol, baseTab, visuals.rows, visuals.uploads);
+    const briefTab = buildInvestorBriefTab(artifacts, symbol, baseTab);
+    return { tabs: [screenshotTab, ...briefTab, ...researchTabs], screenshots: visuals.uploads };
   }
 
   let sourceFile = file;
@@ -464,10 +413,24 @@ async function buildExport(parsed: ParsedArgs, baseTab: string): Promise<{ tabs:
   if (kind === 'analysis') {
     if (!symbol && !value?.company?.ticker) throw new Error('Analysis export requires SYMBOL or company.ticker in the analysis JSON.');
     const ticker = String(value?.company?.ticker ?? symbol).toUpperCase();
-    const tabs = transformAnalysisToSheets(value, ticker, baseTab);
+    const analysisTabs = transformAnalysisToSheets(value, ticker, baseTab);
     const visuals = await collectScreenshots(ticker);
-    appendScreenshotSection(tabs[0], ticker, visuals.rows, visuals.uploads);
-    return { tabs, screenshots: visuals.uploads };
+    const screenshotTab = prepareScreenshotTab(ticker, baseTab, visuals.rows, visuals.uploads);
+    const briefArtifacts = {
+      manifest: { ticker, companyName: value?.company?.name ?? '', generatedAt: value?.analysis_meta?.analysis_timestamp ?? '' },
+      readiness: { ready: true },
+      evidenceQuality: {},
+      sourceHealth: {},
+      individualEvidence: {
+        market: { facts: [{ field: 'last_price', value: value?.market_snapshot?.current_price }] },
+        technicals: { latest: {}, signals: {} },
+        financials: { nsePeriods: [] },
+        catalysts: {},
+      },
+      news: value?.news_sentiment ? { summary: value.news_sentiment, headlines: [] } : {},
+    };
+    const briefTab = buildInvestorBriefTab(briefArtifacts, ticker, baseTab);
+    return { tabs: [screenshotTab, ...briefTab, ...analysisTabs], screenshots: visuals.uploads };
   }
 
   return {
