@@ -405,6 +405,30 @@
       background: rgba(99, 102, 241, 0.2);
     }
 
+    .launcher-autocomplete { position: relative; width: 100%; }
+    .launcher-autocomplete input { width: 100%; }
+    .launcher-autocomplete-menu {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      z-index: 120; display: none; max-height: 320px; overflow-y: auto;
+      background: #0b1220; border: 1px solid var(--border-accent);
+      border-radius: 10px; box-shadow: 0 16px 32px rgba(0,0,0,.45);
+    }
+    .launcher-autocomplete-item {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; padding: .7rem .9rem; text-align: left; color: var(--text-main);
+      background: transparent; border: 0; border-bottom: 1px solid var(--border);
+      cursor: pointer; font: inherit;
+    }
+    .launcher-autocomplete-item:hover,
+    .launcher-autocomplete-item[aria-selected="true"] { background: rgba(99, 102, 241, .2); }
+    .launcher-autocomplete-main { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+    .launcher-autocomplete-main strong { color: #a5f3fc; font-size: .9rem; }
+    .launcher-autocomplete-main small { color: var(--text-muted); font-size: .78rem; overflow-wrap: anywhere; }
+    .launcher-series { flex: 0 0 auto; color: var(--text-muted); font-size: .72rem; }
+    .scan-link-meta { color: var(--text-muted); font-size: .85rem; line-height: 1.55; overflow-wrap: anywhere; }
+    .scan-link-meta strong { display: block; color: var(--text-main); margin-bottom: .25rem; }
+    .scan-link-actions { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-top: .75rem; }
+
     .btn {
       display: inline-flex;
       align-items: center;
@@ -658,7 +682,13 @@
           <div class="card-title">Single Stock Research Launcher</div>
           <div class="form-group">
             <label for="launch-symbol-input">Select or Type NSE Equity Symbol</label>
-            <input type="text" id="launch-symbol-input" placeholder="e.g. ITC, HDFCBANK, IOC, HPCL, RELIANCE" value="ITC">
+            <div class="launcher-autocomplete">
+              <input type="text" id="launch-symbol-input" placeholder="Type NSE symbol or company name (e.g. ITC, Infosys, Reliance)" value="ITC"
+                autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                aria-controls="launch-symbol-suggestions" oninput="onLaunchSymbolSearchInput(this.value)" onkeydown="handleLaunchSymbolKeydown(event)">
+              <div id="launch-symbol-suggestions" class="launcher-autocomplete-menu" role="listbox" aria-label="NSE equity suggestions"></div>
+            </div>
+            <small style="display:block;color:var(--text-muted);margin-top:.4rem;">Search the NSE security master by symbol or company name. The watchlist below is only your saved shortlist.</small>
           </div>
           <div class="form-group">
             <label>Include Supplementary Options</label>
@@ -755,6 +785,27 @@
         <pre id="scan-data-display">Select scan type above to view output dataset...</pre>
       </div>
     </div>
+
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-title">Chartink Swing Scans</div>
+        <p style="font-size: .88rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.6;">
+          Curated public swing-trading screeners from Chartink. Select one to open its live scan, description, and results on Chartink. These links are external screeners and are not executed by the local research pipeline.
+        </p>
+        <div class="form-group" style="max-width: 820px;">
+          <label for="swing-scan-dropdown">Select a Swing Screener</label>
+          <select id="swing-scan-dropdown" onchange="showSelectedSwingScan()" style="width:100%;">
+            <option value="">Loading Chartink swing screeners...</option>
+          </select>
+        </div>
+        <div id="swing-scan-summary" class="scan-link-meta" aria-live="polite">
+          <strong id="swing-scan-title">Loading public screeners...</strong>
+          <span id="swing-scan-tags">The list is loaded from the Chartink scan registry.</span>
+          <div class="scan-link-actions">
+            <a id="swing-scan-open" class="btn btn-emerald" href="https://chartink.com/screeners" target="_blank" rel="noopener noreferrer">Open Selected Screener on Chartink ↗</a>
+            <a class="btn btn-secondary" href="https://chartink.com/screeners" target="_blank" rel="noopener noreferrer">Browse All Chartink Screeners ↗</a>
+          </div>
+        </div>
+      </div>
 
     <!-- TAB 5: PERFORMANCE TRACKER -->
     <div id="tab-tracking" class="tab-content">
@@ -1083,7 +1134,10 @@
       if (tabId === 'results') loadSymbolDetails(document.getElementById('inspect-select').value);
       if (tabId === 'tracking') fetchTrackingData();
       if (tabId === 'history') fetchHistoryData();
-      if (tabId === 'scans') loadScanType(document.getElementById('scan-dropdown').value);
+      if (tabId === 'scans') {
+        loadScanType(document.getElementById('scan-dropdown').value);
+        loadSwingScanOptions();
+      }
       if (tabId === 'laya') loadLayaDecisions(document.getElementById('laya-ticker-select').value);
       if (tabId === 'sheets') refreshSheetsStatus();
     }
@@ -1327,6 +1381,107 @@
         showToast('Trigger failed: ' + err.message);
       }
     }
+
+    let launchSearchTimeout = null;
+    let launchSymbolResults = [];
+    let launchActiveSuggestion = -1;
+
+    function hideLaunchSymbolSuggestions() {
+      const list = document.getElementById('launch-symbol-suggestions');
+      const input = document.getElementById('launch-symbol-input');
+      if (list) list.style.display = 'none';
+      if (input) input.setAttribute('aria-expanded', 'false');
+      launchActiveSuggestion = -1;
+    }
+
+    function renderLaunchSymbolSuggestions(results) {
+      const list = document.getElementById('launch-symbol-suggestions');
+      const input = document.getElementById('launch-symbol-input');
+      launchSymbolResults = results || [];
+      launchActiveSuggestion = -1;
+      if (!launchSymbolResults.length) {
+        list.innerHTML = '<div style="padding:.8rem 1rem;color:var(--text-muted);font-size:.85rem;">No matching NSE equity symbols found.</div>';
+        list.style.display = 'block';
+        input.setAttribute('aria-expanded', 'true');
+        return;
+      }
+      list.innerHTML = launchSymbolResults.map((r, index) => `
+        <button type="button" role="option" id="launch-symbol-option-${index}" aria-selected="false"
+          class="launcher-autocomplete-item" data-symbol="${sheetsEscape(r.symbol)}" onmousedown="event.preventDefault()"
+          onclick="selectLaunchSymbol(this.dataset.symbol)">
+          <span class="launcher-autocomplete-main">
+            <strong>${sheetsEscape(r.symbol)}</strong>
+            <small>${sheetsEscape(r.companyName)}</small>
+          </span>
+          <span class="launcher-series">${sheetsEscape(r.series)}${r.preferred ? ' · NSE EQ' : ''}</span>
+        </button>
+      `).join('');
+      list.style.display = 'block';
+      input.setAttribute('aria-expanded', 'true');
+    }
+
+    function onLaunchSymbolSearchInput(value) {
+      clearTimeout(launchSearchTimeout);
+      const q = String(value || '').trim();
+      if (!q) {
+        hideLaunchSymbolSuggestions();
+        return;
+      }
+      launchSearchTimeout = setTimeout(async () => {
+        try {
+          const response = await fetch('/api/securities/search?q=' + encodeURIComponent(q), { cache: 'no-store' });
+          if (!response.ok) throw new Error('NSE symbol search failed.');
+          const data = await response.json();
+          if (document.getElementById('launch-symbol-input').value.trim() !== q) return;
+          renderLaunchSymbolSuggestions(data.results || []);
+        } catch (error) {
+          const list = document.getElementById('launch-symbol-suggestions');
+          list.innerHTML = '<div style="padding:.8rem 1rem;color:var(--accent-rose);font-size:.85rem;">Could not load NSE suggestions. Check the dashboard server.</div>';
+          list.style.display = 'block';
+          document.getElementById('launch-symbol-input').setAttribute('aria-expanded', 'true');
+        }
+      }, 180);
+    }
+
+    function selectLaunchSymbol(symbol) {
+      const input = document.getElementById('launch-symbol-input');
+      input.value = String(symbol || '').toUpperCase();
+      document.getElementById('cmd-preview').textContent = 'npm run research -- ' + input.value;
+      hideLaunchSymbolSuggestions();
+      input.focus();
+    }
+
+    function handleLaunchSymbolKeydown(event) {
+      const list = document.getElementById('launch-symbol-suggestions');
+      if (list.style.display !== 'block') return;
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        launchActiveSuggestion = Math.min(launchActiveSuggestion + 1, launchSymbolResults.length - 1);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        launchActiveSuggestion = Math.max(launchActiveSuggestion - 1, 0);
+      } else if (event.key === 'Enter' && launchActiveSuggestion >= 0 && launchSymbolResults[launchActiveSuggestion]) {
+        event.preventDefault();
+        selectLaunchSymbol(launchSymbolResults[launchActiveSuggestion].symbol);
+        return;
+      } else if (event.key === 'Escape') {
+        hideLaunchSymbolSuggestions();
+        return;
+      } else {
+        return;
+      }
+      list.querySelectorAll('.launcher-autocomplete-item').forEach((option, index) => {
+        const active = index === launchActiveSuggestion;
+        option.setAttribute('aria-selected', active ? 'true' : 'false');
+        if (active) option.scrollIntoView({ block: 'nearest' });
+      });
+    }
+
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Element && !event.target.closest('.launcher-autocomplete')) {
+        hideLaunchSymbolSuggestions();
+      }
+    });
 
     async function triggerBatchRun() {
       const listStr = document.getElementById('batch-list').value.trim();
@@ -1644,6 +1799,54 @@
         canonicalBox.textContent = `// Error loading facts: ${err.message}`;
         readinessBox.textContent = `// Error loading readiness: ${err.message}`;
       }
+    }
+
+    let swingScanCatalog = [];
+    let swingScanCatalogLoaded = false;
+
+    async function loadSwingScanOptions(forceRefresh = false) {
+      const select = document.getElementById('swing-scan-dropdown');
+      if (!select) return;
+      if (swingScanCatalogLoaded && !forceRefresh) {
+        showSelectedSwingScan();
+        return;
+      }
+      select.innerHTML = '<option value="">Loading Chartink swing screeners...</option>';
+      try {
+        const response = await fetch('/api/chartink/scans?type=swing', { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Could not load swing screeners.');
+        swingScanCatalog = Array.isArray(data.scans) ? data.scans : [];
+        if (!swingScanCatalog.length) throw new Error('No swing screeners are currently listed.');
+        select.innerHTML = swingScanCatalog.map((scan, index) =>
+          '<option value="' + index + '">' + sheetsEscape(scan.name) + '</option>'
+        ).join('');
+        swingScanCatalogLoaded = true;
+        showSelectedSwingScan();
+      } catch (error) {
+        select.innerHTML = '<option value="">Swing screeners unavailable</option>';
+        document.getElementById('swing-scan-title').textContent = 'Could not load Chartink swing screeners';
+        document.getElementById('swing-scan-tags').textContent = error && error.message ? error.message : String(error);
+        document.getElementById('swing-scan-open').href = 'https://chartink.com/screeners';
+      }
+    }
+
+    function showSelectedSwingScan() {
+      const select = document.getElementById('swing-scan-dropdown');
+      if (!select) return;
+      const scan = swingScanCatalog[Number(select.value)];
+      const title = document.getElementById('swing-scan-title');
+      const tags = document.getElementById('swing-scan-tags');
+      const open = document.getElementById('swing-scan-open');
+      if (!scan) {
+        title.textContent = 'Select a listed public Chartink screener';
+        tags.textContent = 'Chartink screeners may change or be removed by their authors.';
+        open.href = 'https://chartink.com/screeners';
+        return;
+      }
+      title.textContent = scan.name;
+      tags.textContent = 'Category: Swing Scans' + (scan.tags && scan.tags.length ? ' · Tags: ' + scan.tags.join(', ') : '') + ' · Opens on Chartink; verify its rules and data freshness there.';
+      open.href = scan.url;
     }
 
     async function loadScanType(type) {
