@@ -2,7 +2,6 @@ import 'dotenv/config';
 import path from 'node:path';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import {
-  buildVisualEvidenceRows,
   transformAnalysisToSheets,
   transformResearchToSheets,
   type ScreenshotRowInput,
