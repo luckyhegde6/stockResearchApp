@@ -76,6 +76,9 @@ function doPost(e) {
       });
     });
 
+    if (results.length && ss.getSheetByName(results[0].tabName)) {
+      ss.setActiveSheet(ss.getSheetByName(results[0].tabName));
+    }
     SpreadsheetApp.flush();
     return json_({
       ok: true,
