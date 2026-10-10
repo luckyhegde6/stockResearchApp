@@ -590,11 +590,19 @@ export function buildVisualEvidenceRows(symbol: string, screenshots: ScreenshotR
     embedding_status: 'not_available',
   }];
   return screenshots.map(item => ({
-    category: 'TradingView',
+    category: /^screener/i.test(item.fileName) ? 'Screener.in' : /^tijori/i.test(item.fileName) ? 'Tijori Finance' : 'TradingView',
     symbol,
     file_name: item.fileName,
-    chart_period: item.fileName.replace(/^tradingview[-_]?/i, '').replace(/\.(png|jpe?g|webp)$/i, ''),
+    chart_period: item.fileName.replace(/^(?:tradingview|screener|tijori)[-_]?/i, '').replace(/\.(png|jpe?g|webp)$/i, ''),
     size_bytes: item.sizeBytes,
+    original_size_bytes: item.originalSizeBytes ?? item.sizeBytes,
+    image_width: item.width ?? '',
+    image_height: item.height ?? '',
+    original_image_width: item.originalWidth ?? '',
+    original_image_height: item.originalHeight ?? '',
+    optimization_occurred: item.optimizationOccurred ?? '',
+    compression_quality: item.compressionQuality ?? '',
+    status: item.status,
     embedding_status: item.status,
     preview: '',
   }));
