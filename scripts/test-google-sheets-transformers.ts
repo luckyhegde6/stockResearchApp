@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   buildVisualEvidenceRows,
+  buildInvestorBriefTab,
+  buildScreenshotTab,
   fitWithinPixelLimit,
   transformAnalysisToSheets,
   transformResearchToSheets,
@@ -102,6 +104,64 @@ assert(packlessSection('EVIDENCE').some(row => row.field === 'rsi14' && row.valu
 assert(packlessSection('SUMMARY').some(row => row.field === 'evidence_facts' && row.value === 1), 'Research summary evidence counts must match canonical fallback rows');
 assert(packlessSection('SUMMARY').some(row => row.field === 'calculated_metrics' && row.value === 1), 'Research summary metric counts must match canonical fallback rows');
 
+
+const briefArtifacts = {
+  manifest: {
+    ticker: 'EXAMPLE',
+    companyName: 'Example Ltd',
+    generatedAt: '2026-10-10T10:00:00Z',
+    acquisitionOnly: true,
+    sourceArtifacts: [{ id: 'nse-quote', provider: 'NSE', type: 'market_data', title: 'NSE Quote', status: 'ok', url: 'https://nse.example/quote', retrievedAt: '2026-10-10T10:00:00Z' }],
+    dataGaps: [],
+    warnings: [],
+  },
+  readiness: { ready: true },
+  evidenceQuality: { report: { status: 'ok' } },
+  sourceHealth: { overall: { status: 'ok' } },
+  individualEvidence: {
+    market: {
+      facts: [
+        { field: 'last_price', value: 180 },
+        { field: 'open', value: 178 },
+        { field: 'day_high', value: 182 },
+        { field: 'day_low', value: 176 },
+        { field: 'volume', value: 1234567 },
+      ],
+      latest52WeekHigh: { row: { new52WHL: 190 } },
+    },
+    technicals: { latest: { date: '2026-10-10', close: 180, ema50: 175, ema200: 160, rsi14: 61 }, signals: { priceVsEma50: true, priceVsEma200: true, rsiState: 'neutral' } },
+    financials: { nsePeriods: [{ period: 'Sep-2026', metrics: { revenue: 1000, profit_after_tax: 120, eps: 4.2 } }] },
+    catalysts: { items: [{ type: 'announcement', date: '2026-10-09', title: 'Board meeting update' }, { type: 'board_meeting', date: '2026-10-15', title: 'Quarterly results' }] },
+  },
+  news: {
+    summary: { headlineCount: 2, label: 'NEUTRAL', weightedScore: 0.01 },
+    headlines: [{ title: 'Example order update', url: 'https://news.example/1', source: 'Example News', publishedAt: '2026-10-10T08:00:00Z', sentiment: { label: 'positive' } }],
+  },
+};
+const briefTabs = buildInvestorBriefTab(briefArtifacts, 'EXAMPLE', 'EXAMPLE-2026-10-10-research');
+assert(briefTabs.length === 1 && briefTabs[0]?.tabName.endsWith('-brief'), 'Investor brief must be a dedicated tab');
+assert(briefTabs[0]?.rows.some(row => row.section === 'TODAY MARKET' && row.field === 'open' && row.value === 178), 'Investor brief must expose today open');
+assert(briefTabs[0]?.rows.some(row => row.section === 'TODAY MARKET' && row.field === 'volume' && row.value === 1234567), 'Investor brief must expose today volume');
+assert(briefTabs[0]?.rows.some(row => row.section === 'LATEST EARNINGS' && row.field === 'profit_after_tax' && row.value === 120), 'Investor brief must expose latest earnings metrics');
+assert(briefTabs[0]?.rows.some(row => row.section === 'NEWS' && row.field === 'Example order update'), 'Investor brief must expose latest news headlines');
+assert(briefTabs[0]?.rows.some(row => row.section === 'UPCOMING EVENTS' && row.value === 'Quarterly results'), 'Investor brief must expose upcoming events');
+const screenshotTab = buildScreenshotTab('EXAMPLE', [{
+  fileName: 'tradingview-1d.png',
+  relativePath: '',
+  sizeBytes: 100000,
+  originalSizeBytes: 200000,
+  width: 900,
+  height: 800,
+  originalWidth: 1200,
+  originalHeight: 1000,
+  optimizationOccurred: true,
+  compressionQuality: 0.76,
+  mimeType: 'image/jpeg',
+  status: 'pending_embedding',
+  rowIndex: 0,
+}], 'EXAMPLE-2026-10-10-research');
+assert(screenshotTab.tabName.endsWith('-screenshots'), 'Screenshots must use a dedicated tab');
+assert(screenshotTab.rows.some(row => row.record_type === 'visual_evidence' && row.file_name === 'tradingview-1d.png'), 'Dedicated screenshot tab must retain screenshot metadata');
 
 const visualRows = buildVisualEvidenceRows('EXAMPLE', []);
 assert(visualRows[0]?.embedding_status === 'not_available', 'Missing screenshots should be explicitly identified');
