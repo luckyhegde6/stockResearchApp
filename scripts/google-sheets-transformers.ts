@@ -571,7 +571,7 @@ export function transformResearchToSheets(artifacts: Record<string, any>, symbol
   }));
   return consolidateRunTabs(symbol, baseTab, [
     { tabName: tab(baseTab, 'summary'), dataset: 'research-summary', rows: [summary] },
-    { tabName: tab(baseTab, 'evidence'), dataset: 'research-evidence', rows: researchEvidenceRows(pack, { canonicalValues, ...individualEvidence }) },
+    { tabName: tab(baseTab, 'evidence'), dataset: 'research-evidence', rows: researchEvidenceRows(pack, { ...individualEvidence, canonicalValues }) },
     { tabName: tab(baseTab, 'sources'), dataset: 'research-sources', rows: sourceArtifactRows(manifest) },
     { tabName: tab(baseTab, 'findings'), dataset: 'research-findings', rows: findings },
     { tabName: tab(baseTab, 'quality'), dataset: 'research-quality', rows: qualityRows },
