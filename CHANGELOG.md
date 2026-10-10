@@ -12,7 +12,9 @@ Canonical release history for repository behavior. Older detail remains in docs/
 - Added a universal process lifecycle: all `src/index.ts` CLI commands, all npm scripts, and dashboard-launched research/batch/analysis/scan jobs create a start/final Sheets status record.
 - Kept process lifecycle state and execution reports local while publishing supported research/analysis/scan datasets through the consolidated Sheets exporter.
 - Added an explicit running state and CI contract checks ensuring no npm script bypasses the shared Sheets lifecycle.
-- Added screenshot optimization (JPEG re-encoding, below 900,000 pixels and byte threshold), original/optimized image metadata, receiver-side size/pixel checks, consistent embedding statuses, and recursive local-path redaction.\n- Added deterministic evidence fallback from `normalized/canonical-values.json` when the optional analysis evidence pack is missing, plus regression tests and versioned Apps Script health checks.\n- Documented local deployment/configuration requirements and the need to redeploy Apps Script separately.
+- Added screenshot optimization (JPEG re-encoding, below 900,000 pixels and byte threshold), original/optimized image metadata, receiver-side size/pixel checks, consistent embedding statuses, and recursive local-path redaction.
+- Added deterministic evidence fallback from `normalized/canonical-values.json` when the optional analysis evidence pack is missing, plus regression tests and versioned Apps Script health checks.
+- Documented local deployment/configuration requirements and the need to redeploy Apps Script separately.
 
 ### Research roadmap
 - Added a roadmap for Kronos forecasting/backtesting, Pine Script strategy research, Lightweight Charts visualization, and future OpenAlgo integration.
