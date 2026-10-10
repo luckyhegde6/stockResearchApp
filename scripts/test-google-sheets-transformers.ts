@@ -36,16 +36,20 @@ const analysis = {
 };
 
 const analysisTabs = transformAnalysisToSheets(analysis, 'EXAMPLE', 'EXAMPLE-2026-10-09-analysis');
-const bySuffix = (suffix: string) => analysisTabs.find(item => item.tabName.endsWith(suffix));
-assert(analysisTabs.length === 8, 'Analysis export should split into eight classified tabs');
-assert(bySuffix('-summary')?.rows[0]?.recommendation === 'BUY', 'Summary should expose recommendation as a first-class column');
-assert(bySuffix('-summary')?.rows[0]?.current_price_inr === 125.5, 'Summary should expose current price as a number');
-assert(bySuffix('-findings')?.rows.some(row => row.domain === 'Fundamentals' && row.field === 'growth.revenue_growth' && row.value === 14), 'Findings should retain domain and nested field classification');
-assert(bySuffix('-risks')?.rows[0]?.early_warning_indicator === 'Margin decline', 'Risks should have dedicated typed columns');
-assert(bySuffix('-catalysts')?.rows[0]?.confirmation_condition === 'Commissioning announcement', 'Catalysts should have dedicated typed columns');
-assert(bySuffix('-scenarios')?.rows.length === 3, 'Bull/base/bear scenarios should be separated into rows');
-assert(bySuffix('-sources')?.rows[0]?.url === 'https://example.com', 'Source URLs should be preserved as their own column');
-assert(bySuffix('-audit')?.rows.some(row => row.audit_type === 'source_conflict'), 'Audit conflicts should be published');
+const analysisTab = analysisTabs[0];
+const rowsIn = (section: string) => analysisTab?.rows.filter(row => row.section === section && row.record_type !== 'section_header') || [];
+const summaryValue = (field: string) => rowsIn('SUMMARY').find(row => row.field === field)?.value;
+assert(analysisTabs.length === 1, 'Analysis export must use exactly one sheet per run');
+assert(analysisTab.tabName === 'EXAMPLE-2026-10-09-analysis', 'Analysis tab should use the unsuffixed run name');
+assert(summaryValue('recommendation') === 'BUY', 'Summary section should expose recommendation as a labelled value');
+assert(summaryValue('current_price_inr') === 125.5, 'Summary section should preserve current price as a number');
+assert(rowsIn('FINDINGS').some(row => row.domain === 'Fundamentals' && row.field === 'growth.revenue_growth' && row.value === 14), 'Findings should retain domain and nested field classification');
+assert(rowsIn('RISKS').some(row => row.field === 'Input costs rise' && String(row.details).includes('early_warning_indicator')), 'Risk detail fields should survive consolidation');
+assert(rowsIn('CATALYSTS').some(row => String(row.details).includes('Commissioning announcement')), 'Catalyst confirmation details should survive consolidation');
+assert(rowsIn('SCENARIOS').length === 3, 'Bull/base/bear scenarios should be separated into rows');
+assert(rowsIn('SOURCES').some(row => row.source_url === 'https://example.com'), 'Source URLs should be preserved as their own column');
+assert(rowsIn('AUDIT').some(row => String(row.details).includes('source_conflict')), 'Audit conflicts should be published');
+assert(analysisTab.rows.every(row => !Object.keys(row).some(key => /local.?path|artifact.?path|screenshot.?path/i.test(key))), 'Consolidated analysis must not expose local path columns');
 
 const researchTabs = transformResearchToSheets({
   manifest: { ticker: 'EXAMPLE', companyName: 'Example Ltd', generatedAt: '2026-10-09T09:00:00Z', acquisitionOnly: true, sourceArtifacts: [{ id: 'nse-1', provider: 'NSE', type: 'market_data', title: 'Quote', status: 'ok', url: 'https://example.com' }], dataGaps: [], warnings: [] },
@@ -55,10 +59,17 @@ const researchTabs = transformResearchToSheets({
   evidenceQuality: { report: { status: 'ok', summary: { missing: 0 } } },
   reconciliation: { conflictCount: 0, conflicts: [] },
 }, 'EXAMPLE', 'EXAMPLE-2026-10-09-research');
-assert(researchTabs.length === 5, 'Research export should split into five classified tabs');
-assert(researchTabs.find(item => item.tabName.endsWith('-summary'))?.rows[0]?.readiness === 'READY', 'Research summary should expose readiness');
-assert(researchTabs.find(item => item.tabName.endsWith('-evidence'))?.rows.some(row => row.field === 'revenue' && row.value === 100), 'Research evidence should publish canonical facts in columns');
-assert(researchTabs.find(item => item.tabName.endsWith('-sources'))?.rows[0]?.provider === 'NSE', 'Research source provenance should have dedicated columns');
+assert(researchTabs.length === 1, 'Research export must use exactly one sheet per run');
+assert(researchTabs[0]?.tabName === 'EXAMPLE-2026-10-09-research', 'Research tab should use the unsuffixed run name');
+const researchRows = researchTabs[0]?.rows || [];
+const researchSection = (section: string) => researchRows.filter(row => row.section === section && row.record_type !== 'section_header');
+assert(researchSection('SUMMARY').some(row => row.field === 'readiness' && row.value === 'READY'), 'Research summary should expose readiness');
+assert(researchSection('EVIDENCE').some(row => row.field === 'revenue' && row.value === 100), 'Research evidence should publish canonical facts in columns');
+assert(researchSection('SOURCES').some(row => row.provider === 'NSE'), 'Research source provenance should have dedicated columns');
+assert(researchSection('FINDINGS').some(row => row.domain === 'Fundamentals' && row.field === 'trend' && row.value === 'positive'), 'Research findings must be included in the single run sheet');
+assert(researchSection('QUALITY').some(row => row.field === 'manifest.json' && row.status === 'present'), 'Research quality checks must be included in the single run sheet');
+assert(researchRows.every(row => !Object.keys(row).some(key => /local.?path|artifact.?path|screenshot.?path|relative.?path/i.test(key))), 'Research sheet must not expose local path columns');
+assert(!JSON.stringify(researchRows).includes('research/EXAMPLE'), 'Research sheet values must not expose local filesystem paths');
 
 const visualRows = buildVisualEvidenceRows('EXAMPLE', []);
 assert(visualRows[0]?.embedding_status === 'not_available', 'Missing screenshots should be explicitly identified');
@@ -80,6 +91,9 @@ assert(appsScript.includes('function doPost('), 'Apps Script sink must accept ex
 assert(appsScript.includes('function embedScreenshots_('), 'Apps Script sink must embed screenshot images');
 assert(appsScript.includes('item.rowIndex = tabResult.dataStartRow + (Number(item.rowIndex || 2) - 2)'), 'Append mode should adjust screenshot row indexes to the appended block');
 assert(appsScript.includes("const HOME_TAB = 'StockResearch'"), 'Apps Script sink must maintain the StockResearch index');
-assert(appsScript.includes("const name = '_EXPORT_LOG'"), 'Apps Script sink must record export runs');
+assert(!appsScript.includes("const name = '_EXPORT_LOG'"), 'Apps Script must not create an _EXPORT_LOG tab');
+assert(appsScript.includes('cleanupLegacyManagedTabs_'), 'Apps Script must remove old command-run and split research tabs');
+assert(appsScript.includes('sanitizeRowsForSheet_'), 'Apps Script must filter local path references before writing data');
+assert(publisher.includes('publishAudit: options.publishAudit ?? false'), 'Command-run audit publishing must be disabled by default');
 
 console.log(JSON.stringify({ ok: true, analysisTabs: analysisTabs.length, researchTabs: researchTabs.length, coverage: ['summary', 'findings', 'scores', 'risks', 'catalysts', 'scenarios', 'sources', 'audit'] }, null, 2));
