@@ -582,25 +582,67 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
   const ticker = String(symbol).toUpperCase();
   const evidence = artifacts.individualEvidence ?? {};
   const market = evidence.market ?? {};
-  const technicals = evidence.technicals ?? {};
-  const financials = evidence.financials ?? {};
-  const catalysts = evidence.catalysts ?? {};
+  const technicals = evidence.technicals ?? artifacts.technicals ?? {};
+  const financials = evidence.financials ?? artifacts.financials ?? {};
+  const catalysts = evidence.catalysts ?? artifacts.catalysts ?? {};
   const news = artifacts.news ?? {};
   const manifest = artifacts.manifest ?? {};
   const rows: SheetRow[] = [];
-
-  const fact = (field: string): any => list(market.facts).find((x: any) => x?.field === field)?.value
-    ?? market.quote?.[field]
-    ?? '';
-  const factPeriod = (field: string): any => list(market.facts).find((x: any) => x?.field === field)?.asOf
-    ?? list(market.facts).find((x: any) => x?.field === field)?.period
-    ?? '';
-  const latestFinancial = list(financials.nsePeriods).at(-1) ?? {};
-  const latestMetrics = latestFinancial.metrics ?? {};
-  const headlineRows = list(news.headlines).slice(0, 8);
-  const catalystRows = list(catalysts.items).slice(0, 12);
+  const allFacts = [
+    ...list(evidence.facts),
+    ...list(artifacts.canonicalValues?.facts),
+    ...list(artifacts.evidencePack?.canonicalFacts),
+  ];
+  const allMetrics = [
+    ...list(artifacts.canonicalValues?.calculatedMetrics),
+    ...list(evidence.calculatedMetrics),
+    ...list(technicals.metrics),
+  ];
+  const findFact = (fields: string[]) => allFacts.find((x: any) => fields.includes(String(x?.field ?? '').toLowerCase()));
+  const fact = (field: string): any => {
+    const aliases: Record<string, string[]> = {
+      last_price: ['last_price', 'lastprice', 'current_price', 'close', 'last_traded_price'],
+      previous_close: ['previous_close', 'prev_close', 'previousclose'],
+      open: ['open', 'open_price'],
+      day_high: ['day_high', 'high', 'high_price', 'dayhigh'],
+      day_low: ['day_low', 'low', 'low_price', 'daylow'],
+      percent_change: ['percent_change', 'change_percent', 'pchange', 'day_change_pct'],
+      volume: ['volume', 'traded_volume', 'total_traded_volume'],
+      '52_week_high_price': ['52_week_high_price', '52_week_high', 'price_52_week_high', 'high_52_week'],
+      '52_week_low_price': ['52_week_low_price', '52_week_low', 'price_52_week_low', 'low_52_week'],
+    };
+    const match = findFact(aliases[field] ?? [field.toLowerCase()]);
+    return match?.value ?? market.quote?.[field] ?? '';
+  };
+  const factPeriod = (field: string): any => {
+    const match = findFact([field.toLowerCase()]);
+    return match?.asOf ?? match?.period ?? '';
+  };
+  const findMetric = (fields: string[]) => allMetrics.find((x: any) => fields.includes(String(x?.field ?? '').toLowerCase()));
+  const latestFinancial = list(financials.nsePeriods).at(-1) ?? list(artifacts.financialPeriods?.periods).at(-1) ?? {};
+  const latestMetrics = latestFinancial.metrics ?? latestFinancial.values ?? {};
+  const headlineRows = [
+    ...list(news.headlines),
+    ...list(news.items),
+    ...list(news.articles),
+  ].slice(0, 8);
+  const catalystRows = [
+    ...list(catalysts.items),
+    ...list(catalysts.events),
+    ...list(artifacts.corporateAnnouncements?.data),
+    ...list(artifacts.corporateAnnouncements?.rows),
+    ...list(artifacts.boardMeetings?.data),
+    ...list(artifacts.boardMeetings?.rows),
+    ...list(artifacts.corporateActions?.data),
+    ...list(artifacts.corporateActions?.rows),
+    ...list(artifacts.eventCalendar?.data),
+    ...list(artifacts.eventCalendar?.rows),
+  ].slice(0, 50);
   const today = new Date().toISOString().slice(0, 10);
-  const upcoming = catalystRows.filter((x: any) => x?.date && String(x.date) >= today).slice(0, 8);
+  const upcoming = catalystRows.filter((x: any) => {
+    const date = x?.date ?? x?.meetingDate ?? x?.exDate ?? x?.recordDate ?? x?.broadcastAt ?? '';
+    return date && String(date).slice(0, 10) >= today;
+  }).slice(0, 8);
 
   const push = (section: string, field: string, value: unknown, source = '', period = '', notes = '', sourceUrl = '') => {
     rows.push({
@@ -632,36 +674,41 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
   push('TODAY MARKET', 'price_vs_ema200', technicals.signals?.priceVsEma200 ?? '', 'deterministic');
 
   rows.push({ section: 'TECHNICALS', record_type: 'section_header', symbol: ticker, field: 'TECHNICALS', value: '' });
-  const latestTech = technicals.latest ?? {};
+  const latestTech = technicals.latest ?? technicals.latestIndicators ?? {};
   for (const [field, value] of Object.entries({
     close: latestTech.close, ema50: latestTech.ema50, ema200: latestTech.ema200,
     rsi14: latestTech.rsi14, rsi_state: technicals.signals?.rsiState,
     trend_price_above_ema50: technicals.signals?.priceVsEma50,
     trend_price_above_ema200: technicals.signals?.priceVsEma200,
     ema50_above_ema200: technicals.signals?.ema50VsEma200,
-  })) push('TECHNICALS', field, value, 'deterministic', latestTech.date ?? '');
+  })) push('TECHNICALS', field, value ?? findMetric([field.toLowerCase()])?.value ?? '', 'deterministic', latestTech.date ?? findMetric([field.toLowerCase()])?.asOf ?? '');
 
   rows.push({ section: 'LATEST EARNINGS', record_type: 'section_header', symbol: ticker, field: 'LATEST EARNINGS', value: '' });
-  push('LATEST EARNINGS', 'reporting_period', latestFinancial.period ?? '', 'NSE');
+  push('LATEST EARNINGS', 'reporting_period', latestFinancial.period ?? latestFinancial.reportingPeriod ?? '', 'NSE');
   for (const [field, value] of Object.entries({
-    revenue: latestMetrics.revenue, operating_profit: latestMetrics.operating_profit,
-    ebitda: latestMetrics.ebitda, profit_after_tax: latestMetrics.profit_after_tax, eps: latestMetrics.eps,
+    revenue: latestMetrics.revenue ?? findFact(['revenue', 'total_income'])?.value,
+    operating_profit: latestMetrics.operating_profit ?? findFact(['operating_profit', 'operating_profit_before_interest'])?.value,
+    ebitda: latestMetrics.ebitda ?? findFact(['ebitda'])?.value,
+    profit_after_tax: latestMetrics.profit_after_tax ?? findFact(['profit_after_tax', 'net_profit', 'pat'])?.value,
+    eps: latestMetrics.eps ?? findFact(['eps', 'basic_eps'])?.value,
   })) push('LATEST EARNINGS', field, value, 'NSE', latestFinancial.period ?? '');
 
   rows.push({ section: 'NEWS', record_type: 'section_header', symbol: ticker, field: 'NEWS', value: '' });
-  push('NEWS', 'headline_count', news.summary?.headlineCount ?? headlineRows.length, 'news-sentiment');
-  push('NEWS', 'sentiment', news.summary?.label ?? '', 'news-sentiment');
-  push('NEWS', 'weighted_score', news.summary?.weightedScore ?? '', 'news-sentiment');
+  push('NEWS', 'headline_count', news.summary?.headlineCount ?? news.headlineCount ?? headlineRows.length, 'news-sentiment');
+  push('NEWS', 'sentiment', news.summary?.label ?? news.sentiment?.label ?? news.label ?? '', 'news-sentiment');
+  push('NEWS', 'weighted_score', news.summary?.weightedScore ?? news.weightedScore ?? '', 'news-sentiment');
   for (const item of headlineRows) push('NEWS', 'headline', item.title ?? '', item.source ?? item.provider ?? 'news', item.publishedAt ?? '', item.sentiment?.label ?? '', item.url ?? '');
 
   rows.push({ section: 'CORPORATE ANNOUNCEMENTS & ACTIONS', record_type: 'section_header', symbol: ticker, field: 'CORPORATE ANNOUNCEMENTS & ACTIONS', value: '' });
-  for (const item of catalystRows.filter((x: any) => ['announcement', 'corporate_action'].includes(x?.type))) {
-    push('CORPORATE ANNOUNCEMENTS & ACTIONS', item.type ?? 'event', item.title ?? '', 'NSE', item.date ?? '', '', item.raw?.attchmntFile ?? item.raw?.attchmntUrl ?? item.raw?.link ?? '');
+  for (const item of catalystRows.filter((x: any) => /announcement|corporate.?action|board.?meeting|dividend|split|bonus/i.test(String(x?.type ?? x?.subject ?? x?.purpose ?? ''))).slice(0, 12)) {
+    const date = item.date ?? item.meetingDate ?? item.exDate ?? item.recordDate ?? item.broadcastAt ?? '';
+    const title = item.title ?? item.subject ?? item.purpose ?? item.desc ?? item.companyName ?? 'Corporate disclosure';
+    push('CORPORATE ANNOUNCEMENTS & ACTIONS', item.type ?? item.subject ?? item.purpose ?? 'announcement', title, item.source ?? 'NSE', date, item.status ?? '', item.url ?? item.attchmntFile ?? item.attchmntUrl ?? item.link ?? '');
   }
 
   rows.push({ section: 'UPCOMING EVENTS', record_type: 'section_header', symbol: ticker, field: 'UPCOMING EVENTS', value: '' });
   if (!upcoming.length) push('UPCOMING EVENTS', 'status', 'not_confirmed', 'catalysts', '', 'No future-dated event was confirmed in the captured catalyst dataset.');
-  for (const item of upcoming) push('UPCOMING EVENTS', item.type ?? 'event', item.title ?? '', 'catalysts', item.date ?? '');
+  for (const item of upcoming) push('UPCOMING EVENTS', item.type ?? item.subject ?? item.purpose ?? 'event', item.title ?? item.subject ?? item.purpose ?? item.desc ?? 'Scheduled event', item.source ?? 'NSE/catalysts', item.date ?? item.meetingDate ?? item.exDate ?? item.recordDate ?? item.broadcastAt ?? '', '', item.url ?? item.attchmntFile ?? item.link ?? '');
 
   rows.push({ section: 'DOCUMENTS & SOURCES', record_type: 'section_header', symbol: ticker, field: 'DOCUMENTS & SOURCES', value: '' });
   for (const source of list(manifest.sourceArtifacts).filter((x: any) => x?.url).slice(0, 30)) {
