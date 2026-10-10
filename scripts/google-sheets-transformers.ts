@@ -96,6 +96,14 @@ function redactEmbeddedLocalPaths(text: string): string {
     .replace(/(^|[\s=:([{])\/(?:Users|home|mnt|tmp)\/[^\s"'<>|,;)}\]]+/g, '$1[local path redacted]');
 }
 
+function redactEmbeddedLocalPaths(text: string): string {
+  return text
+    .replace(/(?:[A-Za-z]:[\\/])(?:[^\\/\s"'<>|,;)}\]]+[\\/])*[^\\/\s"'<>|,;)}\]]*/g, '[local path redacted]')
+    .replace(/\\\\[^\\/\s"'<>|]+\\[^\\/\s"'<>|]+(?:\\[^\s"'<>|,;)}\]]*)?/g, '[local path redacted]')
+    .replace(/(^|[\s=:([{])(?:research|outputs)[\\/][^\s"'<>|,;)}\]]+/g, '$1[local path redacted]')
+    .replace(/(^|[\s=:([{])\/(?:Users|home|mnt|tmp)\/[^\s"'<>|,;)}\]]+/g, '$1[local path redacted]');
+}
+
 function sanitizePathValues(value: unknown, key = ''): unknown {
   if (isLocalPathField(key) || isLikelyLocalPath(value)) return undefined;
   if (typeof value === 'string') return redactEmbeddedLocalPaths(value);
@@ -501,7 +509,9 @@ export function transformResearchToSheets(artifacts: Record<string, any>, symbol
   const quality = artifacts.evidenceQuality ?? {};
   const health = artifacts.sourceHealth ?? {};
   const pack = artifacts.evidencePack ?? {};
-  const reconciliation = artifacts.reconciliation ?? {};\n  const individualEvidence = artifacts.individualEvidence ?? {};
+  const reconciliation = artifacts.reconciliation ?? {};
+  const individualEvidence = artifacts.individualEvidence ?? {};
+  const canonicalValues = artifacts.canonicalValues ?? {};
   const summary: SheetRow = {
     symbol: String(manifest.ticker ?? symbol).toUpperCase(),
     company: cell(manifest.companyName),
