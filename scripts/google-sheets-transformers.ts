@@ -52,16 +52,16 @@ function isLocalPathField(key: string): boolean {
 function isLikelyLocalPath(value: unknown): boolean {
   if (typeof value !== 'string') return false;
   const text = value.trim();
-  return /^[A-Za-z]:[\\\\/]/.test(text) ||
-    text.startsWith('\\\\\\\\') ||
-    /^\\/(?:Users|home|mnt)\\//i.test(text) ||
-    /^(?:research|outputs)[\\\\/]/i.test(text);
+  return /^[A-Za-z]:[\\/]/.test(text) ||
+    text.startsWith('\\\\') ||
+    /^\/(?:Users|home|mnt)\//i.test(text) ||
+    /^(?:research|outputs)[\\/]/i.test(text);
 }
 
 function exportedValue(value: unknown): string | number | boolean {
   if (value === null || value === undefined) return '';
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
-  return JSON.stringify(value, (key, item) => isLocalPathField(key) ? undefined : item);
+  return JSON.stringify(value, (key, item) => isLocalPathField(key) ? undefined : item) ?? '';
 }
 
 function oneRow(section: string, row: SheetRow, symbol: string): SheetRow {
