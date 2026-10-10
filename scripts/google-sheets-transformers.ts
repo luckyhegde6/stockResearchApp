@@ -45,15 +45,17 @@ function asConfidence(value: any): unknown {
 }
 
 
-const PATH_FIELD_PATTERN = /(?:^|[_ .-])(?:local|relative|artifact|screenshot|evidence|report|file)[_ .-]*path(?:$|[_ .-])/i;
-
 function isLocalPathField(key: string): boolean {
-  return /(?:localPath|relativePath|artifactPath|screenshotPath|evidencePath|reportPath|filePath|local_path|relative_path|artifact_path|screenshot_path|evidence_path|report_path|file_path)/i.test(key);
+  return /^(?:path|localPath|relativePath|artifactPath|screenshotPath|evidencePath|reportPath|filePath|sourcePath|local_path|relative_path|artifact_path|screenshot_path|evidence_path|report_path|file_path|source_path)$/i.test(key) || /(?:local|relative|artifact|screenshot|evidence|report|file|source)[_-]?path/i.test(key);
 }
 
 function isLikelyLocalPath(value: unknown): boolean {
   if (typeof value !== 'string') return false;
-  return /^(?:[A-Za-z]:\\\\|\\\\\\\\|\\/Users\\/|\\/home\\/|\\/mnt\\/|research[\\\\/]|outputs[\\\\/])/i.test(value.trim());
+  const text = value.trim();
+  return /^[A-Za-z]:[\\\\/]/.test(text) ||
+    text.startsWith('\\\\\\\\') ||
+    /^\\/(?:Users|home|mnt)\\//i.test(text) ||
+    /^(?:research|outputs)[\\\\/]/i.test(text);
 }
 
 function exportedValue(value: unknown): string | number | boolean {
@@ -64,8 +66,8 @@ function exportedValue(value: unknown): string | number | boolean {
 
 function oneRow(section: string, row: SheetRow, symbol: string): SheetRow {
   const sourceUrl = row.source_url ?? row.url;
-  const field = row.field ?? row.item ?? row.metric ?? row.artifact_id ?? row.file_name ?? row.scenario ?? row.title ?? row.check_type ?? '';
-  const value = row.value ?? row.status ?? row.details ?? row.assessment ?? row.thesis ?? row.notes ?? row.title ?? '';
+  const field = row.field ?? row.item ?? row.metric ?? row.artifact_id ?? row.file_name ?? row.scenario ?? row.title ?? row.check_type ?? row.risk ?? row.catalyst ?? row.name ?? '';
+  const value = row.value ?? row.status ?? row.details ?? row.assessment ?? row.thesis ?? row.notes ?? row.risk ?? row.catalyst ?? row.recommendation ?? row.label ?? row.title ?? '';
   const mapped = new Set([
     'section','record_type','symbol','domain','category','field','item','metric','artifact_id','file_name',
     'scenario','title','check_type','value','status','details','assessment','thesis','notes','unit','source',
