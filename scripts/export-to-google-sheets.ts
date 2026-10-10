@@ -274,10 +274,10 @@ async function main() {
 
   const responseText = await response.text();
   const contentType = response.headers.get('content-type') || '';
-  const looksLikeHtml = /text\\/html/i.test(contentType) || /^\\s*<!doctype html|^\\s*<html/i.test(responseText);
+  const looksLikeHtml = /text\/html/i.test(contentType) || /^\s*<!doctype html|^\s*<html/i.test(responseText);
   if (!response.ok) {
     if (looksLikeHtml) {
-      const title = /<title[^>]*>([\\s\\S]*?)<\\/title>/i.exec(responseText)?.[1]?.replace(/\\s+/g, ' ').trim();
+      const title = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(responseText)?.[1]?.replace(/\s+/g, ' ').trim();
       throw new Error(
         `Google Sheets webhook returned HTTP ${response.status} with HTML${title ? ` (" ${title} ")` : ''}, not Apps Script JSON. ` +
         'The deployed URL is likely stale, incorrect, or not accessible. Run "npm run sheets:doctor"; if its health check fails, redeploy integrations/google-sheets/Code.gs as a Web app and update GOOGLE_SHEETS_WEBHOOK_URL to the current URL ending in /exec. Do not rotate the token until the endpoint health check passes.'
