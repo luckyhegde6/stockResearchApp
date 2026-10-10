@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   buildVisualEvidenceRows,
+  fitWithinPixelLimit,
   transformAnalysisToSheets,
   transformResearchToSheets,
 } from './google-sheets-transformers.js';
@@ -34,6 +35,11 @@ const analysis = {
   sources: [{ source_id: 'NSE-1', source_name: 'NSE', source_type: 'corporate_announcement', url: 'https://example.com', retrieved_at: '2026-10-09T09:00:00Z', artifact_path: 'raw/nse.json' }],
   audit: { facts_without_primary_source: ['Claim with no primary source'], conflicts_detected: [{ field: 'revenue', sources: ['NSE', 'Screener'] }], calculations: [{ metric: 'growth', formula: '(new-old)/old', inputs: ['new', 'old'], calculation_note: 'Year-on-year' }] },
 };
+
+const resizedDimensions = fitWithinPixelLimit(3840, 2160);
+assert(resizedDimensions.width * resizedDimensions.height <= 900_000, 'Screenshot dimensions must stay below the Apps Script one-million-pixel ceiling');
+assert(resizedDimensions.width > 0 && resizedDimensions.height > 0, 'Screenshot resizing must preserve positive dimensions');
+assert(fitWithinPixelLimit(800, 600).width === 800, 'Small images should not be unnecessarily upscaled or resized');
 
 const analysisTabs = transformAnalysisToSheets(analysis, 'EXAMPLE', 'EXAMPLE-2026-10-09-analysis');
 const analysisTab = analysisTabs[0];
