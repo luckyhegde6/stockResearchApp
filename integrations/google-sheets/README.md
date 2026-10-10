@@ -149,6 +149,30 @@ GOOGLE_SHEETS_MAX_SCREENSHOTS=8
 
 The first two keys already appear blank in `.env.example`. Configure the real values only in your local `.env` or your secret manager. With both URL and token populated, the standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands auto-publish after the primary run succeeds. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to opt out. Manual `npm run sheets:export` commands remain useful for retries and re-publishing older artifacts. Never add them to `.env.example`, GitHub, the agent manifest, issues, or pull-request text.
 
+## 4. Restart, test a real write, and refresh the dashboard
+
+After saving `.env`, stop and restart the dashboard so the new environment variables are loaded. In PowerShell, press **Ctrl+C** in the terminal running the dashboard, then from the repository root run:
+
+~~~powershell
+npm run dashboard
+~~~
+
+Open or refresh the dashboard and select **Google Sheets Sync**. **Apps Script endpoint** and **Private token** should both show as configured. If either still says **MISSING**, see the troubleshooting section below before running a research job.
+
+Then use the **Publish Existing Results** panel in the Google Sheets Sync tab to publish an existing dataset, or test via CLI:
+
+~~~powershell
+npm run sheets:export -- custom --tab setup-smoke-test --file integrations/google-sheets/setup-smoke-test.json
+~~~
+
+The smoke-test command above requires a JSON file. For a simple test without creating one, use an existing research artifact:
+
+~~~powershell
+npm run sheets:export -- research ITC
+~~~
+
+A successful command should report JSON containing `"ok": true`, a `tabs` array, and the spreadsheet URL. Open the workbook and verify that `StockResearch` contains the new tab link and `_EXPORT_LOG` contains the write. After this authenticated export succeeds, launch another command; its **Google Sheets Publish Step** should reach **SUCCEEDED** rather than **NOT CONFIGURED**. Every supported command also writes a local audit artifact under `outputs/command-runs/`, even if external sync is misconfigured.
+
 ## 4. Export and verify a research run
 
 With webhook URL/token configured, a research command automatically exports its results. You can still invoke the exporter manually to retry or re-publish:
