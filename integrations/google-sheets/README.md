@@ -291,6 +291,17 @@ After editing `Code.gs`, choose **Deploy → Manage deployments → Edit → New
 ### Dashboard keeps showing an old result
 Click **Refresh Sync Status** or refresh the browser. If settings changed, restart the Node dashboard process as well; a browser refresh alone does not reload server environment variables. Check local status at `outputs/google-sheets-sync-status.json` and detailed command artifacts in `outputs/command-runs/`.
 
+### Research data exports, but screenshots show `screenshotsFailed`
+
+The tab and row write can succeed even when individual chart images fail. The Apps Script now returns a `screenshotErrors` array containing the filename and the actual Apps Script exception for each failed image, and the visual-evidence tab's `embedding_status` column records the same exception.
+
+1. Copy the latest `integrations/google-sheets/Code.gs` from this branch into the Apps Script editor.
+2. Save it, then choose **Deploy → Manage deployments → Edit → New version → Deploy**. A code save alone does not update the running deployment.
+3. Retry `npm run sheets:export -- research HDFCBANK`.
+4. Inspect the returned `response.screenshotErrors` entries. Use the specific exception to choose the fix rather than increasing size limits blindly.
+
+Google's Apps Script `Sheet.insertImage(blobSource, column, row)` API has a maximum blob size of **2 MB**. This project's local upload filters currently cap a file at 1.5 MB, so an image that is actually larger than 2 MB should normally be marked as skipped before upload. If the returned error says the image format is unsupported, convert that image to PNG or JPEG before upload. If it reports authorization/permission errors, check Apps Script's execution logs and ensure the deployed script is authorized to edit the workbook. See the [official Apps Script Sheet reference](https://developers.google.com/apps-script/reference/spreadsheet/sheet#insertImage(BlobSource,Integer,Integer)).
+
 ### A screenshot is listed but not embedded
 Check the row's `embedding_status`. Files larger than `GOOGLE_SHEETS_MAX_SCREENSHOT_BYTES` or the aggregate limit are intentionally skipped; raise the limits cautiously if needed. Check Apps Script execution logs if the response reports screenshot failures.
 
