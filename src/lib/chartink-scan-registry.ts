@@ -1,7 +1,7 @@
-export type ScanType = 'fundamental' | 'candlestick' | 'range-breakouts' | 'bullish' | 'bearish' | 'intraday';
+export type ScanType = 'fundamental' | 'candlestick' | 'range-breakouts' | 'bullish' | 'bearish' | 'intraday' | 'swing';
 export type ScanEntry = { name: string; url: string; scanType: ScanType; tags?: string[]; chartEvidence?: boolean };
 
-export const CHARTINK_SCAN_TYPES: ScanType[] = ['fundamental','candlestick','range-breakouts','bullish','bearish','intraday'];
+export const CHARTINK_SCAN_TYPES: ScanType[] = ['fundamental','candlestick','range-breakouts','bullish','bearish','intraday','swing'];
 
 export const CHARTINK_SCAN_REGISTRY: ScanEntry[] = [
   {name:'Profit jump by 200%',url:'https://chartink.com/scanner/profit-jump-by-200',scanType:'fundamental',chartEvidence:true},
@@ -113,6 +113,21 @@ export const CHARTINK_SCAN_REGISTRY: ScanEntry[] = [
   {name:'Intra CE 5',url:'https://chartink.com/scanner/intra-ce-5',scanType:'intraday',chartEvidence:true},
   {name:'BTST OR READY TO BULL RUN',url:'https://chartink.com/scanner/about-to-break-1',scanType:'intraday',chartEvidence:true},
   {name:'Intraday Jackpot Buy Stock Slection By Rk Meena',url:'https://chartink.com/scanner/intraday-jackpot-buy-stock-slection-by-rk-meena',scanType:'intraday',chartEvidence:true},
+
+  // Curated public swing-trading screeners checked against Chartink's public pages.
+  // These are outbound screener links; the dashboard does not scrape or execute Chartink's private/session APIs.
+  {name:'SWING /BTST TRADING SCREENER',url:'https://chartink.com/screener/swing-btst-trading-screener',scanType:'swing',tags:['swing','btst']},
+  {name:'Select Stocks for Swing Trading with Chartink Scanner',url:'https://chartink.com/screener/select-stocks-for-swing-trading-with-chartink-scanner',scanType:'swing',tags:['swing','selection']},
+  {name:'SWING STRATEGY 1',url:'https://chartink.com/screener/swing-strategy-1-37',scanType:'swing',tags:['swing','momentum']},
+  {name:'Swing Trading Stock for Week Buy',url:'https://chartink.com/screener/swing-trading-stock-for-week-buy',scanType:'swing',tags:['swing','weekly']},
+  {name:'Nifty 500 Swing Trading',url:'https://chartink.com/screener/copy-nifty-500-stocks-3',scanType:'swing',tags:['swing','nifty-500']},
+  {name:'SWING: SuperTrend with RSI - Morning run',url:'https://chartink.com/screener/swing-supertrend-with-rsi-after-market-run',scanType:'swing',tags:['swing','supertrend','rsi']},
+  {name:'Short term breakouts (Swing-Intraday)',url:'https://chartink.com/screener/short-term-breakouts-swing-intraday',scanType:'swing',tags:['swing','breakout']},
+  {name:'Swing Trading Entry Scanner',url:'https://chartink.com/screener/swing-trading-entry-scanner',scanType:'swing',tags:['swing','entry']},
+  {name:'SWING TRADING',url:'https://chartink.com/screener/swing-trading-226',scanType:'swing',tags:['swing']},
+  {name:'Swing trading list - momentum stocks for week',url:'https://chartink.com/screener/swing-trading-list-27',scanType:'swing',tags:['swing','weekly','momentum']},
+  {name:'EMA Based Swing Trading Scanner',url:'https://chartink.com/screener/ema-based-swing-trading-scanner',scanType:'swing',tags:['swing','ema']},
+  {name:'Positional Swing Trading Stock Screener',url:'https://chartink.com/screener/positional-swing-trading-stock-screener-2',scanType:'swing',tags:['swing','positional','ema','rsi']},
 ];
 
 export function getScansByType(scanType: ScanType | 'all') {
