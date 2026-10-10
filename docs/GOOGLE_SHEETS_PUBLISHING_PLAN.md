@@ -23,31 +23,32 @@ This plan keeps code work separate from Google-side deployment and final visual 
 
 - [x] Publish the analysis summary with recommendation, price/time, valuation, scores, confidence and key thesis.
 - [x] Split nested findings into classified domain/field/value rows.
-- [x] Publish domain scores, ranked risks, catalysts, bull/base/bear scenarios, source provenance, calculation notes and conflict audit as separate tabs.
-- [x] Publish deterministic research readiness, canonical evidence, source-health, source-artifact and quality rows.
+- [x] Consolidate summary, evidence, findings, quality, source provenance, risks, catalysts, scenarios, audit and screenshots into one labelled data tab per run.
+- [x] Exclude local filesystem paths from published rows.
 - [x] Add fixture-backed assertions for required tabs and key columns.
 - [ ] Expand edge-case tests for arrays of objects, missing sections, unusual symbols and 90-character sheet-name collisions.
 
 **Acceptance:** stable headers; unknown/missing data stays blank or explicit rather than becoming a fabricated zero; recommendations remain clearly labeled as analysis rather than guaranteed outcomes.
 
-### Task 2 — Workbook index and audit log
-**Status: Implemented in Apps Script; live behavior not yet verified**
+### Task 2 — Workbook index and single-run-tab layout
+**Status: Updated in code; requires Apps Script redeployment and live verification**
 
-- [x] Maintain a `StockResearch` landing/index tab with clickable links to published tabs.
-- [x] Maintain `_EXPORT_LOG` with run ID, timestamp, dataset, tab name, row count, mode and screenshot status.
+- [x] Maintain a `StockResearch` landing/index tab with one clickable link per run.
+- [x] Do not create `_EXPORT_LOG` or `command-runs-*` tabs; command records remain local.
+- [x] Clean legacy managed split research/analysis tabs and prior command-run/log tabs on the next successful export after deployment.
 - [x] Require a configured API token and reject mismatched spreadsheet IDs.
-- [ ] Verify indexing/logging against the actual workbook after Apps Script deployment.
+- [ ] Verify the consolidated tab and legacy cleanup against the actual workbook after Apps Script deployment.
 - [ ] Test replace and append behavior on an existing tab and confirm filters/header formatting survive re-exports.
 
-**Acceptance:** each exporter response marked `ok: true` corresponds to matching rows in the workbook and a matching audit entry.
+**Acceptance:** each research/analysis export creates one data tab with labelled sections and a matching `StockResearch` index row.
 
 ### Task 3 — Screenshot and visual evidence
 **Status: Implemented with limits; live embedding not yet verified**
 
 - [x] Collect screenshots from `research/<SYMBOL>/screenshots/`.
 - [x] Prioritize 1D, 5-year and all-history TradingView charts.
-- [x] Embed screenshots directly into the `*-visual-evidence` tab (not public Drive links).
-- [x] Publish file name, chart period, size, path and an embedding status.
+- [x] Embed screenshots directly into the consolidated run tab (not public Drive links).
+- [x] Publish file name, chart period, size and embedding status, without local paths.
 - [x] Add configurable single-file, total-byte and screenshot-count limits.
 - [ ] Test empty/corrupt image files and Apps Script image insertion failures.
 - [ ] Confirm visual size and row height in desktop/mobile sheet views.
@@ -59,12 +60,12 @@ This plan keeps code work separate from Google-side deployment and final visual 
 
 - [x] On a successful standalone research run, publish the deterministic research package.
 - [x] Wrap every npm script that does not enter `src/index.ts` directly with a shared lifecycle wrapper; central CLI commands use the same lifecycle inside `src/index.ts`.
-- [x] Append an execution-audit row to `command-runs-YYYY-MM-DD` for each completed command/process when sync is configured.
+- [x] Keep command execution audit records local; do not create `command-runs-*` spreadsheet tabs.
 - [x] For the combined research + analysis flow, publish research evidence before the analysis readiness gate.
 - [x] After a schema-valid analysis, publish the full investment analysis.
 - [x] Require both webhook URL and token; allow `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable hooks.
 - [x] Keep the local research/analysis result valid if Sheets publishing fails.
-- [ ] Verify a run ID can be traced from CLI output to every published tab and `_EXPORT_LOG`.
+- [ ] Verify each successful run appears once in the `StockResearch` index and has exactly one data tab.
 
 **Acceptance:** no duplicate research acquisition for the combined `--analyze` path; export failures warn and permit local output to remain available.
 
@@ -88,9 +89,9 @@ This plan keeps code work separate from Google-side deployment and final visual 
 3. Set `GOOGLE_SHEETS_WEBHOOK_URL`, `GOOGLE_SHEETS_WEBHOOK_TOKEN` and `GOOGLE_SHEETS_ID` locally. Never commit credentials.
 4. Run `npm run research -- ITC` and check its response/logs.
 5. Run `npm run analyze -- ITC` only if the deterministic readiness gate passes and the configured LLM is available.
-6. Compare the `StockResearch` index, generated tabs, `_EXPORT_LOG`, and image previews.
+6. Confirm `StockResearch` links to one consolidated run tab; check its section counts and screenshot preview rows.
 
-**Acceptance:** actual sheet contents, row counts, recommendation/findings classifications and screenshot embedding are verified for a known run. Until these steps are complete, do not describe the live sync as confirmed.
+**Acceptance:** actual sheet contents, row counts, section classifications, path-free source provenance and screenshot embedding are verified for a known run. Until these steps are complete, do not describe the live sync as confirmed.
 
 ### Task 7 — Match the AI Studio UI reference
 **Status: Blocked on reference visibility**
