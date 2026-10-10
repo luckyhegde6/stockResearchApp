@@ -1,0 +1,10 @@
+import path from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { buildIndividualStockEvidence } from '../src/lib/individual-stock-evidence.js';
+const ticker=process.argv[2]?.toUpperCase() || 'ITC';
+const dir=path.join(process.cwd(),'fixtures','research',ticker);
+const manifest=JSON.parse(await readFile(path.join(dir,'manifest.json'),'utf8'));
+const r=await buildIndividualStockEvidence(dir,manifest);
+const ok=Boolean(r.security)&&r.facts.length>0;
+console.log(JSON.stringify({ok,ticker,security:r.security,facts:r.facts.length,calculatedMetrics:r.metrics.length,conflicts:r.reconciliation.conflictCount},null,2));
+if(!ok) process.exitCode=1;

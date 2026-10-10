@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "project": "stock-research-pipeline",
+  "version": "1.50.0",
+  "runtime": {
+    "node": ">=20",
+    "typescript": true,
+    "package_manager": "npm"
+  },
+  "entrypoints": {
+    "cli": "src/index.ts",
+    "dashboard": "src/server.ts",
+    "analysis_schema": "src/schema.ts",
+    "agent_rules": "AGENTS.md",
+    "stable_memory": "MEMORY.md",
+    "handoff": "HANDOFF.md",
+    "backlog": "TODO.md",
+    "decisions": "DECISIONS.md"
+  },
+  "commands": {
+    "test": "npm run test:all",
+    "research": "npm run research -- SYMBOL",
+    "analyze": "npm run analyze -- SYMBOL",
+    "validate": "npm run validate -- SYMBOL",
+    "dashboard": "npm run dashboard",
+    "sheets:export": "npm run sheets:export -- <kind> [SYMBOL] [--file path] [--tab name]"
+  },
+  "source_policy": {
+    "core": [
+      "NSE",
+      "Screener",
+      "Tijori",
+      "TradingView"
+    ],
+    "supplementary": [
+      "News"
+    ],
+    "optional": [
+      "Chartink"
+    ],
+    "excluded": [
+      "BSE"
+    ]
+  },
+  "context_priority": [
+    "research/SYMBOL/manifest.json",
+    "research/SYMBOL/analysis-readiness.json",
+    "research/SYMBOL/normalized/analysis-evidence-pack.json",
+    "research/SYMBOL/normalized/analysis-inputs.json",
+    "research/SYMBOL/normalized/reconciliation.json",
+    "research/SYMBOL/source-health.json",
+    "research/SYMBOL/evidence-quality.json"
+  ],
+  "contracts": {
+    "analysis_output": "src/schema.ts",
+    "research_manifest": "src/types/research.ts",
+    "tradingview_urls": "src/lib/tradingview-url.ts",
+    "readiness": "src/lib/analysis-readiness.ts"
+  },
+  "generated_paths": [
+    "research/",
+    "outputs/",
+    "scans/*"
+  ],
+  "agent_rule": "Use deterministic artifacts as truth; never bypass readiness or invent source facts.",
+  "integrations": {
+    "google_sheets": {
+      "config": "GOOGLE_SHEETS_WEBHOOK_URL",
+      "sink": "integrations/google-sheets/Code.gs",
+      "optional": true
+    }
+  }
+}

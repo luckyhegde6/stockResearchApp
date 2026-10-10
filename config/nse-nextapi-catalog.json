@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "provider": "NSE India",
+  "base": "https://www.nseindia.com",
+  "families": {
+    "identity": [
+      "getSymbolName",
+      "getMetaData"
+    ],
+    "market": [
+      "getSymbolData",
+      "getYearwiseData",
+      "getSymbolChartData"
+    ],
+    "financials": [
+      "getFinancialResultData",
+      "getFinancialStatus"
+    ],
+    "corporate": [
+      "getCorporateAnnouncementSubject",
+      "getCorporateAnnouncement",
+      "getCorpBoardMeeting",
+      "getCorpAction",
+      "getCorpEventCalender"
+    ],
+    "annual_reports": [
+      "getCorpAnnualReport"
+    ],
+    "ownership": [
+      "getShareholdingPattern"
+    ],
+    "compliance": [
+      "getCorpBrsr"
+    ],
+    "peers": [
+      "getPeerComparisonQuaters",
+      "getPeerComparisonData"
+    ],
+    "existingPublicApi": [
+      "results-comparision",
+      "corporate-announcements",
+      "corporates-corporateActions",
+      "corporate-share-holdings-master",
+      "historicalOR/generateSecurityWiseHistoricalData",
+      "live-analysis-data-52weekhighstock"
+    ],
+    "marketUniverse": [
+      "marketWatchApi/getIndexList",
+      "marketWatchApi/getIndicesData",
+      "live-equity-market"
+    ]
+  },
+  "storage": "research/<SYMBOL>/raw/nse-api/nextapi/<family>/",
+  "datewiseSnapshot": "research/<SYMBOL>/snapshots/YYYY-MM-DD/nse-api-index.json",
+  "llmUsed": false
+}

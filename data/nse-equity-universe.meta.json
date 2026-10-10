@@ -1,0 +1,13 @@
+{
+  "sourcePage": "https://www.nseindia.com/static/market-data/securities-available-for-trading",
+  "sourceCsv": "https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv",
+  "generatedAt": "2026-08-30T00:00:00.000Z",
+  "count": 2559,
+  "seriesCounts": {
+    "BE": 244,
+    "BZ": 28,
+    "EQ": 2287
+  },
+  "eqCount": 2287,
+  "snapshotFile": "data/EQUITY_L.csv"
+}
