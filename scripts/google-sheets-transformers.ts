@@ -443,23 +443,37 @@ function sourceArtifactRows(manifest: any): SheetRow[] {
   }));
 }
 
-function researchEvidenceRows(pack: any): SheetRow[] {
+function researchEvidenceRows(pack: any, individualEvidence: any): SheetRow[] {
   const rows: SheetRow[] = [];
-  for (const [kind, items] of [
-    ['canonical_fact', list(pack?.canonicalFacts)],
-    ['calculated_metric', list(pack?.calculatedMetrics)],
-  ] as Array<[string, any[]]>) {
-    items.forEach(item => rows.push({
-      evidence_type: kind,
-      field: cell(item?.field),
-      value: cell(item?.value),
-      unit: cell(item?.unit),
-      source: cell(item?.source),
-      source_artifact: cell(item?.sourceArtifact),
-      as_of: cell(item?.asOf),
-      reporting_period: cell(item?.period ?? item?.reportingPeriod),
-      notes: cell(item?.notes),
-    }));
+  const pushItems = (kind: string, items: any[]) => items.forEach(item => rows.push({
+    evidence_type: kind,
+    field: cell(item?.field),
+    value: cell(item?.value),
+    unit: cell(item?.unit),
+    source: cell(item?.source),
+    source_artifact: cell(item?.sourceArtifact ?? item?.source_artifact),
+    as_of: cell(item?.asOf ?? item?.as_of),
+    reporting_period: cell(item?.period ?? item?.reportingPeriod ?? item?.reporting_period),
+    notes: cell(item?.notes ?? item?.note),
+    confidence: cell(item?.confidence),
+    verified: item?.verified ?? '',
+  }));
+
+  const canonicalFacts = list(pack?.canonicalFacts);
+  const calculatedMetrics = list(pack?.calculatedMetrics);
+  if (canonicalFacts.length || calculatedMetrics.length) {
+    pushItems('canonical_fact', canonicalFacts);
+    pushItems('calculated_metric', calculatedMetrics);
+  } else {
+    // Research-only exports still have deterministic facts even if the optional analysis handoff
+    // pack was not generated yet. Use the canonical-values fallback; never synthesize values.
+    pushItems('canonical_fact', list(individualEvidence?.canonicalValues?.facts));
+    pushItems('calculated_metric', list(individualEvidence?.canonicalValues?.calculatedMetrics));
+    if (!list(individualEvidence?.canonicalValues?.facts).length &&
+        !list(individualEvidence?.canonicalValues?.calculatedMetrics).length) {
+      pushItems('canonical_fact', list(individualEvidence?.facts));
+      pushItems('calculated_metric', list(individualEvidence?.calculatedMetrics ?? individualEvidence?.metrics));
+    }
   }
   return rows;
 }
@@ -470,7 +484,7 @@ export function transformResearchToSheets(artifacts: Record<string, any>, symbol
   const quality = artifacts.evidenceQuality ?? {};
   const health = artifacts.sourceHealth ?? {};
   const pack = artifacts.evidencePack ?? {};
-  const reconciliation = artifacts.reconciliation ?? {};
+  const reconciliation = artifacts.reconciliation ?? {};\n  const individualEvidence = artifacts.individualEvidence ?? {};
   const summary: SheetRow = {
     symbol: String(manifest.ticker ?? symbol).toUpperCase(),
     company: cell(manifest.companyName),
@@ -537,7 +551,7 @@ export function transformResearchToSheets(artifacts: Record<string, any>, symbol
   }));
   return consolidateRunTabs(symbol, baseTab, [
     { tabName: tab(baseTab, 'summary'), dataset: 'research-summary', rows: [summary] },
-    { tabName: tab(baseTab, 'evidence'), dataset: 'research-evidence', rows: researchEvidenceRows(pack) },
+    { tabName: tab(baseTab, 'evidence'), dataset: 'research-evidence', rows: researchEvidenceRows(pack, individualEvidence) },
     { tabName: tab(baseTab, 'sources'), dataset: 'research-sources', rows: sourceArtifactRows(manifest) },
     { tabName: tab(baseTab, 'findings'), dataset: 'research-findings', rows: findings },
     { tabName: tab(baseTab, 'quality'), dataset: 'research-quality', rows: qualityRows },
