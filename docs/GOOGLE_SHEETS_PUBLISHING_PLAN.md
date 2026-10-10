@@ -24,7 +24,8 @@ This plan keeps code work separate from Google-side deployment and final visual 
 - [x] Publish the analysis summary with recommendation, price/time, valuation, scores, confidence and key thesis.
 - [x] Split nested findings into classified domain/field/value rows.
 - [x] Consolidate summary, evidence, findings, quality, source provenance, risks, catalysts, scenarios, audit and screenshots into one labelled data tab per run.
-- [x] Exclude local filesystem paths from published rows.
+- [x] Exclude local filesystem paths from published rows, including paths embedded in serialized JSON and notes.
+- [x] Fall back to `normalized/canonical-values.json` for deterministic evidence rows when `normalized/analysis-evidence-pack.json` is absent; do not fabricate missing facts or bypass readiness.
 - [x] Add fixture-backed assertions for required tabs and key columns.
 - [ ] Expand edge-case tests for arrays of objects, missing sections, unusual symbols and 90-character sheet-name collisions.
 
@@ -48,12 +49,15 @@ This plan keeps code work separate from Google-side deployment and final visual 
 - [x] Collect screenshots from `research/<SYMBOL>/screenshots/`.
 - [x] Prioritize 1D, 5-year and all-history TradingView charts.
 - [x] Embed screenshots directly into the consolidated run tab (not public Drive links).
-- [x] Publish file name, chart period, size and embedding status, without local paths.
+- [x] Publish original filename/size/dimensions plus optimized size/dimensions, optimization flag and JPEG quality, without local paths.
+- [x] Re-encode each screenshot as JPEG below 900,000 pixels and below the configured per-image byte threshold.
+- [x] Enforce a second 1,800,000-byte and 1,000,000-pixel check in Apps Script before Blob/image insertion.
+- [x] Synchronize `value`, `status` and `embedding_status` after successful insertion or failure.
 - [x] Add configurable single-file, total-byte and screenshot-count limits.
-- [ ] Test empty/corrupt image files and Apps Script image insertion failures.
+- [ ] Run live deployment checks for corrupt image files and Apps Script insertion failures.
 - [ ] Confirm visual size and row height in desktop/mobile sheet views.
 
-**Acceptance:** every expected screenshot is embedded or has an explicit skip/failure reason; screenshots are not silently misreported as embedded.
+**Acceptance:** every expected screenshot is embedded or has an explicit skip/failure reason; success/failure columns agree; source filename and optimization metadata survive re-export. Live image insertion remains unverified until the updated Apps Script is deployed.
 
 ### Task 4 — Automatic run publishing
 **Status: Implemented in code; live end-to-end status pending**
