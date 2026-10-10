@@ -139,7 +139,7 @@ const briefArtifacts = {
   },
 };
 const briefTabs = buildInvestorBriefTab(briefArtifacts, 'EXAMPLE', 'EXAMPLE-2026-10-10-research');
-assert(briefTabs.length === 1 && briefTabs[0]?.tabName.endsWith('-brief'), 'Investor brief must be a dedicated tab');
+assert(briefTabs.length === 1 && briefTabs[0]?.tabName.endsWith('-dashboard'), 'Investor brief must be a dedicated tab');
 assert(briefTabs[0]?.rows.some(row => row.section === 'TODAY MARKET' && row.field === 'open' && row.value === 178), 'Investor brief must expose today open');
 assert(briefTabs[0]?.rows.some(row => row.section === 'TODAY MARKET' && row.field === 'volume' && row.value === 1234567), 'Investor brief must expose today volume');
 assert(briefTabs[0]?.rows.some(row => row.section === 'LATEST EARNINGS' && row.field === 'profit_after_tax' && row.value === 120), 'Investor brief must expose latest earnings metrics');
@@ -162,6 +162,7 @@ const screenshotTab = buildScreenshotTab('EXAMPLE', [{
 }], 'EXAMPLE-2026-10-10-research');
 assert(screenshotTab.tabName.endsWith('-screenshots'), 'Screenshots must use a dedicated tab');
 assert(screenshotTab.rows.some(row => row.record_type === 'visual_evidence' && row.file_name === 'tradingview-1d.png'), 'Dedicated screenshot tab must retain screenshot metadata');
+assert(Object.keys(screenshotTab.rows.find(row => row.record_type === 'visual_evidence') ?? {})[3] === 'preview', 'Screenshot preview anchor should be near the left edge for immediate visibility');
 
 const visualRows = buildVisualEvidenceRows('EXAMPLE', []);
 assert(visualRows[0]?.embedding_status === 'not_available', 'Missing screenshots should be explicitly identified');
