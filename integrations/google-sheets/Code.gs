@@ -213,18 +213,19 @@ function writeRows_(sheet, rows, mode) {
     if (sheet.getColumnWidth(column) > 420) sheet.setColumnWidth(column, 420);
     if (sheet.getColumnWidth(column) < 100) sheet.setColumnWidth(column, 120);
   }
-  sheet.setRowHeights(dataStartRow, values.length, previewColumn > 0 ? 230 : 42);
-  const sectionColumn = columns.indexOf('section') + 1;
+  sheet.setRowHeights(dataStartRow, values.length, 42);
   const recordTypeColumn = columns.indexOf('record_type') + 1;
-  if (sectionColumn > 0 && recordTypeColumn > 0) {
+  if (recordTypeColumn > 0) {
     values.forEach(function(row, index) {
+      const targetRow = dataStartRow + index;
       if (row[recordTypeColumn - 1] === 'section_header') {
-        const targetRow = dataStartRow + index;
         sheet.getRange(targetRow, 1, 1, columns.length)
           .setFontWeight('bold')
           .setFontColor('#ffffff')
           .setBackground('#244062');
         sheet.setRowHeight(targetRow, 32);
+      } else if (row[recordTypeColumn - 1] === 'visual_evidence') {
+        sheet.setRowHeight(targetRow, 230);
       }
     });
   }
