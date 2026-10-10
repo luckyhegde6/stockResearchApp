@@ -590,6 +590,7 @@ export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: st
   const rows: SheetRow[] = [];
   const allFacts = [
     ...list(evidence.facts),
+    ...list(market.facts),
     ...list(artifacts.canonicalValues?.facts),
     ...list(artifacts.evidencePack?.canonicalFacts),
   ];
