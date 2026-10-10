@@ -41,15 +41,15 @@ npm run sheets:export -- chartinkScan --file scans/chartink-market-scans.json
 Expected tab naming:
 
 ```text
-ITC-YYYY-MM-DD-research
-ITC-YYYY-MM-DD-analysis
-ITC-YYYY-MM-DD-fullscan
-chartinkScan-YYYY-MM-DD
-nse52wScan-YYYY-MM-DD
-screenerScan-YYYY-MM-DD
-tijoriScan-YYYY-MM-DD
-ITC-YYYY-MM-DD-news
-ITC-YYYY-MM-DD-laya
+ITC-YYYY-MM-DD-HHMMSSmmm-research
+ITC-YYYY-MM-DD-HHMMSSmmm-analysis
+ITC-YYYY-MM-DD-HHMMSSmmm-fullscan
+chartinkScan-YYYY-MM-DD-HHMMSSmmm
+nse52wScan-YYYY-MM-DD-HHMMSSmmm
+screenerScan-YYYY-MM-DD-HHMMSSmmm
+tijoriScan-YYYY-MM-DD-HHMMSSmmm
+ITC-YYYY-MM-DD-HHMMSSmmm-news
+ITC-YYYY-MM-DD-HHMMSSmmm-laya
 ```
 
 When `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are configured, standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands publish their results automatically after local output is generated, and other commands append a command-run audit row. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable automatic publishing; manual exports remain available. The `StockResearch` tab is the workbook's clickable index. Command audits remain local; no `_EXPORT_LOG` sheet is created. A Sheets outage never invalidates locally saved research or analysis. See [Google Sheets Export](integrations/google-sheets/README.md).
