@@ -58,7 +58,7 @@ assert(rowsIn('AUDIT').some(row => String(row.details).includes('source_conflict
 assert(analysisTab.rows.every(row => !Object.keys(row).some(key => /local.?path|artifact.?path|screenshot.?path/i.test(key))), 'Consolidated analysis must not expose local path columns');
 
 const researchTabs = transformResearchToSheets({
-  manifest: { ticker: 'EXAMPLE', companyName: 'Example Ltd', generatedAt: '2026-10-09T09:00:00Z', acquisitionOnly: true, sourceArtifacts: [{ id: 'nse-1', provider: 'NSE', type: 'market_data', title: 'Quote', status: 'ok', url: 'https://example.com', localPath: 'research/EXAMPLE/raw/quote.json', screenshotPath: 'C:\\Local\\research\\chart.png' }], dataGaps: ['research/EXAMPLE/raw/gap.json'], warnings: [] },
+  manifest: { ticker: 'EXAMPLE', companyName: 'Example Ltd', generatedAt: '2026-10-09T09:00:00Z', acquisitionOnly: true, sourceArtifacts: [{ id: 'nse-1', provider: 'NSE', type: 'market_data', title: 'Quote', status: 'ok', url: 'https://example.com', localPath: 'research/EXAMPLE/raw/quote.json', screenshotPath: 'C:\\Local\\research\\chart.png', notes: ['normalized=F:\\Local_git\\stock-research-app\\research\\EXAMPLE\\raw\\quote.json'] }], dataGaps: ['research/EXAMPLE/raw/gap.json'], warnings: [] },
   readiness: { ready: true, blockingReasons: [], advisoryReasons: [], requiredFiles: [{ file: 'manifest.json', ok: true }], missingFiles: [], actionableWarnings: [] },
   evidencePack: { canonicalFacts: [{ field: 'revenue', value: 100, unit: 'INR crore', source: 'NSE', sourceArtifact: 'nse-1', asOf: 'Jun-2026' }], calculatedMetrics: [{ field: 'revenue_growth', value: 14, unit: '%', source: 'calculated' }], fundamentals: { trend: 'positive' }, catalysts: { items: [] }, newsSentiment: { label: 'NEUTRAL' }, valuation: { pe: 18 }, technicals: { rsi: 58 }, ownership: { promoter: 52 } },
   sourceHealth: { overall: { status: 'ok' }, sources: { NSE: { status: 'ok', warningDetails: [] } } },
@@ -76,6 +76,7 @@ assert(researchSection('FINDINGS').some(row => row.domain === 'Fundamentals' && 
 assert(researchSection('QUALITY').some(row => row.field === 'manifest.json' && row.status === 'present'), 'Research quality checks must be included in the single run sheet');
 assert(researchRows.every(row => !Object.keys(row).some(key => /local.?path|artifact.?path|screenshot.?path|relative.?path/i.test(key))), 'Research sheet must not expose local path columns');
 assert(!JSON.stringify(researchRows).includes('research/EXAMPLE'), 'Research sheet values must not expose local filesystem paths');
+assert(!JSON.stringify(researchRows).includes('F:\\\\Local_git'), 'Embedded Windows paths in source notes must be redacted, not only path-valued fields');
 const emptyEvidenceTabs = transformResearchToSheets({
   manifest: { ticker: 'EMPTY', companyName: 'Empty Example', generatedAt: '2026-10-09T09:00:00Z', acquisitionOnly: true, sourceArtifacts: [], dataGaps: [], warnings: [] },
   evidencePack: {},
@@ -84,6 +85,22 @@ assert(
   emptyEvidenceTabs[0]?.rows.some(row => row.section === 'EVIDENCE' && row.record_type === 'notice' && String(row.value).includes('No evidence rows')),
   'An empty canonical evidence section should be explicit instead of appearing silently blank',
 );
+
+const packlessEvidenceTabs = transformResearchToSheets({
+  manifest: { ticker: 'PACKLESS', companyName: 'Packless Example', generatedAt: '2026-10-09T09:00:00Z', acquisitionOnly: true, sourceArtifacts: [], dataGaps: [], warnings: [] },
+  canonicalValues: {
+    schema_version: '1.2',
+    ticker: 'PACKLESS',
+    facts: [{ id: 'nse-last-price', evidenceRole: 'source_fact', field: 'last_price', value: 154.25, unit: 'INR', source: 'NSE', sourceArtifact: 'nse-quote', verified: true, confidence: 'high' }],
+    calculatedMetrics: [{ id: 'rsi14', evidenceRole: 'calculated_metric', field: 'rsi14', value: 58.2, unit: 'index', source: 'script', sourceArtifact: 'technical-normalizer', verified: true, confidence: 'high' }],
+  },
+}, 'PACKLESS', 'PACKLESS-2026-10-09-research');
+const packlessRows = packlessEvidenceTabs[0]?.rows ?? [];
+const packlessSection = (section: string) => packlessRows.filter(row => row.section === section && row.record_type !== 'section_header');
+assert(packlessSection('EVIDENCE').some(row => row.field === 'last_price' && row.value === 154.25), 'Research export must fall back to canonical-values.json when analysis-evidence-pack.json is absent');
+assert(packlessSection('EVIDENCE').some(row => row.field === 'rsi14' && row.value === 58.2), 'Research evidence fallback must include deterministic calculated metrics');
+assert(packlessSection('SUMMARY').some(row => row.field === 'evidence_facts' && row.value === 1), 'Research summary evidence counts must match canonical fallback rows');
+assert(packlessSection('SUMMARY').some(row => row.field === 'calculated_metrics' && row.value === 1), 'Research summary metric counts must match canonical fallback rows');
 
 
 const visualRows = buildVisualEvidenceRows('EXAMPLE', []);
@@ -97,6 +114,25 @@ const skippedVisual = buildVisualEvidenceRows('EXAMPLE', [{
   rowIndex: 2,
 }]);
 assert(skippedVisual[0]?.embedding_status === 'skipped_empty_file', 'Empty screenshots must not be represented as embedded');
+
+const optimizedVisual = buildVisualEvidenceRows('EXAMPLE', [{
+  fileName: 'tradingview-fullchart-5y.png',
+  relativePath: '',
+  sizeBytes: 125_000,
+  originalSizeBytes: 760_000,
+  width: 900,
+  height: 800,
+  originalWidth: 1200,
+  originalHeight: 1600,
+  optimizationOccurred: true,
+  compressionQuality: 0.76,
+  mimeType: 'image/jpeg',
+  status: 'pending_embedding',
+  rowIndex: 4,
+}]);
+assert(optimizedVisual[0]?.optimization_occurred === true, 'Screenshot rows must record whether optimization occurred');
+assert(optimizedVisual[0]?.original_size_bytes === 760_000, 'Screenshot rows must preserve original bytes');
+assert(optimizedVisual[0]?.original_image_width === 1200 && optimizedVisual[0]?.original_image_height === 1600, 'Screenshot rows must preserve source dimensions');
 const publisher = await readFile(path.join(process.cwd(), 'src', 'lib', 'google-sheets-publish.ts'), 'utf8');
 assert(publisher.includes('GOOGLE_SHEETS_WEBHOOK_URL') && publisher.includes('GOOGLE_SHEETS_WEBHOOK_TOKEN'), 'Auto-publisher must require a configured URL and token');
 assert(publisher.includes('local output remains available'), 'Sheets failure must not invalidate locally saved analysis');
