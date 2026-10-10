@@ -93,7 +93,7 @@ function oneRow(section: string, row: SheetRow, symbol: string): SheetRow {
     period: exportedValue(row.period ?? row.reporting_period ?? row.as_of ?? ''),
     status: exportedValue(row.status ?? ''),
     confidence: exportedValue(row.confidence ?? ''),
-    notes: exportedValue(row.notes ?? ''),
+    notes: exportedValue(row.notes ?? row.details ?? ''),
     artifact_id: exportedValue(row.artifact_id ?? row.source_artifact ?? ''),
     provider: exportedValue(row.provider ?? ''),
     title: exportedValue(row.title ?? ''),
