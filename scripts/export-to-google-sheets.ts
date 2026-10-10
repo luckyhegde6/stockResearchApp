@@ -191,7 +191,7 @@ async function compressScreenshotForSheets(
   inputBase64: string,
   inputMimeType: string,
   maxBytes: number,
-): Promise<{ base64: string; mimeType: 'image/jpeg'; sizeBytes: number; width: number; height: number; quality: number }> {
+): Promise<{ base64: string; mimeType: 'image/jpeg'; sizeBytes: number; width: number; height: number; originalWidth: number; originalHeight: number; quality: number }> {
   const pixelLimit = 900_000;
   return page.evaluate(async ({ base64, mimeType, byteLimit, maxPixels }) => {
     const image = new Image();
@@ -225,7 +225,7 @@ async function compressScreenshotForSheets(
         const outputBase64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
         const sizeBytes = Math.floor(outputBase64.length * 3 / 4);
         if (sizeBytes <= byteLimit && width * height <= maxPixels) {
-          return { base64: outputBase64, sizeBytes, width, height, quality };
+          return { base64: outputBase64, sizeBytes, width, height, originalWidth: image.naturalWidth, originalHeight: image.naturalHeight, quality };
         }
       }
       width = Math.max(1, Math.floor(width * 0.82));
@@ -273,7 +273,7 @@ async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRow
       let base64: string | undefined;
       let uploadSizeBytes = info.size;
       let outputWidth: number | undefined;
-      let outputHeight: number | undefined;
+      let outputHeight: number | undefined;\n      let originalWidth: number | undefined;\n      let originalHeight: number | undefined;\n      let compressionQuality: number | undefined;\n      let optimizationOccurred = false;
 
       if (info.size === 0) {
         rowStatus = 'skipped_empty_file';
@@ -404,7 +404,7 @@ function appendScreenshotSection(
       image_height: screenshot.height ?? '',
       status: screenshot.status,
       embedding_status: embeddingStatus,
-      notes: screenshot.base64 ? 'Image is attached to this export and should be embedded in this row.' : screenshot.status,
+      notes: screenshot.base64 ? 'Optimized image payload is attached; final status is set by Apps Script after insertion.' : screenshot.status,
       preview: '',
     });
     if (upload) {
