@@ -265,6 +265,20 @@ Redeploy as a Web app and check that you are copying the `/exec` URL from **Depl
 ### Export returns Unauthorized
 The local `GOOGLE_SHEETS_WEBHOOK_TOKEN` must exactly match Apps Script **Project Settings → Script Properties → API_TOKEN**. Check for missing characters or whitespace and update both places if you regenerate a token. Restart the dashboard after changing `.env`.
 
+### Export returns HTTP 401 / Google Drive “Page not found” HTML
+
+This exact response means the request is not reaching the deployed StockResearch sink's JSON handler. Treat the webhook URL as invalid/stale or the deployment as inaccessible; it is not proof that the token is wrong. The exporter now suppresses the large HTML body and prints a targeted message.
+
+1. Run `npm run sheets:doctor` from the repository root. This performs a read-only GET check and does not write to your workbook.
+2. If it says the endpoint returns HTML, open the workbook and choose **Extensions → Apps Script → Deploy → Manage deployments**.
+3. Edit the intended Web app deployment and publish a **New version**. If the deployment was deleted or you cannot edit it, create a new **Web app** deployment instead.
+4. Copy the current **Web app URL** ending in `/exec`; do not use `/dev`, an editor URL, or an old deployment URL.
+5. Replace `GOOGLE_SHEETS_WEBHOOK_URL` in your local root `.env` with that exact URL, save it, and restart `npm run dashboard`.
+6. Run `npm run sheets:doctor` again. Proceed only when it returns `"ok": true` and `"spreadsheetIdMatches": true`.
+7. Then retry `npm run sheets:export -- research HDFCBANK`. If the health check succeeds but this POST reports `Unauthorized` in JSON, compare the local `GOOGLE_SHEETS_WEBHOOK_TOKEN` with the Apps Script `API_TOKEN` Script Property. Do not expose either token in logs or screenshots.
+
+The doctor validates the URL shape, final HTTP response, sink identity, and workbook ID. It deliberately does not send a write request, so a passing health check confirms the deployment is reachable but the authenticated POST is verified only by the export command.
+
 ### Export returns an HTML sign-in or permissions page instead of JSON
 The deployment's **Who has access** option is not permitting the Node process to call it without an interactive sign-in, or the deployment URL is wrong. Use an access setting permitted by your Google account/Workspace policy that supports this server-to-server call. Keep **Execute as** set to the workbook-owning/editor account. If your organization prohibits anonymous web apps, use an approved deployment/authentication design rather than sharing credentials publicly.
 
