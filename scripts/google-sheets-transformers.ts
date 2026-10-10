@@ -578,7 +578,7 @@ export function transformResearchToSheets(artifacts: Record<string, any>, symbol
   ], 'research-run');
 }
 
-export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: string, baseTab: string): ResearchSheetTab {
+export function buildInvestorBriefTab(artifacts: Record<string, any>, symbol: string, baseTab: string): ResearchSheetTab[] {
   const ticker = String(symbol).toUpperCase();
   const evidence = artifacts.individualEvidence ?? {};
   const market = evidence.market ?? {};
