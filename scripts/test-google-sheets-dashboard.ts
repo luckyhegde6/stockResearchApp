@@ -61,6 +61,12 @@ assert(wrapper.includes('completeGoogleSheetsCommandStep'), 'Every wrapped proce
 assert(publisher.includes("spawn(process.execPath, [tsxCli, ...args]"), 'Sheets publisher must launch TSX directly through Node');
 assert(publisher.includes('shell: false'), 'Sheets publisher must not spawn npx through a shell on Windows');
 assert(exporter.includes('returned HTTP') && exporter.includes('HTML'), 'Exporter must identify HTML error pages without dumping full HTML');
+assert(exporter.includes("chromium.launch({ headless: true })"), 'Screenshot exporter must use the installed Playwright Chromium to resize images');
+assert(exporter.includes("const pixelLimit = 900_000"), 'Screenshot exporter must stay below Apps Script one-million-pixel image ceiling');
+assert(exporter.includes("canvas.toDataURL('image/jpeg', quality)"), 'Screenshot exporter must re-encode images to JPEG before upload');
+assert(exporter.includes('GOOGLE_SHEETS_MAX_SCREENSHOT_SOURCE_BYTES'), 'Screenshot exporter must distinguish source-file caps from compressed upload caps');
+assert(exporter.includes("mimeType: 'image/jpeg'"), 'Compressed screenshot attachments must declare JPEG MIME type');
+
 assert(appsScript.includes('screenshotErrors: screenshotResult.errors'), 'Apps Script must return per-image embed errors for screenshot troubleshooting');
 assert(appsScript.includes("result.errors.push({") && appsScript.includes("fileName: String(item.fileName || 'unknown')"), 'Apps Script must identify each screenshot that failed to embed');
 
