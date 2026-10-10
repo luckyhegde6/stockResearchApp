@@ -11,6 +11,20 @@ It combines official NSE data, Screener, Tijori, TradingView, optional news/Char
 > **Important:** This project produces research evidence and analysis inputs. It is not investment advice.
 
 
+## Google Sheets & Research Wiki
+
+The repository maintains a Wiki-ready operational and architectural guide for the Google Sheets publishing system:
+
+- [Wiki index](docs/wiki/README.md)
+- [Google Sheets setup](docs/wiki/Google-Sheets-Setup.md)
+- [Architecture & reasoning](docs/wiki/Google-Sheets-Architecture-and-Reasoning.md)
+- [Research & reasoning](docs/wiki/Research-and-Reasoning.md)
+- [Screenshot evidence pipeline](docs/wiki/Screenshot-Evidence-Pipeline.md)
+- [Operations & troubleshooting](docs/wiki/Operations-and-Troubleshooting.md)
+- [Google Sheets data contract](docs/wiki/Google-Sheets-Data-Contract.md)
+
+These documents describe the implementation, design decisions, evidence model, Apps Script deployment, screenshot limits, and operational recovery procedures. They intentionally distinguish source-derived behavior from live deployment verification.
+
 ## Google Sheets export
 
 **StockResearch workbook:** [Open StockResearch — Research & Analysis](https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0)
