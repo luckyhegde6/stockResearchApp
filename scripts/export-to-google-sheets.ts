@@ -273,10 +273,34 @@ async function main() {
   });
 
   const responseText = await response.text();
-  if (!response.ok) throw new Error(`Google Sheets sink HTTP ${response.status}: ${responseText}`);
-  let result: any;
-  try { result = JSON.parse(responseText); } catch { result = { raw: responseText }; }
-  if (result?.ok === false) throw new Error(`Google Sheets sink rejected export: ${result.error || 'unknown error'}`);
+  const contentType = response.headers.get('content-type') || '';
+  const looksLikeHtml = /text\\/html/i.test(contentType) || /^\\s*<!doctype html|^\\s*<html/i.test(responseText);
+  if (!response.ok) {
+    if (looksLikeHtml) {
+      const title = /<title[^>]*>([\\s\\S]*?)<\\/title>/i.exec(responseText)?.[1]?.replace(/\\s+/g, ' ').trim();
+      throw new Error(
+        `Google Sheets webhook returned HTTP ${response.status} with HTML${title ? ` (" ${title} ")` : ''}, not Apps Script JSON. ` +
+        'The deployed URL is likely stale, incorrect, or not accessible. Run "npm run sheets:doctor"; if its health check fails, redeploy integrations/google-sheets/Code.gs as a Web app and update GOOGLE_SHEETS_WEBHOOK_URL to the current URL ending in /exec. Do not rotate the token until the endpoint health check passes.'
+      );
+    }
+    throw new Error(`Google Sheets sink HTTP ${response.status}: ${responseText.slice(0, 500)}`);
+  }
+  let result: unknown;
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    if (looksLikeHtml) {
+      throw new Error('Google Sheets webhook returned HTML instead of JSON. Check that GOOGLE_SHEETS_WEBHOOK_URL is the current deployed Apps Script /exec URL, then run "npm run sheets:doctor".');
+    }
+    throw new Error(`Google Sheets webhook returned invalid JSON: ${responseText.slice(0, 500)}`);
+  }
+  if (result && typeof result === 'object' && 'ok' in result && result.ok === false) {
+    const error = 'error' in result ? String(result.error) : 'unknown error';
+    throw new Error(`Google Sheets sink rejected export: ${error}`);
+  }
+  if (!result || typeof result !== 'object' || !('ok' in result) || result.ok !== true) {
+    throw new Error('Google Sheets webhook response did not contain ok: true; verify the deployed Apps Script version.');
+  }
 
   console.log(JSON.stringify({
     ok: true,
