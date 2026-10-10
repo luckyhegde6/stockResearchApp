@@ -363,7 +363,7 @@ export async function beginGoogleSheetsCommandStep(
   run.startedAt = startedAt;
   await persistRun(resolvedRoot, run);
   console.log(`[sheets] step started for ${command} (run ${runId})`);
-  return { runId, command, target, trigger, root: resolvedRoot, startedAt, publishAudit: options.publishAudit ?? true };
+  return { runId, command, target, trigger, root: resolvedRoot, startedAt, publishAudit: options.publishAudit ?? false };
 }
 
 export async function completeGoogleSheetsCommandStep(
