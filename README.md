@@ -27,6 +27,9 @@ These documents describe the implementation, design decisions, evidence model, A
 
 ## Google Sheets export
 
+**Decision-ready report contract:** the published workbook is intended to read like an analyst research note, covering the executive view, price action and volume, earnings/financial statements, fundamentals and valuation, technical indicators, upcoming earnings/corporate-action dates, linked news, investment scenarios, risks, source quality and chart screenshots. See [the detailed data contract](docs/wiki/Google-Sheets-Data-Contract.md). Source-backed facts, deterministic calculations and analyst interpretation must remain distinguishable; missing values/events must be marked unavailable rather than inferred.
+
+
 **StockResearch workbook:** [Open StockResearch — Research & Analysis](https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0)
 
 ### Dashboard Google Sheets sync

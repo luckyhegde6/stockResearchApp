@@ -2,7 +2,7 @@
 
 **Workbook:** [StockResearch](https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0)  
 **Requested UI reference:** [Google AI Studio app preview](https://aistudio.google.com/apps/bf7ddb4a-486d-46db-9e2a-4cc6cfcfee5c?showPreview=true&showAssistant=true)  
-**Code branch:** `init` (PR #1 → `main`)
+**Base implementation:** `main` (PR #1 merged). **Investment-report contract follow-up:** `feat/investment-report-sheets`.
 
 This plan keeps code work separate from Google-side deployment and final visual verification. Checkboxes describe the current implementation state rather than inferred live workbook state.
 
@@ -19,7 +19,7 @@ This plan keeps code work separate from Google-side deployment and final visual 
 **Acceptance:** reference source and workbook are linked from project docs, with no unsupported claims about the inaccessible preview.
 
 ### Task 1 — Stable row transformer contract
-**Status: Implemented; automated test added**
+**Status: Existing export implemented; analyst-facing decision-report coverage remains a follow-up**
 
 - [x] Publish the analysis summary with recommendation, price/time, valuation, scores, confidence and key thesis.
 - [x] Split nested findings into classified domain/field/value rows.
@@ -28,6 +28,7 @@ This plan keeps code work separate from Google-side deployment and final visual 
 - [x] Fall back to `normalized/canonical-values.json` for deterministic evidence rows when `normalized/analysis-evidence-pack.json` is absent; do not fabricate missing facts or bypass readiness.
 - [x] Add fixture-backed assertions for required tabs and key columns.
 - [ ] Expand edge-case tests for arrays of objects, missing sections, unusual symbols and 90-character sheet-name collisions.
+- [ ] Verify executive, market, financial, technical, event and news fields are mapped as first-class report fields from normalized artifacts.
 
 **Acceptance:** stable headers; unknown/missing data stays blank or explicit rather than becoming a fabricated zero; recommendations remain clearly labeled as analysis rather than guaranteed outcomes.
 
@@ -116,6 +117,12 @@ This plan keeps code work separate from Google-side deployment and final visual 
 - [ ] Add a fixture/mock receiver integration test for HTTP errors, invalid JSON, token mismatch and partial tab failures.
 - [ ] Add a per-tab schema/version field and a migration strategy if headers change.
 - [ ] Add optional compact one-tab export for users who prefer a single worksheet.
+
+## Decision-ready investment-report coverage
+
+The desired output is an analyst-facing dossier. Existing analysis export includes the recommendation, price snapshot, scores, selected fundamentals/valuation/technical findings, sentiment, risks, catalysts, scenarios and source audit when present. This does not guarantee that every source category has usable data in every run.
+
+The research-only transformer primarily maps existing artifacts and evidence-pack findings. It does not yet guarantee that next earnings dates, board/results dates, corporate actions, relative-volume metrics or every financial-statement line item are first-class populated fields. Verify the actual artifact schema and add deterministic mappings plus regression tests for fields that exist. Mark absent data as `not_available` and never infer dates or values.
 
 ## Current commands
 

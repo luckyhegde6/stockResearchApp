@@ -1,184 +1,61 @@
 # Google Sheets Architecture & Reasoning
 
-## 1. Why Google Sheets is a publication layer
+## 1. Publication layer and canonical evidence
 
-The research pipeline generates structured artifacts locally. Those artifacts are more suitable as the canonical source because they are machine-readable, versioned and testable.
+The research pipeline generates structured local artifacts. Those artifacts remain canonical, versioned and testable; Google Sheets is the human-review and sharing layer, not the research database.
 
-Google Sheets is optimized for:
+The workbook should function like an analyst's evidence-backed stock research note. A reader should move from executive view to market, statements, fundamentals, valuation, technicals, events/news, investment reasoning, sources, quality and chart evidence without needing to inspect raw local files.
 
-- human review
-- filtering
-- sharing
-- quick comparison
-- visual inspection
-- operational monitoring
+## 2. Decision-ready, not just machine-readable
 
-It should therefore be treated as a **published view of research**, not as the research database.
+The publication contract should cover:
+- executive stance, time horizon, confidence and why the stance follows from evidence
+- current price and price-action/volume context
+- earnings and financial-statement summary
+- fundamental business quality and valuation
+- traceable technical indicators
+- upcoming results/board dates and corporate actions
+- recent material news with source URLs
+- bull/base/bear cases, catalysts, risks and thesis invalidation
+- data freshness, missing evidence and unresolved source conflicts
 
-## 2. Why one consolidated sheet per run
+The exporter must not fabricate fields to make the workbook look complete. If local artifacts do not contain a metric, date or headline, publish a clear missing/unconfirmed state and show its impact on readiness/confidence.
 
-The earlier design could spread one run across multiple tabs.
+## 3. One consolidated tab per run
 
-That creates several problems:
+The consolidated design keeps the report navigable without splitting one run across many tabs. Current section headings include SUMMARY, EVIDENCE, SOURCES, FINDINGS, QUALITY and SCREENSHOTS; analysis reports also contain SCORES, RISKS, CATALYSTS, SCENARIOS and AUDIT. Future refinements should preserve the single-run-tab acceptance criterion.
 
-- readers must navigate between tabs
-- row relationships become implicit
-- screenshots become detached from the finding they support
-- exporting the same run becomes harder to audit
-- repeated metadata appears across multiple tabs
+Recommended reading order is executive view, price/volume, earnings/financials, fundamentals/valuation, technicals, events/news, findings/risks/scenarios, sources/quality, screenshots.
 
-The consolidated design puts SUMMARY, EVIDENCE, SOURCES, FINDINGS, QUALITY and SCREENSHOTS into one tab.
+## 4. Facts vs calculations vs interpretation
 
-The result is closer to a research dossier:
+Keep three classes clearly distinguished:
+1. **Sourced facts** — provider, source URL, reporting period and retrieval/as-of timestamp.
+2. **Deterministic calculations** — formula/method, inputs/window and calculation timestamp.
+3. **Analyst interpretation** — explicit rationale, confidence, counter-evidence, risks and thesis-invalidation conditions.
 
-`run → summary → evidence → sources → findings → quality → visual evidence`
+A screenshot is visual/provenance evidence. It is not the authoritative numeric source for price, volume, EPS, RSI or moving averages.
 
-The workbook's `StockResearch` tab acts only as an index.
+## 5. Screenshot compression and receiver safety
 
-## 3. Why command-run sheets were removed
+The exporter performs:
 
-Execution lifecycle information is operational telemetry, not research evidence.
+`original → decode → resize as needed → JPEG re-encode → byte check → base64 → Apps Script → insert`
 
-Publishing `command-runs-*` tabs mixed:
+Current code targets <=900,000 pixels, tries progressively lower JPEG quality and reduces dimensions further if needed, defaults to a 1.4 MB per-image cap and 5 MB total payload, and limits the batch to eight screenshots by default. Apps Script rechecks bytes <=1.8 MB and pixels <=1,000,000 before creating a Blob.
 
-- engineering process state
-- research data
-- user-facing investment information
+The metadata row retains original and optimized size/dimensions and encoding quality. Insertion results synchronize `value`, `status` and `embedding_status` to avoid contradictory statuses.
 
-Keeping command reports local provides the same diagnostic capability without polluting the research workbook.
+Source code implementation is not proof of live success: deploy Apps Script, run `npm run sheets:doctor`, export a known symbol, inspect `screenshotsEmbedded/screenshotsFailed`, then open the workbook and verify actual image objects.
 
-Similarly, an `_EXPORT_LOG` tab is unnecessary when the workbook index and local export reports already identify published runs.
+## 6. Evidence fallback and conflicts
 
-## 4. Why screenshots are not numeric evidence
+If optional `normalized/analysis-evidence-pack.json` is missing, the exporter may publish existing deterministic data from `normalized/canonical-values.json` or normalized individual-stock evidence. This fallback never creates new facts or bypasses readiness gates.
 
-A screenshot can demonstrate what a chart or website looked like.
+When providers disagree, preserve the conflict and investigate period, units, currency, consolidation basis, definition and freshness before interpretation. Do not silently choose a value just to avoid an unresolved conflict.
 
-It should not be treated as the authoritative source of:
+## 7. Failure isolation and investment safety
 
-- price
-- market capitalization
-- revenue
-- EPS
-- RSI
-- moving averages
-- valuation ratios
+Research correctness is separate from publication availability. A Google Sheets outage should not invalidate the local artifact. Never publish credentials or local filesystem paths. Keep reporting separate from order execution.
 
-Those should come from structured acquisition artifacts or deterministic calculations.
-
-Screenshots are retained for provenance and visual review.
-
-## 5. Why optimization happens before Apps Script
-
-Apps Script has a Blob-size limitation and image pixel constraints.
-
-Sending an original browser screenshot creates a fragile integration because a perfectly valid local image can still be rejected by the receiver.
-
-The exporter therefore performs:
-
-`original → dimension reduction → JPEG re-encoding → base64 → Apps Script`
-
-The receiver repeats the important safety checks.
-
-This is deliberate defense in depth.
-
-## 6. Why the receiver checks the image again
-
-The client/exporter cannot be the only enforcement point.
-
-A future caller, bug, configuration change or alternate exporter could send an oversized image.
-
-Apps Script therefore validates:
-
-`bytes ≤ 1,800,000`
-
-and
-
-`width × height ≤ 1,000,000`
-
-before creating the Blob/inserting the image.
-
-## 7. Why status fields are synchronized
-
-A screenshot can have several states:
-
-- discovered
-- optimized
-- pending embedding
-- embedded
-- failed
-- skipped
-
-The previous sheet could expose contradictory states, for example:
-
-`embedding_status = embedded_in_sheet`
-
-while:
-
-`status = pending_embedding`
-
-That makes automation and human review unreliable.
-
-The receiver now updates:
-
-- `value`
-- `status`
-- `embedding_status`
-
-together after the actual insertion attempt.
-
-## 8. Why evidence fallback exists
-
-The research pipeline may produce deterministic canonical evidence even when an optional analysis handoff artifact is unavailable.
-
-The exporter therefore falls back to:
-
-`normalized/canonical-values.json`
-
-when:
-
-`normalized/analysis-evidence-pack.json`
-
-is absent.
-
-This does **not** mean the exporter invents missing evidence.
-
-It only exposes evidence that already exists in a deterministic artifact.
-
-Readiness gates remain authoritative.
-
-## 9. Why conflicts are preserved
-
-Different providers can report different values because of:
-
-- reporting period
-- unit scaling
-- consolidated vs standalone statements
-- stale page data
-- source extraction differences
-- timing
-
-The exporter should not silently choose one.
-
-Instead, the conflict remains visible so the research layer can determine whether it is:
-
-- a real disagreement
-- a unit mismatch
-- a period mismatch
-- a stale value
-- an unresolved issue
-
-This is critical for investment reasoning.
-
-## 10. Failure isolation
-
-The architecture intentionally separates:
-
-`research correctness`
-
-from:
-
-`publication availability`
-
-A Google Sheets outage must not destroy or invalidate the locally generated research artifact.
-
-That allows the publishing layer to be retried independently.
+The report informs a decision but is not a guaranteed forecast. Recommendation confidence must be no greater than the evidence confidence; critical gaps should cause a conditional view or `NO CALL`, not false precision.
