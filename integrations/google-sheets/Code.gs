@@ -43,6 +43,7 @@ function doPost(e) {
       const sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName);
       const rows = sanitizeRowsForSheet_(Array.isArray(item.rows) ? item.rows : []);
       const dataStartRow = writeRows_(sheet, rows, mode);
+      styleProfessionalSheet_(sheet, rows, String(item.dataset || payload.dataset || ''), symbol);
       results.push({
         tabName: tabName,
         dataset: String(item.dataset || payload.dataset || ''),
@@ -184,6 +185,155 @@ function sanitizeTabName_(name) {
     .replace(/^-|-$/g, '')
     .slice(0, 90);
   return cleaned || 'research';
+}
+
+
+function styleProfessionalSheet_(sheet, rows, dataset, symbol) {
+  var kind = String(dataset || '').toLowerCase();
+  if (kind === 'investor-dashboard' || /dashboard/.test(kind)) {
+    styleInvestorDashboard_(sheet, rows, symbol);
+    return;
+  }
+  if (kind === 'visual-evidence') {
+    styleScreenshotGallery_(sheet, rows, symbol);
+    return;
+  }
+  styleResearchTable_(sheet, rows);
+}
+
+function styleInvestorDashboard_(sheet, rows, symbol) {
+  // Turn the compact metric table into a report-style front page without losing the underlying data.
+  sheet.insertRowsBefore(1, 7);
+  var lastCol = Math.max(sheet.getLastColumn(), 8);
+  if (lastCol < 8) {
+    sheet.insertColumnsAfter(lastCol, 8 - lastCol);
+    lastCol = 8;
+  }
+  sheet.getRange(1, 1, 2, 8).merge();
+  sheet.getRange(1, 1).setValue(String(symbol || '') + ' | EQUITY RESEARCH DASHBOARD');
+  sheet.getRange(1, 1, 2, 8)
+    .setBackground('#142D4E').setFontColor('#FFFFFF').setFontWeight('bold')
+    .setFontSize(18).setVerticalAlignment('middle').setHorizontalAlignment('left');
+  sheet.setRowHeight(1, 34);
+  sheet.setRowHeight(2, 26);
+  sheet.getRange(3, 1, 1, 8).merge();
+  sheet.getRange(3, 1).setValue('Market snapshot • fundamentals • technicals • news • events • evidence');
+  sheet.getRange(3, 1, 1, 8).setBackground('#DCE6F1').setFontColor('#24364B')
+    .setFontSize(10).setVerticalAlignment('middle');
+  sheet.setRowHeight(3, 26);
+  sheet.getRange(4, 1, 1, 8).merge();
+  sheet.getRange(4, 1).setValue('KPI SNAPSHOT  |  Values are shown only when present in the acquired research artifacts');
+  sheet.getRange(4, 1, 1, 8).setBackground('#244062').setFontColor('#FFFFFF').setFontWeight('bold');
+  sheet.setRowHeight(4, 24);
+
+  var valuesByField = {};
+  rows.forEach(function(row) {
+    if (row && row.field !== undefined) valuesByField[String(row.field).toLowerCase()] = row.value;
+  });
+  var cards = [
+    { label: 'LAST PRICE', keys: ['last_price', 'current_price', 'close'] },
+    { label: 'DAY CHANGE %', keys: ['day_change_pct', 'percent_change', 'change_percent'] },
+    { label: 'VOLUME', keys: ['volume', 'traded_volume'] },
+    { label: 'RSI (14)', keys: ['rsi14', 'rsi'] },
+    { label: '52W HIGH', keys: ['52_week_high', '52_week_high_price'] },
+    { label: '52W LOW', keys: ['52_week_low', '52_week_low_price'] },
+    { label: 'P/E', keys: ['pe', 'pe_ratio'] },
+    { label: 'DATA STATUS', keys: ['data_status', 'readiness'] }
+  ];
+  cards.forEach(function(card, i) {
+    var col = 1 + (i % 4) * 2;
+    var row = 5 + Math.floor(i / 4) * 3;
+    var value = '';
+    for (var k = 0; k < card.keys.length; k++) {
+      var candidate = valuesByField[card.keys[k]];
+      if (candidate !== undefined && candidate !== null && candidate !== '') { value = candidate; break; }
+    }
+    sheet.getRange(row, col, 1, 2).merge().setValue(card.label);
+    sheet.getRange(row + 1, col, 2, 2).merge().setValue(value === '' ? 'Not available' : value);
+    sheet.getRange(row, col, 1, 2).setBackground('#EAF0F6').setFontColor('#40566F')
+      .setFontWeight('bold').setFontSize(9).setHorizontalAlignment('left');
+    sheet.getRange(row + 1, col, 2, 2).setBackground('#F5F8FC').setFontColor('#142D4E')
+      .setFontWeight('bold').setFontSize(i === 7 ? 12 : 16).setVerticalAlignment('middle')
+      .setHorizontalAlignment('left').setWrap(true);
+    sheet.getRange(row, col, 3, 2).setBorder(true, true, true, true, false, false, '#D5DEE8', SpreadsheetApp.BorderStyle.SOLID);
+  });
+  sheet.setRowHeight(5, 22); sheet.setRowHeight(6, 28); sheet.setRowHeight(7, 24);
+  sheet.setRowHeight(8, 22); sheet.setRowHeight(9, 28); sheet.setRowHeight(10, 24);
+  for (var col = 1; col <= 8; col++) sheet.setColumnWidth(col, col % 2 === 1 ? 150 : 115);
+
+  var headerRow = 8 + 0; // KPI cards end at row 10; source table begins at row 8 after insertion.
+  // The data table was shifted down by seven rows; make its section bands and metric rows legible.
+  var tableHeader = 8;
+  var tableRows = sheet.getLastRow();
+  if (tableRows >= tableHeader) {
+    sheet.getRange(tableHeader, 1, 1, Math.max(sheet.getLastColumn(), 1))
+      .setBackground('#17365D').setFontColor('#FFFFFF').setFontWeight('bold').setWrap(true);
+    sheet.setFrozenRows(tableHeader);
+    for (var r = tableHeader + 1; r <= tableRows; r++) {
+      var type = String(sheet.getRange(r, 2).getValue() || '');
+      if (type === 'section_header') {
+        sheet.getRange(r, 1, 1, Math.max(sheet.getLastColumn(), 1))
+          .setBackground('#244062').setFontColor('#FFFFFF').setFontWeight('bold');
+        sheet.setRowHeight(r, 26);
+      } else {
+        sheet.getRange(r, 1, 1, Math.max(sheet.getLastColumn(), 1))
+          .setBackground(r % 2 ? '#FFFFFF' : '#F7F9FC');
+      }
+    }
+  }
+  sheet.setTabColor('#1F6E8C');
+}
+
+function styleScreenshotGallery_(sheet, rows, symbol) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  sheet.setTabColor('#7A5AF8');
+  sheet.setFrozenRows(1);
+  sheet.setRowHeight(1, 32);
+  sheet.getRange(1, 1, 1, lastCol).setBackground('#142D4E').setFontColor('#FFFFFF')
+    .setFontWeight('bold').setWrap(true);
+  var previewCol = 0;
+  var fileCol = 0;
+  var typeCol = 0;
+  var header = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  previewCol = header.indexOf('preview') + 1;
+  fileCol = header.indexOf('file_name') + 1;
+  typeCol = header.indexOf('record_type') + 1;
+  for (var col = 1; col <= lastCol; col++) {
+    if (col === previewCol) sheet.setColumnWidth(col, 500);
+    else if (col === fileCol) sheet.setColumnWidth(col, 220);
+    else sheet.setColumnWidth(col, Math.min(180, Math.max(100, sheet.getColumnWidth(col))));
+  }
+  for (var r = 2; r <= sheet.getLastRow(); r++) {
+    var type = typeCol ? String(sheet.getRange(r, typeCol).getValue()) : '';
+    if (type === 'section_header') {
+      sheet.getRange(r, 1, 1, lastCol).setBackground('#244062').setFontColor('#FFFFFF').setFontWeight('bold');
+      sheet.setRowHeight(r, 28);
+    } else {
+      sheet.getRange(r, 1, 1, lastCol).setBackground(r % 2 ? '#FFFFFF' : '#F7F9FC').setVerticalAlignment('middle').setWrap(true);
+      sheet.setRowHeight(r, 260);
+    }
+  }
+  sheet.setFrozenColumns(Math.max(previewCol - 1, 0));
+}
+
+function styleResearchTable_(sheet, rows) {
+  sheet.setTabColor('#5B8C5A');
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var lastRow = Math.max(sheet.getLastRow(), 1);
+  sheet.getRange(1, 1, 1, lastCol).setBackground('#17365D').setFontColor('#FFFFFF')
+    .setFontWeight('bold').setWrap(true);
+  sheet.setFrozenRows(1);
+  var header = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  var recordTypeCol = header.indexOf('record_type') + 1;
+  for (var r = 2; r <= lastRow; r++) {
+    var type = recordTypeCol ? String(sheet.getRange(r, recordTypeCol).getValue()) : '';
+    if (type === 'section_header') {
+      sheet.getRange(r, 1, 1, lastCol).setBackground('#244062').setFontColor('#FFFFFF').setFontWeight('bold');
+      sheet.setRowHeight(r, 26);
+    } else if (r % 2 === 0) {
+      sheet.getRange(r, 1, 1, lastCol).setBackground('#F7F9FC');
+    }
+  }
 }
 
 function writeRows_(sheet, rows, mode) {
