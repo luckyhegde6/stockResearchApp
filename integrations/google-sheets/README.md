@@ -16,7 +16,7 @@ Each research or analysis run is consolidated vertically in a common, filterable
 
 The `StockResearch` tab remains as a clickable index to the **one data tab for each run**. No `_EXPORT_LOG` or `command-runs-YYYY-MM-DD` tabs are created. Command execution records remain local under `outputs/command-runs/` for diagnostics. After the updated Apps Script is redeployed, the next successful export removes legacy managed split tabs, old command-run tabs, and `_EXPORT_LOG` from previous exports.
 
-Chart screenshots are embedded directly as sheet images in the same consolidated run tab, alongside their screenshot metadata rows. They are not made public Drive files. The exporter prioritizes `tradingview-1d.png`, `tradingview-fullchart-5y.png`, and `tradingview-fullchart-all.png`, then other PNG/JPEG/WebP screenshots. Oversized files are still listed with a skip status so the missing image is visible rather than silently dropped.
+Chart screenshots are embedded directly as sheet images in the same consolidated run tab, alongside their screenshot metadata rows. Before upload, Playwright Chromium resizes them to at most 900,000 pixels and re-encodes them as JPEG below the configured per-image size limit, satisfying Apps Script's 1-million-pixel and 2 MB insertion limits. Original source files stay local and are not linked or uploaded as filesystem paths. The exporter prioritizes `tradingview-1d.png`, `tradingview-fullchart-5y.png`, and `tradingview-fullchart-all.png`, then other PNG/JPEG/WebP screenshots. Images that cannot be decoded or compressed receive an explicit `resize_failed` status.
 
 ## Repository files
 
@@ -283,6 +283,19 @@ After editing `Code.gs`, choose **Deploy → Manage deployments → Edit → New
 
 ### Dashboard keeps showing an old result
 Click **Refresh Sync Status** or refresh the browser. If settings changed, restart the Node dashboard process as well; a browser refresh alone does not reload server environment variables. Check local status at `outputs/google-sheets-sync-status.json` and detailed command artifacts in `outputs/command-runs/`.
+
+### Screenshots fail with “maximum number of pixels is 1 million”
+
+The exporter now uses the project's Playwright Chromium to resize each PNG/JPEG/WebP screenshot to at most 900,000 pixels, then encodes it as JPEG with a byte-size cap before POSTing to Apps Script. Pull the latest branch and retry the export. You do not need to change the Apps Script deployment for this exporter-only adjustment, provided the consolidated-sheet Apps Script version is already deployed.
+
+If a row reports `resize_failed`, install/repair the Playwright browser from the project root:
+
+~~~powershell
+npx playwright install chromium
+npm run sheets:export -- research HDFCBANK
+~~~
+
+The run sheet records both original/compressed byte sizes and resized dimensions for troubleshooting. Images that cannot fit within the configured per-image and total-request limits are not sent as image blobs; the row shows the reason.
 
 ### Research data exports, but screenshots show `screenshotsFailed`
 
