@@ -100,10 +100,12 @@ function isLocalPathKey_(key) {
 function isLocalPathValue_(value) {
   if (typeof value !== 'string') return false;
   var text = value.trim();
-  return /^[A-Za-z]:[\\/]/.test(text) ||
-    text.indexOf('\\\\') === 0 ||
-    /^\/(?:Users|home|mnt)\//i.test(text) ||
-    /^(?:research|outputs)[\\/]/i.test(text);
+  var drivePath = /^[A-Za-z]:/.test(text) && (text.charAt(2) === '\\' || text.charAt(2) === '/');
+  var uncPath = text.charAt(0) === '\\' && text.charAt(1) === '\\';
+  return drivePath || uncPath ||
+    text.indexOf('/Users/') === 0 || text.indexOf('/home/') === 0 || text.indexOf('/mnt/') === 0 ||
+    text.indexOf('research/') === 0 || text.indexOf('research\\') === 0 ||
+    text.indexOf('outputs/') === 0 || text.indexOf('outputs\\') === 0;
 }
 
 function sanitizeRowsForSheet_(rows) {
