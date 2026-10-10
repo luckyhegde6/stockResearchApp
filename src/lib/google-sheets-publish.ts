@@ -330,6 +330,7 @@ export interface GoogleSheetsCommandStep {
   trigger: GoogleSheetsRun['trigger'];
   root: string;
   startedAt: string;
+  publishAudit: boolean;
 }
 
 export interface GoogleSheetsCommandOutcome {
@@ -343,6 +344,7 @@ export async function beginGoogleSheetsCommandStep(
   target: string | undefined,
   root = process.cwd(),
   trigger: GoogleSheetsRun['trigger'] = 'cli',
+  options: { publishAudit?: boolean } = {},
 ): Promise<GoogleSheetsCommandStep> {
   const resolvedRoot = path.resolve(root);
   const startedAt = new Date().toISOString();
@@ -361,7 +363,7 @@ export async function beginGoogleSheetsCommandStep(
   run.startedAt = startedAt;
   await persistRun(resolvedRoot, run);
   console.log(`[sheets] step started for ${command} (run ${runId})`);
-  return { runId, command, target, trigger, root: resolvedRoot, startedAt };
+  return { runId, command, target, trigger, root: resolvedRoot, startedAt, publishAudit: options.publishAudit ?? true };
 }
 
 export async function completeGoogleSheetsCommandStep(
@@ -390,6 +392,22 @@ export async function completeGoogleSheetsCommandStep(
   const reportPath = path.join(step.root, 'outputs', 'command-runs', `${safeTimestamp}-${safeCommand}.json`);
   await mkdir(path.dirname(reportPath), { recursive: true });
   await writeFile(reportPath, JSON.stringify(report, null, 2), 'utf8');
+
+  if (!step.publishAudit) {
+    const skipped = makeRun(
+      step.runId,
+      'custom',
+      step.target || step.command,
+      { root: step.root, trigger: step.trigger },
+      'skipped',
+      `Local command record saved to ${path.relative(step.root, reportPath)}; external audit publishing was intentionally suppressed for this diagnostic command.`,
+    );
+    skipped.startedAt = step.startedAt;
+    skipped.completedAt = completedAt;
+    await persistRun(step.root, skipped);
+    console.log(`[sheets] command audit kept locally for ${step.command}; external publish suppressed.`);
+    return skipped;
+  }
 
   const result = await runGoogleSheetsExport('custom', step.target || step.command, {
     root: step.root,
