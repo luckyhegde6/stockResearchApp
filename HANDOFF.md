@@ -22,7 +22,7 @@ Completed in code:
 
 ## Verification and blockers
 
-- New changes include defensive screenshot byte/pixel validation, synchronized success/failure status cells, recursive local-path redaction, screenshot optimization metadata, and a canonical-values fallback when `normalized/analysis-evidence-pack.json` is absent. These newest changes still require CI verification.
+- GitHub Actions CI passed on implementation head `e072f10c269cc457317837617947ca43c1ad9b5a` (run #388): `npm run version:check`, `npm run typecheck` and `npm run test:all` all succeeded. The new screenshot/evidence changes include defensive byte/pixel validation, synchronized status cells, recursive path redaction, optimization metadata and a canonical-values fallback when the optional analysis evidence pack is absent.
 - Live workbook contents, tab rows and screenshot insertion are **not yet verified** from this workspace. GitHub source changes do not deploy Apps Script automatically.
 - The local endpoint/token values were previously empty. Unless both are configured in `.env`, the UI is expected to show **NOT CONFIGURED** and no external write should be implied.
 - The latest Apps Script must be pasted/saved/deployed in the target workbook's Apps Script editor.
