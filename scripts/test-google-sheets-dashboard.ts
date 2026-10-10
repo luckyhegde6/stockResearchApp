@@ -61,7 +61,7 @@ assert(publisher.includes("spawn(process.execPath, [tsxCli, ...args]"), 'Sheets 
 assert(publisher.includes('shell: false'), 'Sheets publisher must not spawn npx through a shell on Windows');
 assert(exporter.includes('returned HTTP') && exporter.includes('HTML'), 'Exporter must identify HTML error pages without dumping full HTML');
 assert(doctor.includes("method: 'GET'") && doctor.includes('stock-research-sheet-sink'), 'Sheets doctor must verify the Apps Script GET health response');
-assert(doctor.includes("parsedUrl.pathname") && doctor.includes("'/exec' URL"), 'Sheets doctor must validate the deployed /exec endpoint');
+assert(doctor.includes("parsedUrl.pathname") && doctor.includes("DEPLOYMENT_ID/exec"), 'Sheets doctor must validate the deployed /exec endpoint');
 assert(wrapper.includes("publishAudit: !args.includes('--no-publish-audit')"), 'Wrapper must support diagnostic commands that do not recursively publish their own audit');
 
 assert(index.includes('beginGoogleSheetsCommandStep'), 'Every central CLI command must announce the Sheets step');
