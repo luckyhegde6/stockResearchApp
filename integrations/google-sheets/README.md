@@ -189,7 +189,7 @@ Open the [StockResearch workbook](https://docs.google.com/spreadsheets/d/1YMKesB
 Expected research tab:
 
 ~~~text
-ITC-YYYY-MM-DD-HHMMSSmmm-HHMMSSmmm-research
+ITC-YYYY-MM-DD-HHMMSSmmm-research
 ~~~
 
 Within that one tab, filter the `section` column to review `SUMMARY`, `EVIDENCE`, `SOURCES`, `FINDINGS`, `QUALITY`, or `SCREENSHOTS`.
@@ -204,7 +204,7 @@ npm run sheets:export -- analysis ITC
 Expected analysis tab:
 
 ~~~text
-ITC-YYYY-MM-DD-HHMMSSmmm-HHMMSSmmm-analysis
+ITC-YYYY-MM-DD-HHMMSSmmm-analysis
 ~~~
 
 Use the `section` column to filter analysis summary, findings, scores, risks, catalysts, scenarios, sources, audit, and screenshots.
