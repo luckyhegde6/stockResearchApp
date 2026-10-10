@@ -97,7 +97,8 @@ function doPost(e) {
       tabs: results,
       screenshotsEmbedded: screenshotResult.embedded,
       screenshotsFailed: screenshotResult.failed,
-      screenshotsSkipped: screenshotResult.skipped
+      screenshotsSkipped: screenshotResult.skipped,
+      screenshotErrors: screenshotResult.errors
     });
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message ? err.message : err) });
@@ -189,7 +190,7 @@ function toCell_(value) {
 }
 
 function embedScreenshots_(ss, screenshots) {
-  const result = { embedded: 0, failed: 0, skipped: 0 };
+  const result = { embedded: 0, failed: 0, skipped: 0, errors: [] };
   screenshots.forEach(function(item) {
     const sheet = ss.getSheetByName(sanitizeTabName_(item.tabName || 'visual-evidence'));
     if (!sheet || !item.base64 || !item.rowIndex) {
@@ -213,10 +214,15 @@ function embedScreenshots_(ss, screenshots) {
       result.embedded += 1;
     } catch (err) {
       result.failed += 1;
+      const errorMessage = String(err && err.message ? err.message : err).slice(0, 500);
+      result.errors.push({
+        fileName: String(item.fileName || 'unknown'),
+        message: errorMessage
+      });
       try {
         const headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(String);
         const statusColumn = headers.indexOf('embedding_status') + 1;
-        if (statusColumn > 0) sheet.getRange(Number(item.rowIndex), statusColumn).setValue('embed_failed: ' + String(err && err.message ? err.message : err));
+        if (statusColumn > 0) sheet.getRange(Number(item.rowIndex), statusColumn).setValue('embed_failed: ' + errorMessage.slice(0, 300));
       } catch (ignored) {}
     }
   });
