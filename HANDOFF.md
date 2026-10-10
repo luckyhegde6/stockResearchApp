@@ -1,51 +1,60 @@
 # Handoff
 
 Updated: 2026-10-11
-Branch: init (changes prepared on fix/sheets-screenshot-evidence and included in PR #1)
-PR: [#1 → main](https://github.com/luckyhegde6/stockResearchApp/pull/1)
+Default branch: `main`
+Investment-report follow-up branch: `feat/investment-report-sheets`
+Previous implementation PR: [#1 — Initialize stock research pipeline](https://github.com/luckyhegde6/stockResearchApp/pull/1) (merged)
 
 ## Current state
 
-The Google Sheets publishing boundary now has a visible local Control Center surface, in addition to the CLI exporter.
+The Google Sheets publishing implementation is in `main`. The old `fix/sheets-screenshot-evidence` branch points to the same commit as `main`; compare returns `identical` with 0 commits ahead, 0 behind, and no changed files. The comparison page is empty for that reason, not because it has a valid diff that is being hidden.
 
-Completed in code:
-- Structured transformer methods separate research and final analysis into classified workbook tabs.
-- Apps Script receiver maintains a clickable `StockResearch` index, formatted rows and embedded screenshots; each research/analysis run uses one consolidated data tab, with no `_EXPORT_LOG` or `command-runs-*` tabs.
-- The local dashboard has a **Google Sheets Sync** tab, a live status strip and a dynamic sixth **Google Sheets Sync** step after the five research stages.
-- The dashboard can show `waiting`, `publishing`, `succeeded`, `failed`, `not_configured` and `skipped` states, plus recent attempts, row counts, tab names and screenshot counts.
-- `GET /api/sheets/status` reports config booleans and local export history without revealing secrets. `POST /api/sheets/sync` allows controlled manual republishing of supported local artifacts and rejects non-local browser origins.
-- All npm scripts are wrapped unless the command enters `src/index.ts`, which instruments its own CLI lifecycle. Command reports and lifecycle records stay local; they are not published as extra spreadsheet tabs.
-- Dashboard-triggered research, batch, market-scan and analysis processes announce the Sheets step and finalize local lifecycle records on child exit. They also retain specialized exports for research/analysis/scan outputs.
-- Dashboard Laya execution writes `research/<SYMBOL>/normalized/laya-decisions.json` and attempts publication.
-- Google Sheets transformer and dashboard contract tests are included in `npm run test:all`.
-- Task list/acceptance criteria live in [docs/GOOGLE_SHEETS_PUBLISHING_PLAN.md](docs/GOOGLE_SHEETS_PUBLISHING_PLAN.md).
+The follow-up branch `feat/investment-report-sheets` documents the intended decision-ready reporting contract. Keep raw findings/evidence distinct from a validated investment view.
+
+## Current Sheets implementation
+
+- One consolidated data tab per research/analysis run, plus the `StockResearch` index tab.
+- Research tabs currently contain SUMMARY, EVIDENCE, SOURCES, FINDINGS, QUALITY, and SCREENSHOTS. Analysis tabs additionally contain SCORES, RISKS, CATALYSTS, SCENARIOS, and AUDIT.
+- Screenshot exporter code re-encodes image files as JPEG in Playwright Chromium, targets <=900,000 pixels, applies a configurable per-image byte cap (default 1.4 MB, hard capped at 1.8 MB), total payload cap (default 5 MB), and max screenshot count (default 8). Apps Script checks <=1,800,000 bytes and <=1,000,000 pixels again before inserting.
+- Screenshot rows retain original/optimized byte sizes and dimensions, JPEG quality, and an optimization flag. On insertion success/failure, `value`, `status`, and `embedding_status` are set together.
+- These source-code constraints prove the optimization/validation code path exists. They do **not** prove that the user's deployed Apps Script embeds images; that requires live verification.
+
+## Desired investment-research deliverable
+
+The workbook should read like an evidence-backed equity research note that an analyst or investment banker can review before deciding. At minimum, the report contract should cover:
+
+1. Executive view: overall stance (BUY/ACCUMULATE/HOLD/REDUCE/SELL/NO CALL), time horizon, confidence, thesis, reasons, valuation context, risk/reward, and what would invalidate the view.
+2. Earnings and financials: latest reporting period, revenue/profit/EPS growth, margins, balance-sheet leverage/liquidity, operating cash flow/free cash flow, and earnings quality; each item should include units, period, source, as-of date and confidence where available.
+3. Price action and volume: current/previous close, daily and multi-period change, 52-week range, support/resistance where sourced/calculated, volume versus average volume, relative strength, trend and event-day moves.
+4. Technicals: RSI, MACD, moving averages, volatility/ATR, volume trend and chart timeframes, explicitly marking unavailable data rather than filling in estimates.
+5. Events and catalysts: next earnings date, board/results date, dividends, splits, buybacks, corporate actions and other material event dates, with source links and freshness.
+6. News: recent material headlines, published timestamp, publisher, URL, relevance and directional interpretation. Headlines should link to the source.
+7. Fundamentals and valuation: business/sector context, valuation multiples, historical/peer context only when comparable data exists, growth durability, profitability, capital allocation, ownership/governance and key risks.
+8. Decision summary: bull/base/bear cases, catalysts, downside risks, watch levels/metrics, position-specific action where applicable, and data gaps/conflicts.
+
+Separate sourced facts, deterministic calculations and analyst interpretation. No invented event dates, prices, technical indicator values, financial values or news summaries. Missing data should say `not_available` and lower readiness/confidence. A research-only/acquisition export should say `RESEARCH_ONLY / NO CALL` rather than masquerading as a validated recommendation.
 
 ## Verification and blockers
 
-- GitHub Actions CI passed on implementation head `e072f10c269cc457317837617947ca43c1ad9b5a` (run #388): `npm run version:check`, `npm run typecheck` and `npm run test:all` all succeeded. The new screenshot/evidence changes include defensive byte/pixel validation, synchronized status cells, recursive path redaction, optimization metadata and a canonical-values fallback when the optional analysis evidence pack is absent.
-- Live workbook contents, tab rows and screenshot insertion are **not yet verified** from this workspace. GitHub source changes do not deploy Apps Script automatically.
-- The local endpoint/token values were previously empty. Unless both are configured in `.env`, the UI is expected to show **NOT CONFIGURED** and no external write should be implied.
-- The latest Apps Script must be pasted/saved/deployed in the target workbook's Apps Script editor.
-- The supplied AI Studio preview did not return inspectable app content through connected access. Its exact visual layout is still a reference to compare when viewable.
+- Previous GitHub Actions run #388 passed `npm run version:check`, `npm run typecheck` and `npm run test:all` on implementation commit `e072f10c269cc457317837617947ca43c1ad9b5a`. This is historical CI, not proof of a fresh run on current main.
+- Live workbook contents and actual screenshot visibility are unverified.
+- GitHub source changes do not deploy Apps Script automatically.
+- The Apps Script health check should report `ok: true`, `service: stock-research-sheet-sink`, `serviceVersion: 2`, and the expected workbook ID.
+- Missing `GOOGLE_SHEETS_WEBHOOK_URL` or `GOOGLE_SHEETS_WEBHOOK_TOKEN` means publication is not configured; local research should remain valid.
 
-## Local steps after pulling latest `init`
+## Local end-to-end acceptance
 
-1. Run `npm ci` if dependencies changed.
-2. Configure `GOOGLE_SHEETS_WEBHOOK_URL`, `GOOGLE_SHEETS_WEBHOOK_TOKEN`, `GOOGLE_SHEETS_ID` and `GOOGLE_SHEETS_AUTO_EXPORT=true` in your local `.env`.
-3. Deploy the latest `integrations/google-sheets/Code.gs` version from the target workbook's Apps Script project. Configure Script Properties `SHEET_ID` and `API_TOKEN`.
-4. Restart the server with `npm run dashboard`.
-5. Open [http://localhost:3000](http://localhost:3000) and select **Google Sheets Sync**. The status strip below the progress stepper should also show the current Sheets state.
-6. Run `npm run sheets:doctor`; it should report `serviceVersion: 2`. Then run `npm run sheets:export -- research HDFCBANK` and check the workbook index and the single generated run tab. Inspect the `SCREENSHOTS` section for actual images and matching `embedded_in_sheet`/`embed_failed` values. Try **Publish to Google Sheets** to republish an existing artifact.
-7. Run the current deterministic test suite and review the matching GitHub Actions run.
+1. Pull the target branch and run `npm ci`.
+2. Run `npm run version:check`, `npm run typecheck`, and `npm run test:all`.
+3. Set local `GOOGLE_SHEETS_WEBHOOK_URL`, `GOOGLE_SHEETS_WEBHOOK_TOKEN`, and `GOOGLE_SHEETS_ID`; never commit secrets.
+4. Deploy the current `integrations/google-sheets/Code.gs` into the target workbook's Apps Script Web App and set Script Properties `SHEET_ID` and `API_TOKEN`.
+5. Run `npm run sheets:doctor`.
+6. Generate fresh research for a known symbol, then run `npm run sheets:export -- research HDFCBANK`.
+7. If a schema-valid analysis artifact exists, run `npm run sheets:export -- analysis HDFCBANK`.
+8. Check export counts and screenshot metadata. Require each intended image to be embedded or to have an explicit skip/failure reason.
+9. Open the Google Sheet itself and verify the image objects are visibly rendered. A successful HTTP response alone is not acceptance.
+10. Verify key report fields and source links against local artifacts; missing fields must be explicitly unavailable, not inferred.
 
-## Caution areas
+## Safety boundary
 
-- A missing webhook or failed Sheet request must never invalidate local research output.
-- Never display secrets in the dashboard or return them from the status API.
-- The Apps Script is a separate deployment; GitHub changes alone do not update the live web app.
-- Screenshot files are re-encoded as JPEG below 900,000 pixels and the configured byte threshold; rows preserve original filename/size/dimensions and record optimization. The receiver rechecks size/pixels and synchronizes `value`, `status`, and `embedding_status` after insertion.
-- Keep reporting separate from order execution; no trade execution is added here.
-
-## Handoff protocol
-
-Record exact paths, tests run, known limits, and the next action. Do not paste large logs or secrets into this file.
+Keep reporting separate from order execution. The workbook should inform investment decisions, not place trades. Recommendations must include uncertainty, freshness, gaps and risk context and should never be presented as guaranteed outcomes.
