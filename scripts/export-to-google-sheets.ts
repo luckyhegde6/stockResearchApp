@@ -66,19 +66,21 @@ function isoDate() {
 }
 
 function defaultTab(kind: Kind, symbol?: string) {
-  const date = isoDate();
+  const iso = new Date().toISOString();
+  const date = iso.slice(0, 10);
+  const runTime = iso.slice(11, 23).replace(/[:.]/g, '');
   const s = symbol || 'dataset';
   switch (kind) {
-    case 'research': return `${s}-${date}-research`;
-    case 'analysis': return `${s}-${date}-analysis`;
-    case 'fullscan': return `${s}-${date}-fullscan`;
-    case 'chartinkScan': return `chartinkScan-${date}`;
-    case 'nse52w': return `nse52wScan-${date}`;
-    case 'screenerScan': return `screenerScan-${date}`;
-    case 'tijoriScan': return `tijoriScan-${date}`;
-    case 'news': return `${s}-${date}-news`;
-    case 'laya': return `${s}-${date}-laya`;
-    case 'custom': return `dataset-${date}`;
+    case 'research': return `${s}-${date}-${runTime}-research`;
+    case 'analysis': return `${s}-${date}-${runTime}-analysis`;
+    case 'fullscan': return `${s}-${date}-${runTime}-fullscan`;
+    case 'chartinkScan': return `chartinkScan-${date}-${runTime}`;
+    case 'nse52w': return `nse52wScan-${date}-${runTime}`;
+    case 'screenerScan': return `screenerScan-${date}-${runTime}`;
+    case 'tijoriScan': return `tijoriScan-${date}-${runTime}`;
+    case 'news': return `${s}-${date}-${runTime}-news`;
+    case 'laya': return `${s}-${date}-${runTime}-laya`;
+    case 'custom': return `dataset-${date}-${runTime}`;
   }
 }
 
