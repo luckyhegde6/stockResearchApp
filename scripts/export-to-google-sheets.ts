@@ -1,9 +1,11 @@
 import 'dotenv/config';
 import path from 'node:path';
+import { chromium, type Browser, type Page } from 'playwright';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import {
   transformAnalysisToSheets,
   transformResearchToSheets,
+  fitWithinPixelLimit,
   type ScreenshotRowInput,
   type ScreenshotUpload,
   type ResearchSheetTab,
@@ -184,9 +186,66 @@ function screenshotOrder(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
+async function compressScreenshotForSheets(
+  page: Page,
+  inputBase64: string,
+  inputMimeType: string,
+  maxBytes: number,
+): Promise<{ base64: string; mimeType: 'image/jpeg'; sizeBytes: number; width: number; height: number; quality: number }> {
+  const pixelLimit = 900_000;
+  return page.evaluate(async ({ base64, mimeType, byteLimit, maxPixels }) => {
+    const image = new Image();
+    image.src = 'data:' + mimeType + ';base64,' + base64;
+    await image.decode();
+    if (!image.naturalWidth || !image.naturalHeight) {
+      throw new Error('Chromium could not decode the screenshot image.');
+    }
+
+    const scale = Math.min(1, Math.sqrt(maxPixels / (image.naturalWidth * image.naturalHeight)));
+    let width = Math.max(1, Math.floor(image.naturalWidth * scale));
+    let height = Math.max(1, Math.floor(image.naturalHeight * scale));
+    while (width * height > maxPixels) {
+      if (width >= height) width -= 1;
+      else height -= 1;
+    }
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d', { alpha: false });
+    if (!context) throw new Error('Chromium could not create a 2D canvas for screenshot compression.');
+    const qualities = [0.88, 0.82, 0.76, 0.70, 0.64, 0.58, 0.52, 0.46, 0.40, 0.34];
+
+    for (let resizeAttempt = 0; resizeAttempt < 10; resizeAttempt += 1) {
+      canvas.width = width;
+      canvas.height = height;
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, width, height);
+      context.drawImage(image, 0, 0, width, height);
+      for (const quality of qualities) {
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const outputBase64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+        const sizeBytes = Math.floor(outputBase64.length * 3 / 4);
+        if (sizeBytes <= byteLimit && width * height <= maxPixels) {
+          return { base64: outputBase64, sizeBytes, width, height, quality };
+        }
+      }
+      width = Math.max(1, Math.floor(width * 0.82));
+      height = Math.max(1, Math.floor(height * 0.82));
+    }
+    throw new Error('Compression could not meet the Apps Script byte and pixel limits.');
+  }, { base64: inputBase64, mimeType: inputMimeType, byteLimit: maxBytes, maxPixels: pixelLimit })
+    .then(result => ({ ...result, mimeType: 'image/jpeg' as const }));
+}
+
 async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRowInput[]; uploads: ScreenshotUpload[] }> {
   const screenshotDir = path.join(ROOT, 'research', symbol, 'screenshots');
-  const maxFileBytes = Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOT_BYTES || 1_500_000);
+  const maxUploadBytes = Math.min(
+    Math.max(100_000, Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOT_BYTES || 1_400_000)),
+    1_800_000,
+  );
+  const maxSourceBytes = Math.max(
+    maxUploadBytes,
+    Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOT_SOURCE_BYTES || 20_000_000),
+  );
   const maxTotalBytes = Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOT_TOTAL_BYTES || 5_000_000);
   const maxFiles = Number(process.env.GOOGLE_SHEETS_MAX_SCREENSHOTS || 8);
   let files: string[] = [];
@@ -202,41 +261,92 @@ async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRow
   const rows: ScreenshotRowInput[] = [];
   const uploads: ScreenshotUpload[] = [];
   let totalBytes = 0;
-  for (const fileName of files) {
-    const fullPath = path.join(screenshotDir, fileName);
-    const info = await stat(fullPath);
-    const mimeType = /\.jpe?g$/i.test(fileName) ? 'image/jpeg' : /\.webp$/i.test(fileName) ? 'image/webp' : 'image/png';
-    let status = 'pending_embedding';
-    let base64: string | undefined;
-    if (info.size === 0) {
-      status = 'skipped_empty_file';
-    } else if (info.size > maxFileBytes) {
-      status = `skipped_file_over_limit_${maxFileBytes}_bytes`;
-    } else if (totalBytes + info.size > maxTotalBytes) {
-      status = `skipped_total_over_limit_${maxTotalBytes}_bytes`;
-    } else {
-      base64 = (await readFile(fullPath)).toString('base64');
-      totalBytes += info.size;
-    }
-    rows.push({
-      fileName,
-      relativePath: '',
-      sizeBytes: info.size,
-      mimeType,
-      status: base64 ? 'pending_embedding' : status,
-      rowIndex: 0,
-      base64,
-    });
-    if (base64) {
-      uploads.push({
-        tabName: '',
-        rowIndex: 0,
+  let browser: Browser | undefined;
+  let page: Page | undefined;
+  let browserInitError: string | undefined;
+  try {
+    for (const fileName of files) {
+      const fullPath = path.join(screenshotDir, fileName);
+      const info = await stat(fullPath);
+      const sourceMimeType = /\.jpe?g$/i.test(fileName) ? 'image/jpeg' : /\.webp$/i.test(fileName) ? 'image/webp' : 'image/png';
+      let rowStatus = 'pending_embedding';
+      let base64: string | undefined;
+      let uploadSizeBytes = info.size;
+      let outputWidth: number | undefined;
+      let outputHeight: number | undefined;
+
+      if (info.size === 0) {
+        rowStatus = 'skipped_empty_file';
+      } else if (info.size > maxSourceBytes) {
+        rowStatus = `skipped_source_over_limit_${maxSourceBytes}_bytes`;
+      } else if (totalBytes >= maxTotalBytes) {
+        rowStatus = `skipped_total_over_limit_${maxTotalBytes}_bytes`;
+      } else {
+        try {
+          if (!page) {
+            if (browserInitError) throw new Error(browserInitError);
+            try {
+              browser = await chromium.launch({ headless: true });
+              page = await browser.newPage();
+            } catch (error) {
+              browserInitError = error instanceof Error ? error.message : String(error);
+              throw new Error('Could not start Playwright Chromium to resize screenshots. Run "npx playwright install chromium" and retry. ' + browserInitError);
+            }
+          }
+          const sourceBase64 = (await readFile(fullPath)).toString('base64');
+          const normalized = await compressScreenshotForSheets(
+            page,
+            sourceBase64,
+            sourceMimeType,
+            maxUploadBytes,
+          );
+          // Keep the pure sizing contract in sync with the in-browser canvas implementation.
+          const safeSize = fitWithinPixelLimit(normalized.width, normalized.height, 900_000);
+          if (safeSize.width !== normalized.width || safeSize.height !== normalized.height) {
+            throw new Error('Normalized screenshot dimensions exceed the 900,000-pixel safety limit.');
+          }
+          if (normalized.sizeBytes > maxUploadBytes) {
+            rowStatus = `skipped_compressed_over_limit_${maxUploadBytes}_bytes`;
+          } else if (totalBytes + normalized.sizeBytes > maxTotalBytes) {
+            rowStatus = `skipped_total_over_limit_${maxTotalBytes}_bytes`;
+          } else {
+            base64 = normalized.base64;
+            uploadSizeBytes = normalized.sizeBytes;
+            outputWidth = normalized.width;
+            outputHeight = normalized.height;
+            totalBytes += normalized.sizeBytes;
+            rowStatus = 'pending_embedding';
+          }
+        } catch (error) {
+          rowStatus = 'resize_failed: ' + (error instanceof Error ? error.message : String(error)).slice(0, 250);
+        }
+      }
+
+      rows.push({
         fileName,
-        mimeType,
-        sizeBytes: info.size,
+        relativePath: '',
+        sizeBytes: uploadSizeBytes,
+        originalSizeBytes: info.size,
+        width: outputWidth,
+        height: outputHeight,
+        mimeType: base64 ? 'image/jpeg' : sourceMimeType,
+        status: base64 ? 'pending_embedding' : rowStatus,
+        rowIndex: 0,
         base64,
       });
+      if (base64) {
+        uploads.push({
+          tabName: '',
+          rowIndex: 0,
+          fileName,
+          mimeType: 'image/jpeg',
+          sizeBytes: uploadSizeBytes,
+          base64,
+        });
+      }
     }
+  } finally {
+    if (browser) await browser.close().catch(() => undefined);
   }
   return { rows, uploads };
 }
