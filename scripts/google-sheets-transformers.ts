@@ -52,10 +52,12 @@ function isLocalPathField(key: string): boolean {
 function isLikelyLocalPath(value: unknown): boolean {
   if (typeof value !== 'string') return false;
   const text = value.trim();
-  return /^[A-Za-z]:[\\/]/.test(text) ||
-    text.startsWith('\\\\') ||
-    /^\/(?:Users|home|mnt)\//i.test(text) ||
-    /^(?:research|outputs)[\\/]/i.test(text);
+  const drivePath = /^[A-Za-z]:/.test(text) && (text.charAt(2) === '\\' || text.charAt(2) === '/');
+  const uncPath = text.charAt(0) === '\\' && text.charAt(1) === '\\';
+  return drivePath || uncPath ||
+    text.startsWith('/Users/') || text.startsWith('/home/') || text.startsWith('/mnt/') ||
+    text.startsWith('research/') || text.startsWith('research\\') ||
+    text.startsWith('outputs/') || text.startsWith('outputs\\');
 }
 
 function exportedValue(value: unknown): string | number | boolean {
