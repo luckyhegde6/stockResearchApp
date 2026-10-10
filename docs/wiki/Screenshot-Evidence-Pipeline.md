@@ -2,102 +2,51 @@
 
 ## 1. Problem
 
-Google Apps Script rejects oversized image Blobs.
-
-The original failure was:
-
-`The blob was too large. The maximum blob size is 2 MB.`
-
-and:
-
-`The maximum number of pixels is 1 million.`
-
-Therefore simply sending the original browser screenshot was not reliable.
+Google Apps Script has a Blob-size constraint and an image pixel limit. Sending original browser captures may fail even when locally valid.
 
 ## 2. Optimization pipeline
 
-Each screenshot follows:
+The exporter uses Playwright Chromium canvas processing:
 
-`read → inspect → resize → JPEG encode → size check → base64 → Apps Script → insert`
+`read → decode → resize if needed → JPEG re-encode → size check → base64 → Apps Script → insert`
 
-The target is:
+Current constraints:
+- target maximum: 900,000 pixels
+- default maximum per image: 1.4 MB
+- hard per-image cap: 1.8 MB
+- default total screenshot payload: 5 MB
+- default maximum images: 8
+- JPEG quality attempts descend from 0.88 to 0.34; image dimensions are reduced further if needed
 
-- at most 900,000 pixels
-- below the configured exporter byte limit
-- comfortably below the Apps Script 2 MB limit
+For sources over the default source-size limit of 20 MB, compression is skipped and the row gets an explicit status. If Chromium cannot launch, decoding fails or compression cannot meet limits, the image is marked with a clear failure/skip reason instead of being reported as uploaded.
 
-The current configured upload cap is 1.4 MB.
+## 3. Metadata
 
-## 3. Metadata retained
-
-Optimization must not destroy provenance.
-
-Each screenshot row can retain:
-
-- original filename
-- original size
-- optimized size
-- original width
-- original height
-- optimized width
-- optimized height
-- optimization flag
-- JPEG compression quality
-- embedding status
+The row retains original filename, original bytes, optimized bytes, original dimensions, output dimensions, optimization flag, JPEG quality and status. These fields allow reviewers to confirm whether a file was reduced and whether final payload remained within client limits.
 
 ## 4. Receiver-side validation
 
-Apps Script enforces a second boundary:
+Apps Script checks bytes <= 1,800,000, positive image dimensions, and width × height <= 1,000,000 before insertion. It inserts the image directly into the consolidated tab, sets alt text and preserves aspect ratio; the image is not exposed as a public Drive URL.
 
-`size < 1.8 MB`
+## 5. Status lifecycle
 
-and:
+Success: `pending_embedding → embedded_in_sheet`
 
-`pixels ≤ 1,000,000`
+Failure: `pending_embedding → embed_failed: <reason>`
 
-This protects the receiver even if another client sends an invalid payload.
+Skip: `skipped_<reason>`
 
-## 5. Embedding
+The receiver synchronizes `value`, `status` and `embedding_status` after the insertion attempt. The `StockResearch` index contains run links and a screenshot-embedded count.
 
-The image is inserted into the same consolidated run tab as the screenshot metadata.
+## 6. Live acceptance
 
-It is not uploaded as a public Drive link.
+Source code and contract tests prove the optimizer and receiver guards are implemented; they do not prove that the deployed Apps Script is current or that images are visible in the target workbook.
 
-The row remains the authoritative metadata record while the actual image is the visual evidence.
+1. Deploy latest `integrations/google-sheets/Code.gs` as a new Web App version.
+2. Set Script Properties `SHEET_ID` and `API_TOKEN`; configure matching local `GOOGLE_SHEETS_ID`, `GOOGLE_SHEETS_WEBHOOK_URL`, and `GOOGLE_SHEETS_WEBHOOK_TOKEN`.
+3. Run `npm run sheets:doctor`, expecting `serviceVersion: 2` and the matching workbook ID.
+4. Run a research export with existing chart screenshots.
+5. Confirm exporter embedded/failed counts and each screenshot row's metadata/status agree.
+6. Open the workbook and visually confirm embedded images.
 
-The receiver preserves aspect ratio when setting the displayed image size.
-
-## 6. Status lifecycle
-
-Expected lifecycle:
-
-`pending_embedding → embedded_in_sheet`
-
-Failure:
-
-`pending_embedding → embed_failed: <reason>`
-
-Skip:
-
-`pending_embedding → skipped_<reason>`
-
-The three public status fields are synchronized after the insertion attempt.
-
-## 7. Troubleshooting
-
-If all screenshots fail:
-
-1. run `npm run sheets:doctor`
-2. verify `serviceVersion: 2`
-3. redeploy Apps Script
-4. run a fresh export
-5. inspect the screenshot row's error
-6. confirm optimized bytes and pixels are within limits
-
-If the optimized image is already small but insertion still fails, the likely issue is the deployed receiver rather than the Node optimizer.
-
-## 8. Important limitation
-
-A successful exporter response is not sufficient proof that the images are visually present.
-
-The final acceptance test is opening the generated Google Sheet and confirming that the image objects are actually visible in the SCREENSHOTS section.
+An HTTP success without visible image objects is not sufficient acceptance.
