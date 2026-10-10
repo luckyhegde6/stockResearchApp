@@ -12,7 +12,7 @@ function fail(message: string): never {
 }
 
 function htmlTitle(body: string): string | undefined {
-  return /<title[^>]*>([\\s\\S]*?)<\\/title>/i.exec(body)?.[1]?.replace(/\\s+/g, ' ').trim();
+  return /<title[^>]*>([\s\S]*?)<\/title>/i.exec(body)?.[1]?.replace(/\s+/g, ' ').trim();
 }
 
 async function main(): Promise<void> {
@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   }
   if (parsedUrl.protocol !== 'https:' ||
       parsedUrl.hostname !== 'script.google.com' ||
-      !/^\\/macros\\/s\\/[^/]+\\/exec$/.test(parsedUrl.pathname)) {
+      !/^\/macros\/s\/[^/]+\/exec$/.test(parsedUrl.pathname)) {
     fail('GOOGLE_SHEETS_WEBHOOK_URL must be the deployed Apps Script URL shaped like https://script.google.com/macros/s/DEPLOYMENT_ID/exec. Do not use the editor URL or /dev URL.');
   }
 
@@ -55,7 +55,7 @@ async function main(): Promise<void> {
     const title = htmlTitle(body);
     fail(`Apps Script health endpoint returned HTTP ${response.status}${title ? ` (${title})` : ''}. This is not a successful webhook health check. Redeploy the Apps Script web app and replace GOOGLE_SHEETS_WEBHOOK_URL with the current /exec URL.`);
   }
-  if (/text\\/html/i.test(contentType) || /^\\s*<!doctype html|^\\s*<html/i.test(body)) {
+  if (/text\/html/i.test(contentType) || /^\s*<!doctype html|^\s*<html/i.test(body)) {
     const title = htmlTitle(body);
     fail(`Expected Apps Script JSON but received HTML${title ? ` (${title})` : ''}. The endpoint URL may be stale, invalid, or blocked by Google account/Workspace access policy.`);
   }
@@ -73,7 +73,7 @@ async function main(): Promise<void> {
 
   const result = payload as Record<string, unknown>;
   const workbookUrl = typeof result.workbookUrl === 'string' ? result.workbookUrl : '';
-  const actualId = /\\/spreadsheets\\/d\\/([^/]+)/.exec(workbookUrl)?.[1];
+  const actualId = /\/spreadsheets\/d\/([^/]+)/.exec(workbookUrl)?.[1];
   if (!actualId) {
     fail('Apps Script health response did not include a workbook URL. Check the SHEET_ID Script Property and redeploy.');
   }
