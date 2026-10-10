@@ -66,7 +66,11 @@ assert(appsScript.includes("result.errors.push({") && appsScript.includes("fileN
 
 assert(doctor.includes("method: 'GET'") && doctor.includes('stock-research-sheet-sink'), 'Sheets doctor must verify the Apps Script GET health response');
 assert(doctor.includes("parsedUrl.pathname") && doctor.includes("DEPLOYMENT_ID/exec"), 'Sheets doctor must validate the deployed /exec endpoint');
-assert(wrapper.includes("publishAudit: !args.includes('--no-publish-audit')"), 'Wrapper must support diagnostic commands that do not recursively publish their own audit');
+assert(wrapper.includes("publishAudit: args.includes('--publish-audit')"), 'Wrapper must keep command-run audit tabs disabled unless explicitly requested');
+assert(publisher.includes('publishAudit: options.publishAudit ?? false'), 'Command-run audit publishing must remain disabled by default');
+assert(appsScript.includes('cleanupLegacyManagedTabs_'), 'Apps Script must clean previously generated split tabs and command-run tabs');
+assert(!appsScript.includes("const name = '_EXPORT_LOG'"), 'Apps Script must not create an _EXPORT_LOG sheet');
+assert(appsScript.includes('sanitizeRowsForSheet_'), 'Apps Script must prevent local paths from being written to the workbook');
 
 assert(index.includes('beginGoogleSheetsCommandStep'), 'Every central CLI command must announce the Sheets step');
 assert(index.includes('completeGoogleSheetsCommandStep(commandStep'), 'Every central CLI command must finalize the Sheets step');
