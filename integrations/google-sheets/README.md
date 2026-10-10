@@ -8,13 +8,15 @@ The ID in the link matches the default `GOOGLE_SHEETS_ID`. Publishing is optiona
 
 | Export | Published tabs | Contents |
 |---|---|---|
-| `research SYMBOL` | `summary`, `evidence`, `sources`, `findings`, `quality`, `visual-evidence` | Readiness, deterministic canonical facts/calculations, source provenance, fundamental/valuation/technical/news/catalyst findings, blocking and advisory gaps, chart screenshots |
-| `analysis SYMBOL` | `summary`, `findings`, `scores`, `risks`, `catalysts`, `scenarios`, `sources`, `audit`, `visual-evidence` | Decision and confidence, reasons, metric-by-metric findings, 0–10 domain scores, ranked risks/catalysts, bull/base/bear scenarios, source URLs, conflicts/calculation audit and embedded chart screenshots |
-| scans/news/custom | requested dataset tab | One record per row with data columns preserved |
+| `research SYMBOL` | **One** run tab: `SYMBOL-YYYY-MM-DD-research` | Summary/readiness, canonical facts and calculations, source provenance and URLs, all research findings, quality checks, and screenshots embedded into the same tab |
+| `analysis SYMBOL` | **One** run tab: `SYMBOL-YYYY-MM-DD-analysis` | Investment summary, findings, scores, risks, catalysts, scenarios, source URLs, reconciliation/calculation audit, and screenshots embedded into the same tab |
+| scans/news/custom | One requested dataset tab per export | One record per row with local-path fields removed |
 
-Tab names are prefixed with the symbol and run date, for example `ITC-2026-10-09-analysis-summary`. Each tab contains a proper header row, frozen headers, wrapped cells, an active filter, and resized columns. The landing tab named `StockResearch` indexes every published tab with a clickable **Open tab** link. The hidden-from-the-workflow log tab is named `_EXPORT_LOG` and records one entry for each tab written, including the export run ID, time, row count, mode, and screenshot status.
+Each research or analysis run is consolidated vertically in a common, filterable table with a `section` column. Sections include `SUMMARY`, `EVIDENCE`, `SOURCES`, `FINDINGS`, `QUALITY`, and `SCREENSHOTS` (analysis also includes scores, risks, catalysts, scenarios and audit). Section-header rows are visually distinguished, and the standard header stays frozen. Source URLs are retained; local filesystem paths are never published.
 
-Chart screenshots are embedded directly as sheet images in `*-visual-evidence`. They are not made public Drive files. The exporter prioritizes `tradingview-1d.png`, `tradingview-fullchart-5y.png`, and `tradingview-fullchart-all.png`, then other PNG/JPEG/WebP screenshots. Oversized files are still listed with a skip status so the missing image is visible rather than silently dropped.
+The `StockResearch` tab remains as a clickable index to the **one data tab for each run**. No `_EXPORT_LOG` or `command-runs-YYYY-MM-DD` tabs are created. Command execution records remain local under `outputs/command-runs/` for diagnostics. After the updated Apps Script is redeployed, the next successful export removes legacy managed split tabs, old command-run tabs, and `_EXPORT_LOG` from previous exports.
+
+Chart screenshots are embedded directly as sheet images in the same consolidated run tab, alongside their screenshot metadata rows. They are not made public Drive files. The exporter prioritizes `tradingview-1d.png`, `tradingview-fullchart-5y.png`, and `tradingview-fullchart-all.png`, then other PNG/JPEG/WebP screenshots. Oversized files are still listed with a skip status so the missing image is visible rather than silently dropped.
 
 ## Repository files
 
@@ -171,7 +173,7 @@ The smoke-test command above requires a JSON file. For a simple test without cre
 npm run sheets:export -- research ITC
 ~~~
 
-A successful command should report JSON containing `"ok": true`, a `tabs` array, and the spreadsheet URL. Open the workbook and verify that `StockResearch` contains the new tab link and `_EXPORT_LOG` contains the write. After this authenticated export succeeds, launch another command; its **Google Sheets Publish Step** should reach **SUCCEEDED** rather than **NOT CONFIGURED**. Every supported command also writes a local audit artifact under `outputs/command-runs/`, even if external sync is misconfigured.
+A successful command should report JSON containing `"ok": true`, a `tabs` array, and the spreadsheet URL. Open the workbook and verify that `StockResearch` links to the new consolidated run tab. No separate export-log tab is created. After this authenticated export succeeds, launch another command; its **Google Sheets Publish Step** should reach **SUCCEEDED** rather than **NOT CONFIGURED**. Every supported command also writes a local audit artifact under `outputs/command-runs/`, even if external sync is misconfigured.
 
 ## 4. Export and verify a research run
 
@@ -182,18 +184,15 @@ npm run research -- ITC
 npm run sheets:export -- research ITC
 ~~~
 
-Open the [StockResearch workbook](https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0). The `StockResearch` tab should contain an **Open tab** link for every generated tab, and `_EXPORT_LOG` should show each tab write with the same run ID.
+Open the [StockResearch workbook](https://docs.google.com/spreadsheets/d/1YMKesB9CBnntEnLp-rznzuOOixWDwX6WaWqb-FmtRak/edit?gid=0#gid=0). The `StockResearch` tab should contain one **Open tab** link for the consolidated run tab.
 
-Expected research tabs include:
+Expected research tab:
 
 ~~~text
-ITC-YYYY-MM-DD-research-summary
-ITC-YYYY-MM-DD-research-evidence
-ITC-YYYY-MM-DD-research-sources
-ITC-YYYY-MM-DD-research-findings
-ITC-YYYY-MM-DD-research-quality
-ITC-YYYY-MM-DD-research-visual-evidence
+ITC-YYYY-MM-DD-research
 ~~~
+
+Within that one tab, filter the `section` column to review `SUMMARY`, `EVIDENCE`, `SOURCES`, `FINDINGS`, `QUALITY`, or `SCREENSHOTS`.
 
 The standard analysis command auto-exports its detailed report after schema validation; the manual command below is for retries or re-publishing:
 
@@ -202,19 +201,13 @@ npm run analyze -- ITC
 npm run sheets:export -- analysis ITC
 ~~~
 
-Expected analysis tabs include:
+Expected analysis tab:
 
 ~~~text
-ITC-YYYY-MM-DD-analysis-summary
-ITC-YYYY-MM-DD-analysis-findings
-ITC-YYYY-MM-DD-analysis-scores
-ITC-YYYY-MM-DD-analysis-risks
-ITC-YYYY-MM-DD-analysis-catalysts
-ITC-YYYY-MM-DD-analysis-scenarios
-ITC-YYYY-MM-DD-analysis-sources
-ITC-YYYY-MM-DD-analysis-audit
-ITC-YYYY-MM-DD-analysis-visual-evidence
+ITC-YYYY-MM-DD-analysis
 ~~~
+
+Use the `section` column to filter analysis summary, findings, scores, risks, catalysts, scenarios, sources, audit, and screenshots.
 
 Other supported dataset examples:
 
@@ -241,9 +234,9 @@ The exporter prints a JSON result containing the workbook URL, run ID, tab names
 - **scenarios** — one row each for bull, base and bear.
 - **sources** — source ID, source type, link, retrieved/published timestamps, reporting period and artifact provenance.
 - **audit** — facts without a primary source, conflicts, and calculation formulas/inputs.
-- **visual-evidence** — screenshot name/period/size/artifact path and images embedded directly in the sheet.
-- **StockResearch** — workbook landing page linking all published tabs.
-- **_EXPORT_LOG** — run-level operational audit trail.
+- **SCREENSHOTS** — screenshot name/period/size/status and images embedded directly in the consolidated run sheet. Local paths are excluded.
+- **StockResearch** — workbook landing page linking one data tab per run.
+- Command audit artifacts remain local; no `_EXPORT_LOG` or `command-runs-*` sheet tabs are created.
 
 The transformer methods are deterministic; they do not invent missing facts, score values, or fill unavailable numbers with zero.
 
@@ -293,7 +286,7 @@ Click **Refresh Sync Status** or refresh the browser. If settings changed, resta
 
 ### Research data exports, but screenshots show `screenshotsFailed`
 
-The tab and row write can succeed even when individual chart images fail. The Apps Script now returns a `screenshotErrors` array containing the filename and the actual Apps Script exception for each failed image, and the visual-evidence tab's `embedding_status` column records the same exception.
+The tab and row write can succeed even when individual chart images fail. The Apps Script now returns a `screenshotErrors` array containing the filename and the actual Apps Script exception for each failed image, and the `SCREENSHOTS` section's `embedding_status` column records the same exception.
 
 1. Copy the latest `integrations/google-sheets/Code.gs` from this branch into the Apps Script editor.
 2. Save it, then choose **Deploy → Manage deployments → Edit → New version → Deploy**. A code save alone does not update the running deployment.
