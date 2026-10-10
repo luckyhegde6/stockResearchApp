@@ -689,10 +689,27 @@ export function buildScreenshotTab(symbol: string, screenshots: ScreenshotRowInp
     value: '',
   }];
   rows.push(...buildVisualEvidenceRows(ticker, screenshots).map(row => ({
+    // Keep the image anchor column near the left edge so images are immediately visible.
     section: 'SCREENSHOTS',
     record_type: 'visual_evidence',
     symbol: ticker,
-    ...row,
+    file_name: row.file_name ?? row.fileName ?? '',
+    preview: '',
+    field: row.field ?? row.domain ?? '',
+    value: row.value ?? row.status ?? '',
+    status: row.status ?? '',
+    embedding_status: row.embedding_status ?? '',
+    source_url: row.source_url ?? '',
+    size_bytes: row.size_bytes ?? '',
+    original_size_bytes: row.original_size_bytes ?? '',
+    image_width: row.image_width ?? '',
+    image_height: row.image_height ?? '',
+    original_image_width: row.original_image_width ?? '',
+    original_image_height: row.original_image_height ?? '',
+    optimization_occurred: row.optimization_occurred ?? '',
+    compression_quality: row.compression_quality ?? '',
+    notes: row.notes ?? '',
+    details: row.details ?? '',
   })));
   return { tabName: tab(baseTab, 'screenshots'), dataset: 'visual-evidence', rows };
 }
