@@ -249,23 +249,39 @@ The transformer methods are deterministic; they do not invent missing facts, sco
 
 ## Troubleshooting
 
-### The run did not create tabs
-Check that `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are both populated in local `.env`. A successful CLI response must include `ok: true` and a `tabs` array. Confirm the same run appears in `_EXPORT_LOG`.
+### Dashboard says `SHEETS: NOT CONFIGURED` or endpoint/token is MISSING
+This is the state shown in the screenshot. Your local run succeeded; Google Sheets has not received it because the app does not have both publishing credentials. Follow sections 1–3 above, then restart the dashboard. Setting only `GOOGLE_SHEETS_ID` is insufficient: the exporter needs the deployed web-app URL and matching token as well.
 
-### Unauthorized
-The local token must exactly match the Apps Script `API_TOKEN` Script Property. If a token was rotated, update both sides.
+If the app still reports a missing setting, verify:
+- The file is named `.env`, not `.env.txt`, and lives in the project root beside `package.json`.
+- Both `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` have real, non-empty values, without placeholders.
+- The URL is the deployed Apps Script web-app URL ending in `/exec`, not the editor URL.
+- The dashboard was stopped and restarted after the file was changed.
+- `GOOGLE_SHEETS_AUTO_EXPORT=true` (or the value is omitted, which defaults to enabled).
 
-### The endpoint returns success, but old behavior persists
-Update the deployment under **Deploy → Manage deployments** to point at the saved/latest version. Re-test the GET health endpoint and perform a small export.
+### Endpoint GET does not return the expected JSON
+Redeploy as a Web app and check that you are copying the `/exec` URL from **Deploy → Manage deployments**. Complete any authorization prompts. A GET health response does not by itself test writes or token correctness.
+
+### Export returns Unauthorized
+The local `GOOGLE_SHEETS_WEBHOOK_TOKEN` must exactly match Apps Script **Project Settings → Script Properties → API_TOKEN**. Check for missing characters or whitespace and update both places if you regenerate a token. Restart the dashboard after changing `.env`.
+
+### Export returns an HTML sign-in or permissions page instead of JSON
+The deployment's **Who has access** option is not permitting the Node process to call it without an interactive sign-in, or the deployment URL is wrong. Use an access setting permitted by your Google account/Workspace policy that supports this server-to-server call. Keep **Execute as** set to the workbook-owning/editor account. If your organization prohibits anonymous web apps, use an approved deployment/authentication design rather than sharing credentials publicly.
 
 ### The script cannot edit the workbook
-Use an execution account that has editor access to the target workbook. Check the workbook ID in Apps Script Script Properties.
+Confirm `SHEET_ID` in Script Properties is the workbook ID from its URL and the account configured for **Execute as** has edit access. Re-authorize the script if Google asks for new permissions.
+
+### Export succeeds, but old behavior persists
+After editing `Code.gs`, choose **Deploy → Manage deployments → Edit → New version → Deploy**. Saving the editor alone does not update the deployed version.
+
+### Dashboard keeps showing an old result
+Click **Refresh Sync Status** or refresh the browser. If settings changed, restart the Node dashboard process as well; a browser refresh alone does not reload server environment variables. Check local status at `outputs/google-sheets-sync-status.json` and detailed command artifacts in `outputs/command-runs/`.
 
 ### A screenshot is listed but not embedded
 Check the row's `embedding_status`. Files larger than `GOOGLE_SHEETS_MAX_SCREENSHOT_BYTES` or the aggregate limit are intentionally skipped; raise the limits cautiously if needed. Check Apps Script execution logs if the response reports screenshot failures.
 
 ### Multiple Google accounts
-Test with the same account that has edit permission to the workbook. Google-account session and deployment permissions can make a correct-looking endpoint fail authorization.
+Use the Google account that owns the deployment and has edit permission to the workbook. Google-account session and deployment permissions can make a correct-looking endpoint fail authorization.
 
 ## Security and publication policy
 
