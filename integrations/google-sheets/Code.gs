@@ -203,7 +203,7 @@ function styleProfessionalSheet_(sheet, rows, dataset, symbol) {
 
 function styleInvestorDashboard_(sheet, rows, symbol) {
   // Turn the compact metric table into a report-style front page without losing the underlying data.
-  sheet.insertRowsBefore(1, 7);
+  sheet.insertRowsBefore(1, 10);
   var lastCol = Math.max(sheet.getLastColumn(), 8);
   if (lastCol < 8) {
     sheet.insertColumnsAfter(lastCol, 8 - lastCol);
@@ -261,9 +261,8 @@ function styleInvestorDashboard_(sheet, rows, symbol) {
   sheet.setRowHeight(8, 22); sheet.setRowHeight(9, 28); sheet.setRowHeight(10, 24);
   for (var col = 1; col <= 8; col++) sheet.setColumnWidth(col, col % 2 === 1 ? 150 : 115);
 
-  var headerRow = 8 + 0; // KPI cards end at row 10; source table begins at row 8 after insertion.
-  // The data table was shifted down by seven rows; make its section bands and metric rows legible.
-  var tableHeader = 8;
+  // The original table is shifted below the title and KPI cards.
+  var tableHeader = 11;
   var tableRows = sheet.getLastRow();
   if (tableRows >= tableHeader) {
     sheet.getRange(tableHeader, 1, 1, Math.max(sheet.getLastColumn(), 1))
