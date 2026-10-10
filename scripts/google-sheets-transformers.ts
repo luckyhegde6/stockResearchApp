@@ -96,13 +96,6 @@ function redactEmbeddedLocalPaths(text: string): string {
     .replace(/(^|[\s=:([{])\/(?:Users|home|mnt|tmp)\/[^\s"'<>|,;)}\]]+/g, '$1[local path redacted]');
 }
 
-function redactEmbeddedLocalPaths(text: string): string {
-  return text
-    .replace(/(?:[A-Za-z]:[\\/])(?:[^\\/\s"'<>|,;)}\]]+[\\/])*[^\\/\s"'<>|,;)}\]]*/g, '[local path redacted]')
-    .replace(/\\\\[^\\/\s"'<>|]+\\[^\\/\s"'<>|]+(?:\\[^\s"'<>|,;)}\]]*)?/g, '[local path redacted]')
-    .replace(/(^|[\s=:([{])(?:research|outputs)[\\/][^\s"'<>|,;)}\]]+/g, '$1[local path redacted]')
-    .replace(/(^|[\s=:([{])\/(?:Users|home|mnt|tmp)\/[^\s"'<>|,;)}\]]+/g, '$1[local path redacted]');
-}
 
 function sanitizePathValues(value: unknown, key = ''): unknown {
   if (isLocalPathField(key) || isLikelyLocalPath(value)) return undefined;
