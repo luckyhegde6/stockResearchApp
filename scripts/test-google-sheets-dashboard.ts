@@ -7,7 +7,7 @@ function assert(condition: unknown, message: string): asserts condition {
 }
 
 const root = process.cwd();
-const [server, html, launcher, publisher, index, laya, exporter, wrapper, packageSource, doctor] = await Promise.all([
+const [server, html, launcher, publisher, index, laya, exporter, wrapper, packageSource, doctor, appsScript] = await Promise.all([
   readFile(path.join(root, 'src', 'server.ts'), 'utf8'),
   readFile(path.join(root, 'public', 'index.html'), 'utf8'),
   readFile(path.join(root, 'src', 'lib', 'process-launcher.ts'), 'utf8'),
@@ -18,6 +18,7 @@ const [server, html, launcher, publisher, index, laya, exporter, wrapper, packag
   readFile(path.join(root, 'scripts', 'with-google-sheets-step.ts'), 'utf8'),
   readFile(path.join(root, 'package.json'), 'utf8'),
   readFile(path.join(root, 'scripts', 'google-sheets-doctor.ts'), 'utf8'),
+  readFile(path.join(root, 'integrations', 'google-sheets', 'Code.gs'), 'utf8'),
 ]);
 
 assert(server.includes("pathname === '/api/sheets/status'"), 'Dashboard must expose GET /api/sheets/status');
@@ -60,6 +61,9 @@ assert(wrapper.includes('completeGoogleSheetsCommandStep'), 'Every wrapped proce
 assert(publisher.includes("spawn(process.execPath, [tsxCli, ...args]"), 'Sheets publisher must launch TSX directly through Node');
 assert(publisher.includes('shell: false'), 'Sheets publisher must not spawn npx through a shell on Windows');
 assert(exporter.includes('returned HTTP') && exporter.includes('HTML'), 'Exporter must identify HTML error pages without dumping full HTML');
+assert(appsScript.includes('screenshotErrors: screenshotResult.errors'), 'Apps Script must return per-image embed errors for screenshot troubleshooting');
+assert(appsScript.includes("result.errors.push({") && appsScript.includes("fileName: String(item.fileName || 'unknown')"), 'Apps Script must identify each screenshot that failed to embed');
+
 assert(doctor.includes("method: 'GET'") && doctor.includes('stock-research-sheet-sink'), 'Sheets doctor must verify the Apps Script GET health response');
 assert(doctor.includes("parsedUrl.pathname") && doctor.includes("DEPLOYMENT_ID/exec"), 'Sheets doctor must validate the deployed /exec endpoint');
 assert(wrapper.includes("publishAudit: !args.includes('--no-publish-audit')"), 'Wrapper must support diagnostic commands that do not recursively publish their own audit');
