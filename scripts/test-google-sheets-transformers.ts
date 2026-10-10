@@ -143,7 +143,7 @@ assert(briefTabs.length === 1 && briefTabs[0]?.tabName.endsWith('-dashboard'), '
 assert(briefTabs[0]?.rows.some(row => row.section === 'TODAY MARKET' && row.field === 'open' && row.value === 178), 'Investor brief must expose today open');
 assert(briefTabs[0]?.rows.some(row => row.section === 'TODAY MARKET' && row.field === 'volume' && row.value === 1234567), 'Investor brief must expose today volume');
 assert(briefTabs[0]?.rows.some(row => row.section === 'LATEST EARNINGS' && row.field === 'profit_after_tax' && row.value === 120), 'Investor brief must expose latest earnings metrics');
-assert(briefTabs[0]?.rows.some(row => row.section === 'NEWS' && row.field === 'Example order update'), 'Investor brief must expose latest news headlines');
+assert(briefTabs[0]?.rows.some(row => row.section === 'NEWS' && row.value === 'Example order update'), 'Investor brief must expose latest news headlines');
 assert(briefTabs[0]?.rows.some(row => row.section === 'UPCOMING EVENTS' && row.value === 'Quarterly results'), 'Investor brief must expose upcoming events');
 const screenshotTab = buildScreenshotTab('EXAMPLE', [{
   fileName: 'tradingview-1d.png',
