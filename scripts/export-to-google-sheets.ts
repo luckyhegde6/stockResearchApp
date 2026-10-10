@@ -94,10 +94,12 @@ function isPathLikeKey(key: string): boolean {
 function isPathLikeValue(value: unknown): boolean {
   if (typeof value !== 'string') return false;
   const text = value.trim();
-  return /^[A-Za-z]:[\\/]/.test(text) ||
-    text.startsWith('\\\\') ||
-    /^\/(?:Users|home|mnt)\//i.test(text) ||
-    /^(?:research|outputs)[\\/]/i.test(text);
+  const drivePath = /^[A-Za-z]:/.test(text) && (text.charAt(2) === '\\' || text.charAt(2) === '/');
+  const uncPath = text.charAt(0) === '\\' && text.charAt(1) === '\\';
+  return drivePath || uncPath ||
+    text.startsWith('/Users/') || text.startsWith('/home/') || text.startsWith('/mnt/') ||
+    text.startsWith('research/') || text.startsWith('research\\') ||
+    text.startsWith('outputs/') || text.startsWith('outputs\\');
 }
 
 function scalar(value: unknown): string | number | boolean {
@@ -188,7 +190,7 @@ async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRow
   let files: string[] = [];
   try {
     files = (await readdir(screenshotDir))
-      .filter(name => /\\.(png|jpe?g|webp)$/i.test(name))
+      .filter(name => /\.(png|jpe?g|webp)$/i.test(name))
       .sort(screenshotOrder)
       .slice(0, maxFiles);
   } catch {
@@ -201,7 +203,7 @@ async function collectScreenshots(symbol: string): Promise<{ rows: ScreenshotRow
   for (const fileName of files) {
     const fullPath = path.join(screenshotDir, fileName);
     const info = await stat(fullPath);
-    const mimeType = /\\.jpe?g$/i.test(fileName) ? 'image/jpeg' : /\\.webp$/i.test(fileName) ? 'image/webp' : 'image/png';
+    const mimeType = /\.jpe?g$/i.test(fileName) ? 'image/jpeg' : /\.webp$/i.test(fileName) ? 'image/webp' : 'image/png';
     let status = 'pending_embedding';
     let base64: string | undefined;
     if (info.size === 0) {
@@ -273,7 +275,7 @@ function appendScreenshotSection(
     const rowIndex = tab.rows.length + 2;
     const chartPeriod = screenshot.fileName
       .replace(/^tradingview[-_]?/i, '')
-      .replace(/\\.(png|jpe?g|webp)$/i, '');
+      .replace(/\.(png|jpe?g|webp)$/i, '');
     const upload = uploads.find(item => item.fileName === screenshot.fileName);
     const embeddingStatus = screenshot.base64 ? 'pending_embedding' : screenshot.status;
     tab.rows.push({
