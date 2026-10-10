@@ -217,22 +217,33 @@ export class LayaDecisionEngine {
 }
 
 function buildSummary(decisions: Record<string, LayaResult>): LayaReportSummary {
-  const get = <T>(id: string, field: keyof LayaAnswer): T | any => {
-    const r = decisions[id];
-    if (!r) return null;
-    return (r.answer as any)[field];
+  const choice = (id: string): string | null => {
+    const answer = decisions[id]?.answer;
+    return answer?.type === 'choice' ? answer.choice : null;
+  };
+  const score = (id: string): number | null => {
+    const answer = decisions[id]?.answer;
+    return answer?.type === 'score' ? answer.level : null;
+  };
+  const noul = (id: string): boolean | null => {
+    const answer = decisions[id]?.answer;
+    return answer?.type === 'noul' ? answer.value : null;
+  };
+  const confidence = (id: string): number | null => {
+    const answer = decisions[id]?.answer;
+    return answer ? answer.confidence : null;
   };
 
   return {
-    action:              get<string>('action_recommendation', 'choice') ?? 'Insufficient-Data',
-    actionConfidence:    get<number>('action_recommendation', 'confidence') ?? 0,
-    trendDirection:      get<string>('trend_direction', 'choice') ?? 'Mixed',
-    fundamentalScore:    get<number>('fundamental_quality', 'level') ?? 0,
-    valuationStance:     get<string>('valuation_stance', 'choice') ?? 'Indeterminate',
-    momentumLevel:       get<number>('momentum_strength', 'level') ?? 0,
-    newsRisk:            get<boolean | null>('news_risk', 'value') ?? null,
-    scanConviction:      get<boolean | null>('scan_conviction', 'value') ?? null,
-    dataQualityLevel:    get<number>('data_quality_gate', 'level') ?? 0
+    action: choice('action_recommendation') ?? 'Insufficient-Data',
+    actionConfidence: confidence('action_recommendation') ?? 0,
+    trendDirection: choice('trend_direction') ?? 'Mixed',
+    fundamentalScore: score('fundamental_quality') ?? 0,
+    valuationStance: choice('valuation_stance') ?? 'Indeterminate',
+    momentumLevel: score('momentum_strength') ?? 0,
+    newsRisk: noul('news_risk'),
+    scanConviction: noul('scan_conviction'),
+    dataQualityLevel: score('data_quality_gate') ?? 0
   };
 }
 

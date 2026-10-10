@@ -41,7 +41,7 @@ async function stockDomainChecks(dir:string,m:ResearchManifest):Promise<Check[]>
   const catalysts=await readJson(path.join(dir,'normalized','catalysts.json'));
   const identity=await readJson(path.join(dir,'normalized','identity.json'));
   const facts=Array.isArray(canonical?.facts)?canonical.facts:[];
-  const factFields=new Set(facts.filter((f:any)=>f?.value!==null&&f?.value!==undefined&&f?.value!=='').map((f:any)=>String(f.field)));
+  const factFields = new Set<string>(facts.filter((f:any)=>f?.value!==null&&f?.value!==undefined&&f?.value!=='').map((f:any)=>String(f.field)));
   const financialRows=Array.isArray(financial?.nse?.rows)?financial.nse.rows:[];
   const screenerPeriods=Array.isArray(financial?.screener)?financial.screener:[];
   const hasFinancialValue=financialRows.some((r:any)=>r && Object.keys(r?.metrics??{}).length>0) || screenerPeriods.some((r:any)=>Array.isArray(r?.rows)&&r.rows.length>0);
@@ -54,7 +54,7 @@ async function stockDomainChecks(dir:string,m:ResearchManifest):Promise<Check[]>
     {id:'stock-fundamentals-complete',field:'fundamentals with actual values',ok:hasFinancialValue || ['revenue','operating_profit','profit_after_tax','eps','roce','roe','debt','sales_growth','profit_growth'].some(x=>factFields.has(x)),evidence:'normalized/financials.json'},
     {id:'stock-valuation-complete',field:'valuation with actual values',ok:valuationValues.length>0 || ['market_cap','pe_ratio','price_to_book','book_value','dividend_yield'].some(x=>factFields.has(x)),evidence:'normalized/valuation.json'},
     {id:'stock-financial-periods-complete',field:'period-aware financial tables',ok:financialRows.length>0 && hasFinancialValue || screenerPeriods.length>0,evidence:'normalized/financial-periods.json'},
-    {id:'stock-ownership-complete',field:'ownership/shareholding detail',ok:ownershipValues.length>0 || [...factFields].some(x=>/promoter|fii|dii|public|pledge|ownership/i.test(x)),evidence:'normalized/ownership.json'},
+    {id:'stock-ownership-complete',field:'ownership/shareholding detail',ok:ownershipValues.length>0 || [...factFields].some((x: string) => /promoter|fii|dii|public|pledge|ownership/i.test(x)),evidence:'normalized/ownership.json'},
     {id:'stock-catalysts-complete',field:'catalyst/event evidence',ok:catalystItems.length>0,evidence:'normalized/catalysts.json'},
     {id:'stock-technicals-complete',field:'technical dataset',ok:techMetricFields.has('ema50')&&techMetricFields.has('ema200')&&techMetricFields.has('rsi14'),evidence:'normalized/technicals.json'},
     {id:'stock-screening-complete',field:'screening context',ok:hasNonEmpty(screening),evidence:'normalized/screening.json'},

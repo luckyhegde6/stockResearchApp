@@ -11,7 +11,9 @@ export type EvidenceType =
   | 'financials'
   | 'derived_data'
   | 'screening_results'
-  | 'sentiment';
+  | 'sentiment'
+  | 'market_screen'
+  | 'visual_evidence';
 
 export interface SourceArtifact {
   id: string;
@@ -52,6 +54,8 @@ export interface AdapterContext {
   isin?: string;
   bseScrip?: string;
   researchDir: string;
+  gaps?: string[];
+  warnings?: string[];
 }
 
 export interface AdapterResult {
