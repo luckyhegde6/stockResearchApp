@@ -27,6 +27,7 @@ const TEST_SUITES = [
   'scripts/test-chartink-feature-flag.ts',
   'scripts/test-chartink-no-results.ts',
   'scripts/test-chartink-scan-registry.ts',
+  'scripts/test-chartink-swing-ui.ts',
   'scripts/test-nse-market-transformers.ts',
   'scripts/test-nse-securities.ts',
   'scripts/test-nse-nextapi-normalizers.ts',
