@@ -17,12 +17,36 @@ export interface ScreenshotUpload {
 
 export interface ScreenshotRowInput {
   fileName: string;
+  /** Retained for compatibility with old fixtures; never published to Sheets. */
   relativePath: string;
+  /** Compressed bytes sent to Apps Script, or source bytes if compression was skipped. */
   sizeBytes: number;
+  originalSizeBytes?: number;
+  width?: number;
+  height?: number;
   mimeType: string;
   status: string;
   rowIndex: number;
   base64?: string;
+}
+
+export function fitWithinPixelLimit(
+  sourceWidth: number,
+  sourceHeight: number,
+  maxPixels = 900_000,
+): { width: number; height: number } {
+  if (!Number.isFinite(sourceWidth) || !Number.isFinite(sourceHeight) ||
+      sourceWidth < 1 || sourceHeight < 1 || !Number.isFinite(maxPixels) || maxPixels < 1) {
+    throw new Error('Screenshot dimensions and pixel limit must be positive finite numbers.');
+  }
+  const scale = Math.min(1, Math.sqrt(maxPixels / (sourceWidth * sourceHeight)));
+  let width = Math.max(1, Math.floor(sourceWidth * scale));
+  let height = Math.max(1, Math.floor(sourceHeight * scale));
+  while (width * height > maxPixels) {
+    if (width >= height) width -= 1;
+    else height -= 1;
+  }
+  return { width, height };
 }
 
 function cell(value: unknown): string | number | boolean {
