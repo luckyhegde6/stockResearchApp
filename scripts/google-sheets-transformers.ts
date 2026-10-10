@@ -126,7 +126,7 @@ function oneRow(section: string, row: SheetRow, symbol: string): SheetRow {
     'section','record_type','symbol','domain','category','field','item','metric','artifact_id','file_name',
     'scenario','title','check_type','value','status','details','assessment','thesis','notes','unit','source',
     'source_url','url','period','reporting_period','as_of','confidence','provider','artifact_type','retrieved_at',
-    'method','size_bytes','sizeBytes','original_size_bytes','originalSizeBytes','image_width','image_height','width','height','mimeType','mime_type','embedding_status','preview','source_id','source_artifact',
+    'method','size_bytes','sizeBytes','original_size_bytes','originalSizeBytes','image_width','image_height','original_image_width','original_image_height','optimization_occurred','compression_quality','width','height','originalWidth','originalHeight','optimizationOccurred','compressionQuality','mimeType','mime_type','embedding_status','preview','source_id','source_artifact',
     'evidence_type','finding_type','scale','severity','row','symbol',
   ]);
   const details: Record<string, unknown> = {};
