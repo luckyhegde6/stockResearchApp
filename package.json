@@ -108,7 +108,8 @@
     "test:google-sheets-transformers": "tsx scripts/with-google-sheets-step.ts --name \"test:google-sheets-transformers\" --exec \"tsx\" -- scripts/test-google-sheets-transformers.ts",
     "test:google-sheets-dashboard": "tsx scripts/with-google-sheets-step.ts --name \"test:google-sheets-dashboard\" --exec \"tsx\" -- scripts/test-google-sheets-dashboard.ts",
     "test:fixture": "tsx scripts/with-google-sheets-step.ts --name \"test:fixture\" --exec \"tsx\" -- scripts/ensure-test-research-fixture.ts",
-    "typecheck": "tsx scripts/with-google-sheets-step.ts --name \"typecheck\" --exec \"tsc\" -- --noEmit"
+    "typecheck": "tsx scripts/with-google-sheets-step.ts --name \"typecheck\" --exec \"tsc\" -- --noEmit",
+    "sheets:doctor": "tsx scripts/with-google-sheets-step.ts --name \"sheets:doctor\" --no-publish-audit --exec \"tsx\" -- scripts/google-sheets-doctor.ts"
   },
   "engines": {
     "node": ">=20"
