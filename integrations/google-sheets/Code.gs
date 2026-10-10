@@ -2,7 +2,6 @@ const SHEET_ID = PropertiesService.getScriptProperties().getProperty('SHEET_ID')
 const API_TOKEN = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
 const HOME_TAB = 'StockResearch';
 const INDEX_HEADERS = ['last_exported_at', 'symbol', 'dataset', 'tab_name', 'row_count', 'mode', 'screenshots_embedded', 'open_tab'];
-const LOG_HEADERS = ['exported_at', 'run_id', 'symbol', 'dataset', 'tab_name', 'row_count', 'mode', 'screenshots_embedded', 'status'];
 
 function doGet() {
   return json_({
@@ -36,11 +35,12 @@ function doPost(e) {
     const timestamp = new Date().toISOString();
 
     const home = ensureIndex_(ss);
+    cleanupLegacyManagedTabs_(ss, home);
     const results = [];
     tabs.forEach(function(item) {
       const tabName = sanitizeTabName_(item.tabName || 'research');
       const sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName);
-      const rows = Array.isArray(item.rows) ? item.rows : [];
+      const rows = sanitizeRowsForSheet_(Array.isArray(item.rows) ? item.rows : []);
       const dataStartRow = writeRows_(sheet, rows, mode);
       results.push({
         tabName: tabName,
@@ -61,8 +61,6 @@ function doPost(e) {
     const screenshotResult = embedScreenshots_(ss, screenshots);
     const screenshotCount = screenshotResult.embedded;
     results.forEach(function(result) {
-      const sheet = ss.getSheetByName(result.tabName);
-      const countForTab = result.dataset === 'visual-evidence' ? screenshotCount : 0;
       upsertIndex_(home, {
         exportedAt: timestamp,
         symbol: symbol,
@@ -70,20 +68,9 @@ function doPost(e) {
         tabName: result.tabName,
         rows: result.rows,
         mode: mode,
-        screenshotsEmbedded: countForTab,
+        screenshotsEmbedded: screenshots.length ? screenshotCount : 0,
         gid: result.gid,
         spreadsheetUrl: ss.getUrl()
-      });
-      logExport_(ss, {
-        exportedAt: timestamp,
-        runId: runId,
-        symbol: symbol,
-        dataset: result.dataset,
-        tabName: result.tabName,
-        rows: result.rows,
-        mode: mode,
-        screenshotsEmbedded: countForTab,
-        status: 'ok'
       });
     });
 
@@ -102,6 +89,64 @@ function doPost(e) {
     });
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
+}
+
+function isLocalPathKey_(key) {
+  return /(?:localPath|relativePath|artifactPath|screenshotPath|evidencePath|reportPath|filePath|local_path|relative_path|artifact_path|screenshot_path|evidence_path|report_path|file_path)/i.test(String(key || ''));
+}
+
+function isLocalPathValue_(value) {
+  if (typeof value !== 'string') return false;
+  var text = value.trim();
+  return /^[A-Za-z]:[\\\\/]/.test(text) ||
+    text.indexOf('\\\\\\\\') === 0 ||
+    /^\\/(?:Users|home|mnt)\\//i.test(text) ||
+    /^(?:research|outputs)[\\\\/]/i.test(text);
+}
+
+function sanitizeRowsForSheet_(rows) {
+  return rows.map(function(row) {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) return { value: row };
+    var clean = {};
+    Object.keys(row).forEach(function(key) {
+      var value = row[key];
+      if (isLocalPathKey_(key) || isLocalPathValue_(value)) return;
+      if (value && typeof value === 'object') {
+        clean[key] = JSON.parse(JSON.stringify(value, function(childKey, childValue) {
+          return isLocalPathKey_(childKey) || isLocalPathValue_(childValue) ? undefined : childValue;
+        }));
+      } else {
+        clean[key] = value;
+      }
+    });
+    return clean;
+  });
+}
+
+function isLegacyManagedTab_(name) {
+  return name === '_EXPORT_LOG' ||
+    /^command-runs-/i.test(name) ||
+    /^[A-Z0-9&-]+-\\d{4}-\\d{2}-\\d{2}-(?:research|analysis)-(?:summary|evidence|sources|findings|quality|visual-evidence|scores|risks|catalysts|scenarios|audit)$/i.test(name);
+}
+
+function cleanupLegacyManagedTabs_(ss, indexSheet) {
+  var removed = [];
+  ss.getSheets().slice().forEach(function(sheet) {
+    var name = sheet.getName();
+    if (name !== HOME_TAB && isLegacyManagedTab_(name) && ss.getSheets().length > 1) {
+      ss.deleteSheet(sheet);
+      removed.push(name);
+    }
+  });
+  if (!removed.length || indexSheet.getLastRow() < 2) return;
+  var removedSet = {};
+  removed.forEach(function(name) { removedSet[name] = true; });
+  var rowCount = indexSheet.getLastRow();
+  var linkedNames = indexSheet.getRange(2, 4, rowCount - 1, 1).getValues();
+  for (var i = linkedNames.length - 1; i >= 0; i -= 1) {
+    var tabName = String(linkedNames[i][0] || '');
+    if (removedSet[tabName] || isLegacyManagedTab_(tabName)) indexSheet.deleteRow(i + 2);
   }
 }
 
@@ -167,7 +212,21 @@ function writeRows_(sheet, rows, mode) {
     if (sheet.getColumnWidth(column) > 420) sheet.setColumnWidth(column, 420);
     if (sheet.getColumnWidth(column) < 100) sheet.setColumnWidth(column, 120);
   }
-  sheet.setRowHeights(dataStartRow, values.length, previewColumn > 0 ? 230 : 48);
+  sheet.setRowHeights(dataStartRow, values.length, previewColumn > 0 ? 230 : 42);
+  const sectionColumn = columns.indexOf('section') + 1;
+  const recordTypeColumn = columns.indexOf('record_type') + 1;
+  if (sectionColumn > 0 && recordTypeColumn > 0) {
+    values.forEach(function(row, index) {
+      if (row[recordTypeColumn - 1] === 'section_header') {
+        const targetRow = dataStartRow + index;
+        sheet.getRange(targetRow, 1, 1, columns.length)
+          .setFontWeight('bold')
+          .setFontColor('#ffffff')
+          .setBackground('#244062');
+        sheet.setRowHeight(targetRow, 32);
+      }
+    });
+  }
   return dataStartRow;
 }
 
@@ -269,26 +328,6 @@ function upsertIndex_(sheet, item) {
   for (let column = 1; column <= 7; column += 1) {
     if (sheet.getColumnWidth(column) > 320) sheet.setColumnWidth(column, 320);
   }
-}
-
-function logExport_(ss, entry) {
-  const name = '_EXPORT_LOG';
-  const sheet = ss.getSheetByName(name) || ss.insertSheet(name);
-  sheet.getRange(1, 1, 1, LOG_HEADERS.length).setValues([LOG_HEADERS]);
-  styleHeader_(sheet, LOG_HEADERS.length);
-  sheet.setFrozenRows(1);
-  sheet.appendRow([
-    entry.exportedAt,
-    entry.runId,
-    entry.symbol,
-    entry.dataset,
-    entry.tabName,
-    entry.rows,
-    entry.mode,
-    entry.screenshotsEmbedded,
-    entry.status
-  ]);
-  sheet.autoResizeColumns(1, LOG_HEADERS.length);
 }
 
 function json_(value) {
