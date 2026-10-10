@@ -70,7 +70,7 @@ function extractScreenerCompany(snapshot: any): string | null {
   return cleanText(findKeyDeep(snapshot, ['companyName', 'company_name', 'name'])) as string | null;
 }
 
-function extractTijoriMetric(snapshot: any, labels: string[]): number | string | null {
+function extractTijoriMetric(snapshot: any, labels: readonly string[]): number | string | null {
   const text = getText(snapshot);
   for (const label of labels) {
     const n = findLabeledNumber(text, [label]);

@@ -122,7 +122,7 @@ export async function buildCanonicalExtraction(researchDir:string, manifest:Rese
         for(let i=0;i<Math.min(headers.length,cells.length);i++){
           const n=numberValue(cells[i]);
           if(n!==null && /sales|revenue|profit|eps|cash|debt|assets|liabil|equity/i.test(`${headers[i]} ${caption}`)){
-            periods.push(sourceField({id:`screener-period-${periods.length+1}`,field:canonicalizeLabel(headers[i]),value:n,unit:null,period:canonicalizeLabel(caption),source:sr.a?.provider||'Screener',sourceArtifact:sr.a?.id??null,method:'source_extraction',verified:true,asOf:sr.a?.retrievedAt??null,evidencePath:sr.a?.localPath??null,sourceUrl:sr.a?.url??null,confidence:'medium',notes:['Extracted from captured Screener table; original table remains in raw evidence.']}));
+            periods.push(sourceField({id:`screener-period-${periods.length+1}`,field:canonicalizeLabel(headers[i]),value:n,unit:null,period:canonicalizeLabel(caption),source:sr.a?.provider||'Screener',sourceArtifact:sr.a?.id??null,asOf:sr.a?.retrievedAt??null,evidencePath:sr.a?.localPath??null,sourceUrl:sr.a?.url??null,confidence:'medium',notes:['Extracted from captured Screener table; original table remains in raw evidence.']}));
           }
         }
       }
@@ -135,7 +135,7 @@ export async function buildCanonicalExtraction(researchDir:string, manifest:Rese
     for(const [field,labels,unit] of scalar){const r=extractFromTables(tr.d,labels,'number'); if(r)push(facts,manifest,tr.a,field,numberValue(r.value),unit,{period:normalizePeriod(r.period),confidence:'medium'});}
     // Preserve financial-history-looking lines as period evidence where labels and dates coexist.
     const txt=getText(tr.d); const lines=txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-    for(const line of lines){ if(/20\d{2}|FY\d{2}|Q[1-4]/i.test(line) && /revenue|sales|profit|eps|cash|debt/i.test(line)){const n=numberValue(line); if(n!==null) periods.push(sourceField({id:`tijori-period-${periods.length+1}`,field:'financial_history_line',value:n,unit:null,period:normalizePeriod(line.match(/(FY\s*\d{2,4}|Q[1-4].{0,10}20\d{2}|20\d{2})/i)?.[1]??null),source:tr.a?.provider||'Tijori Finance',sourceArtifact:tr.a?.id??null,method:'source_extraction',verified:true,asOf:tr.a?.retrievedAt??null,evidencePath:tr.a?.localPath??null,sourceUrl:tr.a?.url??null,confidence:'low'}));}}
+    for(const line of lines){ if(/20\d{2}|FY\d{2}|Q[1-4]/i.test(line) && /revenue|sales|profit|eps|cash|debt/i.test(line)){const n=numberValue(line); if(n!==null) periods.push(sourceField({id:`tijori-period-${periods.length+1}`,field:'financial_history_line',value:n,unit:null,period:normalizePeriod(line.match(/(FY\s*\d{2,4}|Q[1-4].{0,10}20\d{2}|20\d{2})/i)?.[1]??null),source:tr.a?.provider||'Tijori Finance',sourceArtifact:tr.a?.id??null,asOf:tr.a?.retrievedAt??null,evidencePath:tr.a?.localPath??null,sourceUrl:tr.a?.url??null,confidence:'low'}));}}
   }
 
   const tech=await readJson(path.join(researchDir,'raw','tradingview','technical-normalized.json'));
@@ -143,7 +143,7 @@ export async function buildCanonicalExtraction(researchDir:string, manifest:Rese
     const synthetic:SourceArtifact={id:'tradingview-technical-normalized',provider:'NSE',type:'derived_data',title:'Canonical technical metrics',localPath:path.join(researchDir,'raw','tradingview','technical-normalized.json'),retrievedAt:tech.generatedAt??new Date().toISOString(),status:'ok',method:'script'};
     for(const [field,val,unit] of [['close',tech.latest.close,'price'],['ema50',tech.latest.ema50,'price'],['ema200',tech.latest.ema200,'price'],['rsi14',tech.latest.rsi14,'index'],['volume',tech.latest.volume,'shares']] as const){
       if(val===null||val===undefined) continue;
-      facts.push(calculatedField({id:`nse-calculated-${field}`,evidenceRole:'calculated_metric',field,value:val,unit,source:'NSE',sourceArtifact:synthetic.id,asOf:tech.latest.date??tech.generatedAt??null,evidencePath:synthetic.localPath,sourceUrl:null,confidence:'high',notes:['Deterministically calculated from canonical NSE EQ historical data.']}));
+      facts.push(calculatedField({id:`nse-calculated-${field}`,field,value:val,unit,source:'NSE',sourceArtifact:synthetic.id,asOf:tech.latest.date??tech.generatedAt??null,evidencePath:synthetic.localPath,sourceUrl:null,confidence:'high',notes:['Deterministically calculated from canonical NSE EQ historical data.']}));
     }
   }
 

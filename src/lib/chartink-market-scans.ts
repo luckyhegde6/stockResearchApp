@@ -287,7 +287,7 @@ export async function runChartinkMarketScans(options: { projectRoot: string; sca
   const date = dateSlug();
   const scanEntries = getScansByType(scanType);
   const root = path.join(projectRoot, 'scans');
-  const dateDir = path.join(root, `${scanType === 'all' ? 'All' : scanType.replace(/\b\w/g, x => x.toUpperCase())}-${date}`);
+  const dateDir = path.join(root, `${scanType.replace(/\b\w/g, x => x.toUpperCase())}-${date}`);
   await ensureDir(dateDir);
   await writeFile(path.join(dateDir, 'scan-conditions.json'), JSON.stringify({ schema_version: '1.0', generatedAt: new Date().toISOString(), scanType, count: scanEntries.length, scans: scanEntries }, null, 2), 'utf8');
   const debugDir = path.join(dateDir, 'debug');

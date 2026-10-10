@@ -4,6 +4,16 @@ import { createRequire } from 'node:module';
 
 export interface CliResult { stdout: string; stderr: string; code: number; }
 
+function stripOuterQuotes(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length >= 2 &&
+      ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+       (trimmed.startsWith("'") && trimmed.endsWith("'")))) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
 export async function runPlaywrightBrowserProbe(_cwd: string, _session: string, timeoutMs = 45_000) {
   try {
     const result = await browserHealthCheck('https://www.nseindia.com/', timeoutMs);
