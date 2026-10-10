@@ -37,7 +37,7 @@ async function run() {
   }
 
   const target = commandTarget(args);
-  const step = await beginGoogleSheetsCommandStep(commandName, target, ROOT, 'cli');
+  const step = await beginGoogleSheetsCommandStep(commandName, target, ROOT, 'cli', { publishAudit: !args.includes('--no-publish-audit') });
   let child: ChildProcess | undefined;
   let signalReceived: NodeJS.Signals | undefined;
 
