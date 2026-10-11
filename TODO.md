@@ -35,8 +35,9 @@ Target workbook: [StockResearch](https://docs.google.com/spreadsheets/d/1YMKesB9
 
 ## P1 — agentic layer
 
-- [ ] Add read-only evidence inspection commands.
-- [ ] Add a machine-readable readiness/source-health summary for agents.
+- [x] Add read-only evidence inspection commands.
+- [x] Add a deterministic evidence auditor for manifest/pack provenance and readiness parity.
+- [x] Add a machine-readable readiness/source-health summary for agents.
 - [ ] Add an explicit model-provider boundary.
 - [ ] Add bounded multi-step reasoning only after the deterministic handoff contract is stable.
 
