@@ -1,5 +1,11 @@
 # StockResearchApp Wiki
 
+## Product and agent documentation
+- [Product Roadmap](./Product-Roadmap.md)
+- [Agent System & Guardrails](./Agent-System-and-Guardrails.md)
+- [PRD-004: Evidence-First Research Platform](../prd/004-evidence-first-research-platform.md)
+
+
 This documentation explains the Google Sheets publishing system, Apps Script receiver, consolidated research-sheet design, screenshot evidence pipeline, and the reasoning behind the architecture.
 
 ## Documentation map
