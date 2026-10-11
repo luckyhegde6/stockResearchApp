@@ -9,6 +9,8 @@ scans/*
 .playwright-cli/
 .playwright/
 .agents/
+!.agents/
+!.agents/**
 .claude/
 *.tmp
 *_head.txt
