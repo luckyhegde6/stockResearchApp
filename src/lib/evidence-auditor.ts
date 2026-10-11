@@ -12,7 +12,7 @@ export interface EvidenceAuditReport {
   generated_at: string;
   symbol: string;
   status: 'ready' | 'partial' | 'blocked' | 'not_found';
-  readiness: { ready: boolean | null; blockingReasons: string[]; missingFiles: string[] } | null;
+  readiness: { ready: boolean | null; blockingReasons: string[]; missingFiles: string[]; actionableWarnings: string[]; advisoryReasons: string[]; qualityStatus: string | null; allowPartial: boolean | null } | null;
   counts: { sourceArtifacts: number; canonicalFacts: number; calculatedMetrics: number; checkedClaims: number };
   checks: EvidenceAuditCheck[];
   issues: string[];
@@ -149,7 +149,7 @@ export async function auditResearchEvidence(
     generated_at: (options.now?.() ?? new Date()).toISOString(),
     symbol,
     status,
-    readiness: readiness ? { ready: typeof readiness.ready === 'boolean' ? readiness.ready : null, blockingReasons, missingFiles } : null,
+    readiness: readiness ? { ready: typeof readiness.ready === 'boolean' ? readiness.ready : null, blockingReasons, missingFiles, actionableWarnings: unique(array(readiness.actionableWarnings).map(String)), advisoryReasons: unique(array(readiness.advisoryReasons).map(String)), qualityStatus: typeof readiness.qualityStatus === 'string' ? readiness.qualityStatus : null, allowPartial: typeof readiness.allowPartial === 'boolean' ? readiness.allowPartial : null } : null,
     counts: { sourceArtifacts: array(manifest?.sourceArtifacts).length, canonicalFacts: facts.length, calculatedMetrics: metrics.length, checkedClaims: claims.length },
     checks,
     issues,
