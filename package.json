@@ -112,7 +112,9 @@
     "sheets:doctor": "tsx scripts/with-google-sheets-step.ts --name \"sheets:doctor\" --no-publish-audit --exec \"tsx\" -- scripts/google-sheets-doctor.ts",
     "agents:inspect": "tsx scripts/with-google-sheets-step.ts --name \"agents:inspect\" --exec \"tsx\" -- scripts/agent-harness.ts inspect",
     "agents:validate": "tsx scripts/with-google-sheets-step.ts --name \"agents:validate\" --exec \"tsx\" -- scripts/agent-harness.ts validate",
-    "test:agent-harness": "tsx scripts/with-google-sheets-step.ts --name \"test:agent-harness\" --exec \"tsx\" -- scripts/test-agent-harness.ts"
+    "test:agent-harness": "tsx scripts/with-google-sheets-step.ts --name \"test:agent-harness\" --exec \"tsx\" -- scripts/test-agent-harness.ts",
+    "agents:audit": "tsx scripts/with-google-sheets-step.ts --name \"agents:audit\" --exec \"tsx\" -- scripts/evidence-auditor.ts",
+    "test:evidence-auditor": "tsx scripts/with-google-sheets-step.ts --name \"test:evidence-auditor\" --exec \"tsx\" -- scripts/test-evidence-auditor.ts"
   },
   "engines": {
     "node": ">=20"
