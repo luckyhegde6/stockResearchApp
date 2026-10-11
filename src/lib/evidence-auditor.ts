@@ -111,7 +111,7 @@ export async function auditResearchEvidence(
   }
 
   const artifactIds = new Set(array(manifest?.sourceArtifacts).map((item) => String(item?.id ?? '')).filter(Boolean));
-  const claims = [...facts.map((item) => ({ ...(object(item) ?? {}), _claimType: 'canonicalFact' })), ...metrics.map((item) => ({ ...(object(item) ?? {}), _claimType: 'calculatedMetric' }))];
+  const claims: Array<JsonObject & { _claimType: string }> = [...facts.map((item) => ({ ...(object(item) ?? {}), _claimType: 'canonicalFact' })), ...metrics.map((item) => ({ ...(object(item) ?? {}), _claimType: 'calculatedMetric' }))];
   const claimIssues: string[] = [];
   for (const claim of claims) {
     if (!claim) continue;
