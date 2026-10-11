@@ -9,7 +9,7 @@ try {
   await mkdir(path.join(root, '.agents', 'harness'), { recursive: true });
   await writeFile(
     path.join(root, '.agents', 'harness', 'agent-result.schema.json'),
-    await readFile(path.resolve('.agents/harness/agent-result.schema.json'), 'utf8'),
+    JSON.stringify({ type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } }, additionalProperties: false }),
   );
 
   const validResult = {
