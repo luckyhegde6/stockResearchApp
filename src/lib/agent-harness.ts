@@ -1,7 +1,8 @@
 import { readFile, mkdir, appendFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
+import AjvModule, { type ErrorObject, type ValidateFunction } from 'ajv';
+const Ajv = (AjvModule as unknown as { default?: typeof AjvModule }).default ?? AjvModule;
 
 
 export type AgentStatus = 'complete' | 'partial' | 'blocked' | 'failed';
