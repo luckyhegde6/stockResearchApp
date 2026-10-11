@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import os from 'node:os';
 import path from 'node:path';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { auditResearchEvidence } from '../src/lib/evidence-auditor.js';
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'stockresearch-evidence-audit-'));
