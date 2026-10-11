@@ -2,8 +2,7 @@ import { readFile, mkdir, appendFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
-import addFormatsModule from 'ajv-formats';
-const addFormats = (addFormatsModule as unknown as { default?: (ajv: Ajv) => void }).default ?? (addFormatsModule as unknown as (ajv: Ajv) => void);
+
 
 export type AgentStatus = 'complete' | 'partial' | 'blocked' | 'failed';
 export type AgentClaimType = 'sourced_fact' | 'deterministic_calculation' | 'interpretation' | 'assumption';
@@ -98,7 +97,6 @@ async function loadValidator(repositoryRoot: string): Promise<ValidateFunction<A
       const schemaPath = path.join(repositoryRoot, '.agents', 'harness', 'agent-result.schema.json');
       const schema = JSON.parse(await readFile(schemaPath, 'utf8'));
       const ajv = new Ajv({ allErrors: true, strict: false });
-      addFormats(ajv);
       return ajv.compile<AgentResult>(schema);
     })();
   }
