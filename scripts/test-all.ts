@@ -7,6 +7,7 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 
 const TEST_SUITES = [
+  'scripts/test-agent-harness.ts',
   'scripts/test-research-config.ts',
   'scripts/test-symbol-agnostic.ts',
   'scripts/test-source-classifier.ts',
