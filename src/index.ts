@@ -670,9 +670,11 @@ const cmd = process.argv[2] || 'unknown';
       const analysisInputs=await writeAnalysisInputs(dir,mf);
       const bundle=await writeEvidenceBundle(dir,mf);
       const prompt=await buildAnalysisPrompt(SKILL,PROMPT,dir,mf.sourceArtifacts,{name:mf.companyName,ticker:t,isin:mf.isin});
+      // The evidence pack is a required readiness artifact; create it before evaluating readiness.
+      const evidencePack=await writeAnalysisEvidencePack(dir,mf);
       const readiness=await writeAnalysisReadiness(dir,mf);
       const finalBundle=await writeEvidenceBundle(dir,mf);
-      await writeText(path.join(dir,'analysis-prep.json'),JSON.stringify({schema_version:'1.2',ticker:t,preparedAt:new Date().toISOString(),ingestion:{allEvidence:ing.allEvidence,structuredEvidence:ing.structuredEvidence,mdaEvidence:ing.mdaEvidence,visualEvidence:ing.visualEvidence},readiness:readiness.report,evidenceContract:contract,evidenceBundle:finalBundle,prompt:prompt.out,deterministic:true,llmUsed:false},null,2));
+      await writeText(path.join(dir,'analysis-prep.json'),JSON.stringify({schema_version:'1.2',ticker:t,preparedAt:new Date().toISOString(),ingestion:{allEvidence:ing.allEvidence,structuredEvidence:ing.structuredEvidence,mdaEvidence:ing.mdaEvidence,visualEvidence:ing.visualEvidence},readiness:readiness.report,evidenceContract:contract,evidenceBundle:finalBundle,analysisEvidencePack:{json:evidencePack.jsonPath,markdown:evidencePack.mdPath},prompt:prompt.out,deterministic:true,llmUsed:false},null,2));
       console.log(JSON.stringify({ticker:t,ready:readiness.report.ready,blockingReasons:readiness.report.blockingReasons,advisoryReasons:readiness.report.advisoryReasons,analysisPrep:path.join(dir,'analysis-prep.json')},null,2)); break; }
     case 'analyze': await analyze(await tickerArg()); break;
     case 'ingest': await ingestOnly(await tickerArg()); break;
