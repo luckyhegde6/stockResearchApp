@@ -2,7 +2,8 @@ import { readFile, mkdir, appendFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
-import addFormats = require('ajv-formats');
+import addFormatsModule from 'ajv-formats';
+const addFormats = (addFormatsModule as unknown as { default?: typeof addFormatsModule }).default ?? addFormatsModule;
 
 export type AgentStatus = 'complete' | 'partial' | 'blocked' | 'failed';
 export type AgentClaimType = 'sourced_fact' | 'deterministic_calculation' | 'interpretation' | 'assumption';
