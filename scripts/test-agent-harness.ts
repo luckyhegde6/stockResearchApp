@@ -100,8 +100,8 @@ try {
   assert.equal(audited.validation.valid, true);
   assert.ok(audited.auditPath);
   const auditLines = (await readFile(audited.auditPath!, 'utf8')).trim().split('\n');
-  assert.equal(auditLines.length, 1);
-  const audit = JSON.parse(auditLines[0]);
+  assert.equal(auditLines.length, 2, 'both failed and successful validation attempts should be audited');
+  const audit = JSON.parse(auditLines[1]);
   assert.equal(audit.agent_id, 'evidence-auditor');
   assert.equal(audit.status, 'complete');
 
