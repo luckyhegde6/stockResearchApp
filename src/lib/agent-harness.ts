@@ -1,8 +1,8 @@
 import { readFile, mkdir, appendFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
-import addFormats from 'ajv-formats';
+import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
+import { default as addFormats } from 'ajv-formats';
 
 export type AgentStatus = 'complete' | 'partial' | 'blocked' | 'failed';
 export type AgentClaimType = 'sourced_fact' | 'deterministic_calculation' | 'interpretation' | 'assumption';
@@ -273,7 +273,7 @@ export async function runAgentValidation(
   let parsed: AgentResult | null = null;
   let validation: AgentValidationReport;
   let status: AgentStatus = 'failed';
-  let runId = randomUUID();
+  let runId: string = randomUUID();
   let agentId = options.agentId ?? 'unknown';
   try {
     const encoded = typeof input === 'string' ? input : JSON.stringify(input);
