@@ -111,7 +111,7 @@ async function runAll() {
       failedCount += 1;
       console.log(`\x1b[31mFAIL\x1b[0m (${res.durationMs}ms)`);
       if (res.error) {
-        console.log(`   \x1b[33mError details:\x1b[0m\n${res.error.split('\n').slice(0, 8).join('\n')}`);
+        console.log(`   \x1b[33mError details:\x1b[0m\n${res.error.split('\n').slice(-16).join('\n')}`);
       }
     }
   }
