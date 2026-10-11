@@ -1,7 +1,8 @@
 import { readFile, mkdir, appendFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
+import Ajv from 'ajv';
+import type { ErrorObject, ValidateFunction } from 'ajv';
 
 
 export type AgentStatus = 'complete' | 'partial' | 'blocked' | 'failed';
@@ -97,7 +98,7 @@ async function loadValidator(repositoryRoot: string): Promise<ValidateFunction<A
   if (!validatorPromise) {
     validatorPromise = (async () => {
       const schema = JSON.parse(await readFile(schemaPath, 'utf8'));
-      const AjvConstructor = (Ajv as unknown as { default?: typeof Ajv }).default ?? Ajv;
+      const AjvConstructor = Ajv as unknown as new (options?: object) => import('ajv').Ajv;
       const ajv = new AjvConstructor({ allErrors: true, strict: false });
       return ajv.compile<AgentResult>(schema);
     })();
