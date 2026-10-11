@@ -1,7 +1,7 @@
 import { readFile, mkdir, appendFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import Ajv from 'ajv';
+import Ajv2020 from 'ajv/dist/2020.js';
 import type { ErrorObject, ValidateFunction } from 'ajv';
 
 
@@ -85,7 +85,7 @@ export interface HarnessOptions {
 }
 
 const DEFAULT_MAX_RESULT_BYTES = 256 * 1024;
-const DEFAULT_AUDIT_PATH = path.join('.agents', 'runs', 'audit.jsonl');
+const DEFAULT_AUDIT_PATH = path.join('outputs', 'agent-runs', 'audit.jsonl');
 const PRIVATE_KEY_PATTERN = /(?:^|[_-])(api[_-]?key|token|secret|password|authorization|cookie|private[_-]?key)(?:$|[_-])/i;
 const ABSOLUTE_PATH_PATTERN = /(?:[A-Z]:\\[^\s"'<>]+|(?:^|\s)\/(?:Users|home|mnt|private|var|tmp)\/[^\s"'<>]+)/;
 const INJECTION_PATTERN = /ignore\s+(all\s+)?(previous|prior|above)\s+instructions|reveal\s+(the\s+)?(system|developer)\s+prompt|exfiltrat\w*|place\s+(an?\s+)?(market\s+)?order|execute\s+(a\s+)?trade/i;
@@ -98,7 +98,7 @@ async function loadValidator(repositoryRoot: string): Promise<ValidateFunction<A
   if (!validatorPromise) {
     validatorPromise = (async () => {
       const schema = JSON.parse(await readFile(schemaPath, 'utf8'));
-      const AjvConstructor = Ajv as unknown as new (options?: object) => import('ajv').Ajv;
+      const AjvConstructor = Ajv2020 as unknown as new (options?: object) => import('ajv').Ajv;
       const ajv = new AjvConstructor({ allErrors: true, strict: false });
       return ajv.compile<AgentResult>(schema);
     })();
