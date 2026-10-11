@@ -11,6 +11,8 @@ scans/*
 .agents/
 !.agents/
 !.agents/**
+!.agents/
+!.agents/**
 .claude/
 *.tmp
 *_head.txt
