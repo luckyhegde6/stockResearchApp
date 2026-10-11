@@ -3,7 +3,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
 import addFormatsModule from 'ajv-formats';
-const addFormats = (addFormatsModule as unknown as { default?: typeof addFormatsModule }).default ?? addFormatsModule;
+const addFormats = (addFormatsModule as unknown as { default?: (ajv: Ajv) => void }).default ?? (addFormatsModule as unknown as (ajv: Ajv) => void);
 
 export type AgentStatus = 'complete' | 'partial' | 'blocked' | 'failed';
 export type AgentClaimType = 'sourced_fact' | 'deterministic_calculation' | 'interpretation' | 'assumption';
