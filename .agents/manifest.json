@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0",
+  "project": "stockResearchApp",
+  "mode": "agent-neutral-contracts",
+  "status": "specification-and-documentation",
+  "default_permissions": "read_only",
+  "required_context": [
+    "AGENTS.md",
+    "MEMORY.md",
+    "HANDOFF.md",
+    "TODO.md",
+    ".agents/SYSTEM.md",
+    ".agents/rules/GUARDRAILS.md"
+  ],
+  "canonical_interfaces": [
+    "src/index.ts",
+    "src/lib/analysis-readiness.ts",
+    "src/lib/individual-stock-evidence.ts",
+    "src/lib/analysis-evidence-pack.ts",
+    "src/lib/prompt.ts",
+    "src/lib/llm.ts",
+    "src/schema.ts"
+  ],
+  "agents": [
+    {
+      "id": "orchestrator",
+      "file": "agents/orchestrator.md",
+      "risk": "medium"
+    },
+    {
+      "id": "source-acquisition",
+      "file": "agents/source-acquisition.md",
+      "risk": "medium"
+    },
+    {
+      "id": "evidence-auditor",
+      "file": "agents/evidence-auditor.md",
+      "risk": "low"
+    },
+    {
+      "id": "financial-analyst",
+      "file": "agents/financial-analyst.md",
+      "risk": "medium"
+    },
+    {
+      "id": "technical-analyst",
+      "file": "agents/technical-analyst.md",
+      "risk": "medium"
+    },
+    {
+      "id": "news-catalyst",
+      "file": "agents/news-catalyst.md",
+      "risk": "medium"
+    },
+    {
+      "id": "valuation-scenarios",
+      "file": "agents/valuation-scenarios.md",
+      "risk": "medium"
+    },
+    {
+      "id": "decision-reviewer",
+      "file": "agents/decision-reviewer.md",
+      "risk": "medium"
+    },
+    {
+      "id": "research-publisher",
+      "file": "agents/research-publisher.md",
+      "risk": "high"
+    },
+    {
+      "id": "strategy-researcher",
+      "file": "agents/strategy-researcher.md",
+      "risk": "high"
+    },
+    {
+      "id": "software-engineer",
+      "file": "agents/software-engineer.md",
+      "risk": "high"
+    },
+    {
+      "id": "quality-reviewer",
+      "file": "agents/quality-reviewer.md",
+      "risk": "low"
+    }
+  ],
+  "guardrails": "rules/GUARDRAILS.md",
+  "harness": "harness/README.md",
+  "output_schema": "harness/agent-result.schema.json",
+  "skills_dir": "skills",
+  "note": "Manifest describes intended contracts; runtime wiring must be implemented and tested separately."
+}

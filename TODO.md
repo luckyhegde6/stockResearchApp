@@ -81,3 +81,46 @@ Target workbook: [StockResearch](https://docs.google.com/spreadsheets/d/1YMKesB9
 - [ ] Add a compact "why not ready?" view.
 - [ ] Add provenance drill-down from results to source paths.
 - [ ] Add a read-only symbol comparison view.
+
+
+## P0 — agent foundation and evidence trust
+
+- [ ] Implement the documented `.agents/` harness contract in runtime code; current role files, skills, and schemas are specifications, not proof of orchestration.
+- [ ] Add schema-validation and policy-check tests for `.agents/harness/agent-result.schema.json`.
+- [ ] Add a deterministic agent audit record with redacted tool metadata and run/artifact IDs.
+- [ ] Add read-only evidence inspection commands and machine-readable readiness/source-health summary.
+- [ ] Add a dashboard "Why is this report not ready?" view with provenance drill-down.
+- [ ] Add regression tests proving agents cannot bypass readiness or promote unsupported facts.
+
+## P1 — decision intelligence and research history
+
+- [ ] Add an Evidence Trust Center separating data confidence from investment conviction.
+- [ ] Add a one-page decision brief with counter-thesis, catalysts, risks, and "What would change my mind?"
+- [ ] Add explicit bull/base/bear valuation scenarios with sourced inputs, labeled assumptions, and sensitivity analysis.
+- [ ] Add "What Changed?" comparison across completed runs with period comparability checks and evidence-linked deltas.
+- [ ] Add a research timeline for earnings, filings, corporate events, material news, and thesis changes.
+- [ ] Add peer comparison and explainable quality/growth/valuation/momentum/risk scorecard.
+
+## P1 — monitoring and distribution
+
+- [ ] Add persistent watchlists and a thesis monitor with source-linked, deduplicated alerts.
+- [ ] Add event intelligence for results, board meetings, dividends, bonus/split, buybacks, orders, acquisitions, management, regulatory, litigation, credit/rating, and sector catalysts.
+- [ ] Deploy the latest Apps Script version and verify actual target workbook rows and screenshot insertion.
+- [ ] Add publishing payload preflight, idempotency keys, bounded retries, and mock-receiver E2E tests.
+- [ ] Generate a polished, versioned PDF equity research note.
+- [ ] Define a versioned, read-only Research API over validated research artifacts.
+
+## P2 — strategy lab
+
+- [ ] Define versioned strategy specifications and research/backtest artifact contracts.
+- [ ] Add leakage-aware deterministic backtesting with point-in-time inputs, out-of-sample evaluation, costs/slippage, benchmark, position sizing, and risk controls.
+- [ ] Evaluate Kronos forecasting only as a research experiment against deterministic baselines.
+- [ ] Review imported Pine Script for repainting/lookahead before backtesting.
+- [ ] Evaluate Lightweight Charts for local deterministic chart rendering.
+
+## P3 — gated execution boundary
+
+- [ ] Write a separate execution/paper-trading PRD covering kill switch, risk limits, credentials, auditability, and explicit human authorization.
+- [ ] Keep live order placement disabled until the separate PRD and safety review are approved.
+
+Roadmap details and exit criteria: [docs/wiki/Product-Roadmap.md](docs/wiki/Product-Roadmap.md). Product requirements: [docs/prd/004-evidence-first-research-platform.md](docs/prd/004-evidence-first-research-platform.md). Agent contract: [.agents/README.md](.agents/README.md).
