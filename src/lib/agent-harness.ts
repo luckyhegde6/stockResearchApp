@@ -89,16 +89,18 @@ const PRIVATE_KEY_PATTERN = /(?:^|[_-])(api[_-]?key|token|secret|password|author
 const ABSOLUTE_PATH_PATTERN = /(?:[A-Z]:\\[^\s"'<>]+|(?:^|\s)\/(?:Users|home|mnt|private|var|tmp)\/[^\s"'<>]+)/;
 const INJECTION_PATTERN = /ignore\s+(all\s+)?(previous|prior|above)\s+instructions|reveal\s+(the\s+)?(system|developer)\s+prompt|exfiltrat\w*|place\s+(an?\s+)?(market\s+)?order|execute\s+(a\s+)?trade/i;
 
-let validatorPromise: Promise<ValidateFunction<AgentResult>> | undefined;
+const validatorCache = new Map<string, Promise<ValidateFunction<AgentResult>>>();
 
 async function loadValidator(repositoryRoot: string): Promise<ValidateFunction<AgentResult>> {
+  const schemaPath = path.join(repositoryRoot, '.agents', 'harness', 'agent-result.schema.json');
+  let validatorPromise = validatorCache.get(schemaPath);
   if (!validatorPromise) {
     validatorPromise = (async () => {
-      const schemaPath = path.join(repositoryRoot, '.agents', 'harness', 'agent-result.schema.json');
       const schema = JSON.parse(await readFile(schemaPath, 'utf8'));
       const ajv = new Ajv({ allErrors: true, strict: false });
       return ajv.compile<AgentResult>(schema);
     })();
+    validatorCache.set(schemaPath, validatorPromise);
   }
   return validatorPromise;
 }
