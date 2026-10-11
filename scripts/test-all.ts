@@ -8,6 +8,7 @@ const ROOT = path.resolve(__dirname, '..');
 
 const TEST_SUITES = [
   'scripts/test-agent-harness.ts',
+  'scripts/test-agent-harness.ts',
   'scripts/test-research-config.ts',
   'scripts/test-symbol-agnostic.ts',
   'scripts/test-source-classifier.ts',
