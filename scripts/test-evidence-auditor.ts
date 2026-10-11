@@ -34,7 +34,8 @@ try {
   assert.equal(ready.status, 'ready');
   assert.equal(ready.counts.sourceArtifacts, 1);
   assert.equal(ready.counts.checkedClaims, 2);
-  assert.equal(ready.issues.length, 0);\n  assert.deepEqual(ready.readiness?.actionableWarnings, []);
+  assert.equal(ready.issues.length, 0);
+  assert.deepEqual(ready.readiness?.actionableWarnings, []);
 
   const brokenPack = structuredClone(pack);
   brokenPack.canonicalFacts[0].sourceArtifact = 'unknown-source';
@@ -50,7 +51,10 @@ try {
   const blocked = await auditResearchEvidence('ITC', { repositoryRoot: root });
   assert.equal(blocked.status, 'blocked', 'auditor must not override deterministic readiness');
   assert.equal(blocked.readiness?.ready, false);
-  assert.deepEqual(blocked.readiness?.blockingReasons, ['missing-required-files', 'actionable-source-warnings']);\n  assert.deepEqual(blocked.readiness?.actionableWarnings, ['Screener financial snapshot failed']);\n  assert.deepEqual(blocked.readiness?.advisoryReasons, ['optional markdown missing']);\n  assert.equal(blocked.readiness?.qualityStatus, 'partial');
+  assert.deepEqual(blocked.readiness?.blockingReasons, ['missing-required-files', 'actionable-source-warnings']);
+  assert.deepEqual(blocked.readiness?.actionableWarnings, ['Screener financial snapshot failed']);
+  assert.deepEqual(blocked.readiness?.advisoryReasons, ['optional markdown missing']);
+  assert.equal(blocked.readiness?.qualityStatus, 'partial');
 
   await assert.rejects(() => auditResearchEvidence('../../etc/passwd', { repositoryRoot: root }));
   const absent = await auditResearchEvidence('INFY', { repositoryRoot: root });
