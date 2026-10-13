@@ -64,7 +64,7 @@ function extractScreenerMetric(snapshot: any, labels: string[]): number | string
   return null;
 }
 
-function extractScreenerCompany(snapshot: any): string | null {
+export function extractScreenerCompany(snapshot: any): string | null {
   const candidates = [
     snapshot?.companyName,
     snapshot?.company_name,
