@@ -110,7 +110,11 @@ export async function auditResearchEvidence(
     else check('evidence-pack-shape', 'pass', 'Analysis evidence pack is readable and symbol-consistent.');
   }
 
-  const artifactIds = new Set(array(manifest?.sourceArtifacts).map((item) => String(item?.id ?? '')).filter(Boolean));
+  // Canonical facts may legitimately cite shared normalized datasets registered as derived artifacts.
+  const artifactIds = new Set([
+    ...array(manifest?.sourceArtifacts),
+    ...array(manifest?.derivedArtifacts),
+  ].map((item) => String(item?.id ?? '')).filter(Boolean));
   const claims: Array<JsonObject & { _claimType: string }> = [...facts.map((item) => ({ ...(object(item) ?? {}), _claimType: 'canonicalFact' })), ...metrics.map((item) => ({ ...(object(item) ?? {}), _claimType: 'calculatedMetric' }))];
   const claimIssues: string[] = [];
   for (const claim of claims) {
