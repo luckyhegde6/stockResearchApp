@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { auditResearchEvidence } from '../src/lib/evidence-auditor.js';
+import { extractScreenerCompany } from '../src/lib/evidence-contract.js';
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'stockresearch-evidence-audit-'));
 const research = path.join(root, 'research', 'ITC');
@@ -12,6 +13,10 @@ const put = async (file: string, value: unknown) => {
   await writeFile(target, JSON.stringify(value, null, 2));
 };
 try {
+  assert.equal(extractScreenerCompany({ text: 'HOME\nITC Limited' }), null, 'navigation text must not become company identity');
+  assert.equal(extractScreenerCompany({ links: [{ name: 'HOME' }] }), null, 'generic nested name keys must not become company identity');
+  assert.equal(extractScreenerCompany({ title: 'ITC Limited share price' }), 'ITC Limited share price');
+
   const manifest = {
     ticker: 'ITC',
     sourceArtifacts: [{ id: 'nse-quote', type: 'market_data', provider: 'NSE', status: 'ok', retrievedAt: '2026-10-10T00:00:00.000Z' }],
