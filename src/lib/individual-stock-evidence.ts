@@ -33,8 +33,10 @@ function sourceFact(id:string, field:string, value:any, source:string, a:SourceA
   return { id, evidenceRole:'source_fact', field, value, unit:unit??null, period:period??null, source, sourceArtifact:a?.id, method:'source_extraction', verified:true, asOf:a?.retrievedAt??null, evidencePath:a?.localPath??null, sourceUrl:a?.url??null, confidence:'high', note };
 }
 
-function syntheticMasterArtifact(researchDir:string):SourceArtifact {
-  return { id:'nse-equity-universe', type:'derived_data', provider:'NSE Securities Master', title:'Official NSE Equity Securities Master', url:'https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv', localPath:path.join(researchDir,'..','..','data','nse-equity-universe.json'), retrievedAt:new Date().toISOString(), status:'ok', method:'script', notes:['Official NSE EQUITY_L-derived security master.'] };
+async function syntheticMasterArtifact(researchDir:string):Promise<SourceArtifact> {
+  const localPath=path.resolve(researchDir,'..','..','data','nse-equity-universe.json');
+  const info=await stat(localPath).catch(()=>null);
+  return { id:'nse-equity-universe', type:'derived_data', provider:'NSE Securities Master', title:'Official NSE Equity Securities Master', url:'https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv', localPath, retrievedAt:info?.mtime.toISOString()??new Date().toISOString(), status:'ok', method:'script', notes:['Official NSE EQUITY_L-derived security master.'] };
 }
 function calc(id:string, field:string, value:any, source:string, a:SourceArtifact|undefined, asOf:string|null, unit:string|null, note?:string):CanonicalValue{
   return { id, evidenceRole:'calculated_metric', field, value, unit, source, sourceArtifact:a?.id, method:'deterministic_calculation', verified:true, asOf, evidencePath:a?.localPath??null, sourceUrl:a?.url??null, confidence:'high', note };
@@ -354,7 +356,7 @@ export async function buildIndividualStockEvidence(researchDir:string, manifest:
   const fundamentals:any={metrics:{},tables:[],periodTables:[],nsePeriods:[],tijoriAvailable:false}; const valuation:any={};
   if(security){
     const masterPath=path.join(projectRoot,'data','nse-equity-universe.json'); const masterUrl='https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv';
-    const masterArtifact=syntheticMasterArtifact(researchDir);
+    const masterArtifact=await syntheticMasterArtifact(researchDir);
     facts.push(sourceFact('identity-symbol','symbol',security.symbol,'NSE Securities Master',masterArtifact,null,null));
     facts.push(sourceFact('identity-company','company_name',security.companyName,'NSE Securities Master',masterArtifact,null,null));
     facts.push(sourceFact('identity-isin','isin',security.isin,'NSE Securities Master',masterArtifact,null,null));
@@ -484,7 +486,23 @@ export async function buildIndividualStockEvidence(researchDir:string, manifest:
   return {evidence,facts,metrics,reconciliation,security,financialPeriods,valuation,ownership,catalysts:catalystsOut,technicals:technicalsOut,screening:screeningOut};
 }
 
-export async function writeIndividualStockEvidence(researchDir:string,manifest:ResearchManifest){ return buildIndividualStockEvidence(researchDir,manifest); }
+export async function writeIndividualStockEvidence(researchDir:string,manifest:ResearchManifest){
+  const result=await buildIndividualStockEvidence(researchDir,manifest);
+  if(result.security){
+    const masterArtifact=await syntheticMasterArtifact(researchDir);
+    const derived=Array.isArray(manifest.derivedArtifacts)?[...manifest.derivedArtifacts]:[];
+    const existingIndex=derived.findIndex(a=>a.id===masterArtifact.id);
+    if(existingIndex>=0){
+      masterArtifact.retrievedAt=derived[existingIndex].retrievedAt||masterArtifact.retrievedAt;
+      derived[existingIndex]={...derived[existingIndex],...masterArtifact};
+    }else if(!manifest.sourceArtifacts.some(a=>a.id===masterArtifact.id)){
+      derived.push(masterArtifact);
+    }
+    manifest.derivedArtifacts=derived;
+    await writeFile(path.join(researchDir,'manifest.json'),JSON.stringify(manifest,null,2),'utf8');
+  }
+  return result;
+}
 
 if(import.meta.url===`file://${process.argv[1]?.replace(/\\/g,'/')}`){
   const ticker=process.argv[2]?.toUpperCase(); if(!ticker) throw new Error('Usage: npm run stock:evidence -- ITC');
