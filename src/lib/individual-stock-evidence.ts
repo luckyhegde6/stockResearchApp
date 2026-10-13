@@ -201,7 +201,8 @@ async function extractScreener(researchDir:string, manifest:ResearchManifest, fa
       if(domain==='fundamental') fundamentals.metrics[field]={value:r.value,unit,period:r.period,source:'Screener',artifact:a?.id};
     }
   }
-  const company=cleanText(pickKey(primarySnap,['companyName','company_name','name'])) ?? text(primarySnap?.text).split('\n').find((x:string)=>x.trim() && !/screener/i.test(x)) ?? null;
+  const companyCandidates=[cleanText(pickKey(primarySnap,['companyName','company_name'])),cleanText(primarySnap?.title)];
+  const company=companyCandidates.find((v:string|null)=>Boolean(v)&&! /^(home|screener|screeners|markets?|stocks?|portfolio|login|sign in|sign up|search)(?:\s*[|>·-].*)?$/i.test(v as string))??null;
   if(company) facts.push(sourceFact('screener-company-name','company_name',company,'Screener',a,null,null));
   fundamentals.companyName=company;
 }
