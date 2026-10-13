@@ -37,6 +37,19 @@ try {
   assert.equal(ready.issues.length, 0);
   assert.deepEqual(ready.readiness?.actionableWarnings, []);
 
+  const derivedManifest = structuredClone(manifest);
+  derivedManifest.derivedArtifacts = [{ id: 'nse-equity-universe', type: 'derived_data', provider: 'NSE Securities Master', status: 'ok', retrievedAt: '2026-10-10T00:00:00.000Z' }];
+  const derivedPack = structuredClone(pack);
+  derivedPack.canonicalFacts.push({ id: 'identity-symbol', field: 'symbol', evidenceRole: 'source_fact', value: 'ITC', sourceArtifact: 'nse-equity-universe' });
+  await put('manifest.json', derivedManifest);
+  await put('normalized/analysis-evidence-pack.json', derivedPack);
+  const derivedAudit = await auditResearchEvidence('ITC', { repositoryRoot: root });
+  assert.equal(derivedAudit.status, 'ready', 'registered derived artifacts are valid provenance references');
+  assert.equal(derivedAudit.counts.checkedClaims, 3);
+  assert.ok(derivedAudit.checks.some((item) => item.id === 'claim-provenance' && item.severity === 'pass'));
+
+  await put('manifest.json', manifest);
+  await put('normalized/analysis-evidence-pack.json', pack);
   const brokenPack = structuredClone(pack);
   brokenPack.canonicalFacts[0].sourceArtifact = 'unknown-source';
   brokenPack.calculatedMetrics[0].method = '';
