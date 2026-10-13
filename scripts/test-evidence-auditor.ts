@@ -42,9 +42,11 @@ try {
   assert.equal(ready.issues.length, 0);
   assert.deepEqual(ready.readiness?.actionableWarnings, []);
 
-  const derivedManifest = structuredClone(manifest);
-  derivedManifest.derivedArtifacts = [{ id: 'nse-equity-universe', type: 'derived_data', provider: 'NSE Securities Master', status: 'ok', retrievedAt: '2026-10-10T00:00:00.000Z' }];
-  const derivedPack = structuredClone(pack);
+  const derivedManifest = {
+    ...structuredClone(manifest),
+    derivedArtifacts: [{ id: 'nse-equity-universe', type: 'derived_data', provider: 'NSE Securities Master', status: 'ok', retrievedAt: '2026-10-10T00:00:00.000Z' }],
+  };
+  const derivedPack: { ticker: string; canonicalFacts: Array<Record<string, unknown>>; calculatedMetrics: typeof pack.calculatedMetrics; sourceFreshness: typeof pack.sourceFreshness } = structuredClone(pack);
   derivedPack.canonicalFacts.push({ id: 'identity-symbol', field: 'symbol', evidenceRole: 'source_fact', value: 'ITC', sourceArtifact: 'nse-equity-universe' });
   await put('manifest.json', derivedManifest);
   await put('normalized/analysis-evidence-pack.json', derivedPack);
