@@ -517,6 +517,19 @@ async function promptOnly(ticker: string) {
   console.log(p.out);
 }
 
+async function prepareAnalysisStep<T>(name:string, work:()=>Promise<T>):Promise<T>{
+  const started=Date.now();
+  console.log(`[prepare-analysis] START ${name}`);
+  try{
+    const result=await work();
+    console.log(`[prepare-analysis] DONE ${name} (${Date.now()-started}ms)`);
+    return result;
+  }catch(error){
+    console.error(`[prepare-analysis] FAILED ${name} (${Date.now()-started}ms):`,error);
+    throw error;
+  }
+}
+
 const cmd = process.argv[2] || 'unknown';
 (async () => {
   const targetArg = process.argv.slice(3).find(value => !value.startsWith('--') && /^[A-Za-z0-9&-]{1,20}$/.test(value));
@@ -660,21 +673,22 @@ const cmd = process.argv[2] || 'unknown';
       break;
     }
     case 'prepare-analysis': {
-      const t=await tickerArg(); const dir=path.join(ROOT,'research',t); const manifestFile=path.join(dir,'manifest.json');
-      if(!(await import('node:fs/promises')).access(manifestFile).then(()=>true).catch(()=>false)) { console.log(`→ ANALYSIS/PREPARE: manifest missing; running deterministic research for ${t}`); await acquire(t); }
+      const t=await prepareAnalysisStep('resolve ticker',()=>tickerArg()); const dir=path.join(ROOT,'research',t); const manifestFile=path.join(dir,'manifest.json');
+      const manifestExists=await (await import('node:fs/promises')).access(manifestFile).then(()=>true).catch(()=>false);
+      if(!manifestExists) { console.log(`→ ANALYSIS/PREPARE: manifest missing; running deterministic research for ${t}`); await prepareAnalysisStep('acquire research',()=>acquire(t)); }
       const mf=JSON.parse(await readFile(manifestFile,'utf8')) as ResearchManifest;
-      await writeIndividualStockEvidence(dir,mf);
-      await writeEvidenceQuality(dir,mf);
-      const ing=await ingestResearch(dir,mf.sourceArtifacts);
-      const contract=await writeEvidenceContract(dir,mf);
-      const analysisInputs=await writeAnalysisInputs(dir,mf);
-      const bundle=await writeEvidenceBundle(dir,mf);
-      const prompt=await buildAnalysisPrompt(SKILL,PROMPT,dir,mf.sourceArtifacts,{name:mf.companyName,ticker:t,isin:mf.isin});
+      await prepareAnalysisStep('individual stock evidence',()=>writeIndividualStockEvidence(dir,mf));
+      await prepareAnalysisStep('evidence quality',()=>writeEvidenceQuality(dir,mf));
+      const ing=await prepareAnalysisStep('ingest research evidence',()=>ingestResearch(dir,mf.sourceArtifacts));
+      const contract=await prepareAnalysisStep('evidence contract',()=>writeEvidenceContract(dir,mf));
+      const analysisInputs=await prepareAnalysisStep('analysis inputs',()=>writeAnalysisInputs(dir,mf));
+      await prepareAnalysisStep('initial evidence bundle',()=>writeEvidenceBundle(dir,mf));
+      const prompt=await prepareAnalysisStep('analysis prompt',()=>buildAnalysisPrompt(SKILL,PROMPT,dir,mf.sourceArtifacts,{name:mf.companyName,ticker:t,isin:mf.isin}));
       // The evidence pack is a required readiness artifact; create it before evaluating readiness.
-      const evidencePack=await writeAnalysisEvidencePack(dir,mf);
-      const readiness=await writeAnalysisReadiness(dir,mf);
-      const finalBundle=await writeEvidenceBundle(dir,mf);
-      await writeText(path.join(dir,'analysis-prep.json'),JSON.stringify({schema_version:'1.2',ticker:t,preparedAt:new Date().toISOString(),ingestion:{allEvidence:ing.allEvidence,structuredEvidence:ing.structuredEvidence,mdaEvidence:ing.mdaEvidence,visualEvidence:ing.visualEvidence},readiness:readiness.report,evidenceContract:contract,evidenceBundle:finalBundle,analysisEvidencePack:{json:evidencePack.jsonPath,markdown:evidencePack.mdPath},prompt:prompt.out,deterministic:true,llmUsed:false},null,2));
+      const evidencePack=await prepareAnalysisStep('analysis evidence pack',()=>writeAnalysisEvidencePack(dir,mf));
+      const readiness=await prepareAnalysisStep('analysis readiness',()=>writeAnalysisReadiness(dir,mf));
+      const finalBundle=await prepareAnalysisStep('final evidence bundle',()=>writeEvidenceBundle(dir,mf));
+      await prepareAnalysisStep('write analysis-prep.json',()=>writeText(path.join(dir,'analysis-prep.json'),JSON.stringify({schema_version:'1.2',ticker:t,preparedAt:new Date().toISOString(),ingestion:{allEvidence:ing.allEvidence,structuredEvidence:ing.structuredEvidence,mdaEvidence:ing.mdaEvidence,visualEvidence:ing.visualEvidence},readiness:readiness.report,evidenceContract:contract,evidenceBundle:finalBundle,analysisEvidencePack:{json:evidencePack.jsonPath,markdown:evidencePack.mdPath},prompt:prompt.out,deterministic:true,llmUsed:false},null,2)));
       console.log(JSON.stringify({ticker:t,ready:readiness.report.ready,blockingReasons:readiness.report.blockingReasons,advisoryReasons:readiness.report.advisoryReasons,analysisPrep:path.join(dir,'analysis-prep.json')},null,2)); break; }
     case 'analyze': await analyze(await tickerArg()); break;
     case 'ingest': await ingestOnly(await tickerArg()); break;
