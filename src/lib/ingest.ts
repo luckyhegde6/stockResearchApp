@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { readdir } from 'node:fs/promises';
+import { mkdir, readdir } from 'node:fs/promises';
 import { ensureDir, fileExists, readText, writeText } from './fs.js';
 import { runMarkItDown } from './cli.js';
 import { writeVisualEvidence } from './visual-evidence.js';
@@ -28,6 +28,8 @@ export async function ingestResearch(researchDir:string, artifacts:SourceArtifac
     const output=path.join(markdownDir,rel.replace(/\.(pdf|docx|xlsx|xls|pptx|ppt|html?)$/i,'.md').replace(/\.txt$/i,'.md'));
     console.log(`[ingest] ${index+1}/${files.length} converting ${path.relative(researchDir,file)}`);
     try{
+      // MarkItDown opens the output path directly; nested folders do not exist by default.
+      await mkdir(path.dirname(output),{recursive:true});
       const r=await runMarkItDown(file,output,process.cwd(),120000);
       if(r.code!==0) throw new Error((r.stderr||r.stdout).slice(-2000) || `MarkItDown exited with code ${r.code}`);
       results.push({input:file,output,status:'ok'});
