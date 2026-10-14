@@ -2,7 +2,7 @@
 
 ## Current implementation phase
 
-PR #7 was merged to `main` on 2026-10-14 (merge commit `7def14e6ef80e4c80e2a2f50852eca3f85a98e15`). Follow-up work is on `feat/model-provider-boundary-v1`, cut from that merge. This branch begins the explicit vendor-neutral model-provider boundary: typed `ModelProvider` contract, OpenAI-compatible adapter, injectable transport, and fixture tests. The existing `LLM_*` configuration and readiness-first orchestration are preserved. No live model request was made as part of implementation.
+PR #7 was merged to `main` on 2026-10-14 (merge commit `7def14e6ef80e4c80e2a2f50852eca3f85a98e15`). PR #8 (`feat/model-provider-boundary-v1`) adds the vendor-neutral model-provider boundary, OpenAI-compatible adapter, injectable transport, and fixture tests. Follow-up bounded orchestration is being developed on `feat/bounded-reasoning-v1`, based on PR #8's head so the work can be reviewed in sequence. The runner uses a caller-defined finite plan, hard maximum of four steps, timeout/output budgets, per-step schema/policy validation, and harness audit records. It is opt-in and is not wired into the stock-analysis CLI; future integration must preserve the existing readiness gate. No live model request is made by fixture tests.
 
 Updated: 2026-10-15
 Default branch: `main`
