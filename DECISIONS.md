@@ -36,3 +36,8 @@ Use normalized/analysis-evidence-pack.json and related deterministic summaries b
 Status: accepted
 
 The repository contract is files + CLI + schemas + deterministic artifacts, not a specific model vendor or agent SDK.
+
+## D-008 — Vendor-neutral model provider boundary
+Status: accepted
+
+The orchestration layer depends on a small `ModelProvider` contract; the default HTTP adapter speaks OpenAI-compatible chat completions. Configuration and transport are tested independently, and model output remains untrusted until JSON syntax and the existing analysis schema validation pass.
