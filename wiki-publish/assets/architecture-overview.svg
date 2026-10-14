@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+<title id="title">StockResearchApp architecture overview</title>
+<desc id="desc">Source adapters feed raw artifacts, then deterministic normalization, canonical evidence, reconciliation and readiness. Only ready evidence may flow to optional model reasoning and schema validation.</desc>
+<defs>
+  <style>
+    .bg{fill:#0b1220}.card{fill:#162033;stroke:#5faea8;stroke-width:2}.txt{font-family:Inter,Arial,sans-serif;fill:#ecf4ff;font-size:18px;font-weight:600}.small{font-size:14px;font-weight:400;fill:#c0cddd}.line{stroke:#73d5cb;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  </style>
+  <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#73d5cb"/></marker>
+</defs>
+<rect class="bg" width="1200" height="360" rx="18"/>
+<g transform="translate(24 55)">
+  <rect class="card" width="160" height="100" rx="12"/><text class="txt" x="80" y="35" text-anchor="middle">Source</text><text class="txt" x="80" y="58" text-anchor="middle">adapters</text><text class="small" x="80" y="82" text-anchor="middle">NSE / financials / charts</text>
+</g>
+<path class="line" d="M184 105 H215" marker-end="url(#arrow)"/>
+<g transform="translate(220 55)">
+  <rect class="card" width="160" height="100" rx="12"/><text class="txt" x="80" y="42" text-anchor="middle">Raw</text><text class="txt" x="80" y="65" text-anchor="middle">evidence</text><text class="small" x="80" y="85" text-anchor="middle">provenance retained</text>
+</g>
+<path class="line" d="M380 105 H411" marker-end="url(#arrow)"/>
+<g transform="translate(416 55)">
+  <rect class="card" width="160" height="100" rx="12"/><text class="txt" x="80" y="37" text-anchor="middle">Normalize</text><text class="txt" x="80" y="60" text-anchor="middle">and calculate</text><text class="small" x="80" y="83" text-anchor="middle">deterministic code</text>
+</g>
+<path class="line" d="M576 105 H607" marker-end="url(#arrow)"/>
+<g transform="translate(612 55)">
+  <rect class="card" width="160" height="100" rx="12"/><text class="txt" x="80" y="37" text-anchor="middle">Reconcile</text><text class="txt" x="80" y="60" text-anchor="middle">and quality</text><text class="small" x="80" y="83" text-anchor="middle">conflicts preserved</text>
+</g>
+<path class="line" d="M772 105 H803" marker-end="url(#arrow)"/>
+<g transform="translate(808 55)">
+  <rect class="card" width="150" height="100" rx="12"/><text class="txt" x="75" y="45" text-anchor="middle">Readiness</text><text class="txt" x="75" y="68" text-anchor="middle">gate</text><text class="small" x="75" y="88" text-anchor="middle">fail closed</text>
+</g>
+<path class="line" d="M958 105 H989" marker-end="url(#arrow)"/>
+<g transform="translate(994 55)">
+  <rect class="card" width="180" height="100" rx="12"/><text class="txt" x="90" y="37" text-anchor="middle">Optional model</text><text class="txt" x="90" y="60" text-anchor="middle">+ schema check</text><text class="small" x="90" y="83" text-anchor="middle">analysis only</text>
+</g>
+<text class="small" x="600" y="224" text-anchor="middle">Deterministic preparation is always upstream of model interpretation.</text>
+<path class="line" d="M883 155 V268 H590" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<g transform="translate(350 248)">
+  <rect x="0" y="0" width="480" height="64" rx="12" fill="#1c2a40" stroke="#90a7c4" stroke-width="2"/>
+  <text class="txt" x="240" y="27" text-anchor="middle">Not ready?</text>
+  <text class="small" x="240" y="48" text-anchor="middle">Stop model call; inspect gaps, freshness and conflicts</text>
+</g>
+</svg>
