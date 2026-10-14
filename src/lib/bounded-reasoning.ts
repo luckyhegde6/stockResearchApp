@@ -40,7 +40,7 @@ export interface BoundedReasoningResult {
   completedSteps: number;
   steps: BoundedReasoningStepResult[];
   result: AgentResult | null;
-  stopReason: 'plan_complete' | 'step_blocked' | 'step_failed' | 'budget_exhausted' | 'provider_error';
+  stopReason: 'plan_complete' | 'step_blocked' | 'step_partial' | 'step_failed' | 'budget_exhausted' | 'provider_error';
 }
 
 const DEFAULT_MAX_STEPS = 3;
@@ -210,7 +210,7 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
         return { runId, status: 'blocked', completedSteps: completed.length, steps: completed, result, stopReason: 'step_blocked' };
       }
       if (result.status === 'partial') {
-        return { runId, status: 'partial', completedSteps: completed.length, steps: completed, result, stopReason: 'step_blocked' };
+        return { runId, status: 'partial', completedSteps: completed.length, steps: completed, result, stopReason: 'step_partial' };
       }
     }
 
