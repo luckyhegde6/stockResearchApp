@@ -15,6 +15,9 @@
 
 ## Evidence trust path
 
+![Evidence trust model](assets/evidence-trust-model.svg)
+
+
 ```mermaid
 flowchart TD
     A[Raw source + URL + retrieval time] --> B[Normalized record]
