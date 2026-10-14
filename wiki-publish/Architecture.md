@@ -6,6 +6,9 @@ The deterministic pipeline owns data collection, normalization, reconciliation, 
 
 ## System context
 
+![Architecture overview](assets/architecture-overview.svg)
+
+
 ```mermaid
 flowchart TB
     U[Developer / CLI / local dashboard] --> S[NSE security master]
