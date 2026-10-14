@@ -49,7 +49,7 @@ try {
     generate: async (request) => {
       requests.push(request);
       return {
-        content: JSON.stringify(outputs[requests.length - 1]),
+        content: JSON.stringify(outputs[(requests.length - 1) % outputs.length]),
         provider: 'fixture-provider',
         model: request.model,
       };
