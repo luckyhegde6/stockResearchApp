@@ -64,10 +64,21 @@ function extractScreenerMetric(snapshot: any, labels: string[]): number | string
   return null;
 }
 
-function extractScreenerCompany(snapshot: any): string | null {
-  const title = cleanText(snapshot?.text?.split(/\n/)[0]) ?? cleanText(snapshot?.title);
-  if (title && !/screener|screeners/i.test(title)) return title;
-  return cleanText(findKeyDeep(snapshot, ['companyName', 'company_name', 'name'])) as string | null;
+export function extractScreenerCompany(snapshot: any): string | null {
+  const candidates = [
+    snapshot?.companyName,
+    snapshot?.company_name,
+    snapshot?.title,
+    typeof snapshot?.text === 'string' ? snapshot.text.split(/\r?\n/)[0] : null,
+  ];
+  for (const candidate of candidates) {
+    const value = cleanText(candidate);
+    if (!value) continue;
+    // Navigation labels such as HOME are not company names; never fall back to arbitrary nested "name" keys.
+    if (/^(home|screener|screeners|markets?|stocks?|portfolio|login|sign in|sign up|search)(?:\s*[|>·-].*)?$/i.test(value)) continue;
+    return value;
+  }
+  return null;
 }
 
 function extractTijoriMetric(snapshot: any, labels: readonly string[]): number | string | null {

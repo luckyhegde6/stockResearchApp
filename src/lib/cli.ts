@@ -94,11 +94,17 @@ export async function runMarkItDown(
         cwd,
         timeoutMs,
       );
+      if (result.code === 124) throw new Error(`${candidate.command} timed out after ${timeoutMs}ms while converting ${filePath}`);
       if (result.code === 0) return result;
       lastError = new Error(
         `${candidate.command} exited with code ${result.code}: ${(result.stderr || result.stdout).slice(-2000)}`,
       );
     } catch (error) {
+      // Timeout is terminal for this document: retrying other launchers would
+      // repeat the same expensive conversion and hide the original bottleneck.
+      if (error instanceof Error && /timed out after \\d+ms while converting/.test(error.message)) {
+        throw error;
+      }
       lastError = error;
     }
   }

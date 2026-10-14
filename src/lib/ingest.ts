@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { readdir } from 'node:fs/promises';
+import { mkdir, readdir } from 'node:fs/promises';
 import { ensureDir, fileExists, readText, writeText } from './fs.js';
 import { runMarkItDown } from './cli.js';
 import { writeVisualEvidence } from './visual-evidence.js';
@@ -22,14 +22,22 @@ export async function ingestResearch(researchDir:string, artifacts:SourceArtifac
   const markdownDir=path.join(researchDir,'markdown'); await ensureDir(markdownDir);
   const files=await walk(path.join(researchDir,'raw'));
   const results:{input:string,output:string,status:'ok'|'error',error?:string}[]=[];
-  for(const file of files){
+  console.log(`[ingest] found ${files.length} supported raw files to convert`);
+  for(const [index,file] of files.entries()){
     const rel=path.relative(path.join(researchDir,'raw'),file).replaceAll(path.sep,'/');
     const output=path.join(markdownDir,rel.replace(/\.(pdf|docx|xlsx|xls|pptx|ppt|html?)$/i,'.md').replace(/\.txt$/i,'.md'));
+    console.log(`[ingest] ${index+1}/${files.length} converting ${path.relative(researchDir,file)}`);
     try{
+      // MarkItDown opens the output path directly; nested folders do not exist by default.
+      await mkdir(path.dirname(output),{recursive:true});
       const r=await runMarkItDown(file,output,process.cwd(),120000);
-      if(r.code!==0) throw new Error((r.stderr||r.stdout).slice(-2000));
+      if(r.code!==0) throw new Error((r.stderr||r.stdout).slice(-2000) || `MarkItDown exited with code ${r.code}`);
       results.push({input:file,output,status:'ok'});
-    }catch(e:any){ results.push({input:file,output,status:'error',error:e.message}); }
+      console.log(`[ingest] ${index+1}/${files.length} converted successfully`);
+    }catch(e:any){
+      results.push({input:file,output,status:'error',error:e.message});
+      console.warn(`[ingest] ${index+1}/${files.length} conversion failed: ${path.relative(researchDir,file)}: ${e.message}`);
+    }
   }
 
   const visual=await writeVisualEvidence(researchDir);

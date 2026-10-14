@@ -7,6 +7,8 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 
 const TEST_SUITES = [
+  'scripts/test-agent-harness.ts',
+  'scripts/test-evidence-auditor.ts',
   'scripts/test-research-config.ts',
   'scripts/test-symbol-agnostic.ts',
   'scripts/test-source-classifier.ts',
@@ -110,7 +112,7 @@ async function runAll() {
       failedCount += 1;
       console.log(`\x1b[31mFAIL\x1b[0m (${res.durationMs}ms)`);
       if (res.error) {
-        console.log(`   \x1b[33mError details:\x1b[0m ${res.error.split('\n')[0]}`);
+        console.log(`   \x1b[33mError details:\x1b[0m\n${res.error.split('\n').slice(-16).join('\n')}`);
       }
     }
   }

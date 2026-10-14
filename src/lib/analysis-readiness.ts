@@ -55,7 +55,11 @@ export async function buildAnalysisReadiness(researchDir:string, manifest:Resear
         // domains are otherwise complete, failed optional transcript retrieval must
         // reduce confidence but must not block the reasoning stage.
         if (/Screener concall \d+: fetch failed/i.test(msg)) return false;
+        // Screener concall PDFs are supplementary evidence and are not always linked publicly.
+        if (/^Screener: no direct concall PDF links found/i.test(msg)) return false;
         if (/Tijori .*concall.*(?:fetch failed|failed)/i.test(msg)) return false;
+        // TradingView news pagination may reject a cursor after the first page; this is supplementary.
+        if (/^News TradingView News Flow (?:failed:|pagination stopped(?: after \d+ items)?:)/i.test(msg)) return false;
         if (/^TradingView .*UI surface.*(?:not fully confirmed|screenshot could not be created)/i.test(msg)) return false;
         return true;
       })
