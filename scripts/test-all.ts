@@ -9,6 +9,7 @@ const ROOT = path.resolve(__dirname, '..');
 const TEST_SUITES = [
   'scripts/test-model-provider.ts',
   'scripts/test-agent-harness.ts',
+  'scripts/test-bounded-reasoning.ts',
   'scripts/test-evidence-auditor.ts',
   'scripts/test-research-config.ts',
   'scripts/test-symbol-agnostic.ts',
