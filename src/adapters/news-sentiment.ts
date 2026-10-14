@@ -46,8 +46,17 @@ export async function runNewsSentiment(ctx:AdapterContext):Promise<AdapterResult
     for(let page=1;page<=maxPages;page++){
       const qs=new URLSearchParams({filter:'lang:en', 'client':'chart','user_prostatus':'non_pro'}); qs.append('filter',`symbol:NSE:${ticker}`); if(cursor) qs.set('cursor',cursor);
       const url=`${TV_NEWS_BASE}?${qs.toString()}`;
-      const r=await webFetchText(url,{headers:{'Accept':'application/json'}});
-      const data=JSON.parse(r.text||'{}');
+      let data:any;
+      try{
+        const r=await webFetchText(url,{headers:{'Accept':'application/json'}});
+        data=JSON.parse(r.text||'{}');
+      }catch(e:any){
+        if(tvItems.length){
+          warnings.push(`News TradingView News Flow pagination stopped after ${tvItems.length} items: ${e?.message||String(e)}`);
+          break;
+        }
+        throw e;
+      }
       const items=Array.isArray(data?.items)?data.items:[];
       tvItems.push(...items);
       cursor=clean(data?.pagination?.cursor);
