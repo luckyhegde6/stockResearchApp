@@ -38,7 +38,7 @@ Target workbook: [StockResearch](https://docs.google.com/spreadsheets/d/1YMKesB9
 - [x] Add read-only evidence inspection commands.
 - [x] Add a deterministic evidence auditor for manifest/pack provenance and readiness parity.
 - [x] Add a machine-readable readiness/source-health summary for agents.
-- [ ] Add an explicit model-provider boundary.
+- [x] Add an explicit model-provider boundary (typed interface, OpenAI-compatible adapter, injectable transport, fixture tests).
 - [ ] Add bounded multi-step reasoning only after the deterministic handoff contract is stable.
 
 ## P2 — research depth
