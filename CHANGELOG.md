@@ -4,6 +4,11 @@ Canonical release history for repository behavior. Older detail remains in docs/
 
 ## [Unreleased]
 
+### Documentation and research roadmap
+- Clarified that GitHub Wiki is a separately initialized repository and added a reliable source-docs fallback.
+- Added a free-source evaluation and feature plan for TejHQ EOD/corporate actions, NSE/issuer events, point-in-time history, peer comparison and backtesting.
+- Added PRD-005 and reconciled roadmap/TODO status for partially implemented trust and distribution phases.
+
 ### Google Sheets publishing
 - Linked the StockResearch workbook from the README and integration guide.
 - Added classified research and analysis transformer methods with dedicated summary, evidence/findings, scores, risks, catalysts, scenarios, sources, quality, audit, and visual-evidence tabs.
