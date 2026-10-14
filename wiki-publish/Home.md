@@ -23,6 +23,9 @@ StockResearchApp is an NSE-first Indian-equity research pipeline. It collects so
 
 ## System overview
 
+![StockResearchApp architecture overview](assets/architecture-overview.svg)
+
+
 ```mermaid
 flowchart LR
     A[Symbol] --> B[NSE symbol resolution]
