@@ -74,7 +74,7 @@ try {
   assert.equal(requests.length, 2);
   assert.match(requests[1].messages[1].content, /evidence-auditor/);
   assert.match(requests[0].messages[1].content, /fixture-only evidence marker/);
-  assert.match(requests[0].messages[1].content, /research\\/RELIANCE\\/fixture.json|research\\/RELIANCE\\/fixture.json/);
+  assert.ok(requests[0].messages[1].content.includes('research/RELIANCE/fixture.json'));
   assert.equal((await readFile(path.join(tempRoot, auditPath), 'utf8')).trim().split('\n').length, 2);
 
   await assert.rejects(() => runBoundedReasoning({
