@@ -2,9 +2,7 @@
 
 ## Current implementation phase
 
-PR #8 (`feat/model-provider-boundary-v1`) merged into `main` at `def7a72bb92a2a1a1072334341bf27f73392d986`. PR #9 (`feat/bounded-reasoning-v1`) merged into `main` at `f1513cc23e486a41ba127e5a532d3893894a4080` on 2026-10-15.
-
-Follow-up hardening is being prepared on `fix/bounded-reasoning-guardrails-v1`: enforce the fixed `evidence-auditor` / `decision-reviewer` allowlist, apply the overall deadline to artifact loading/provider generation/result validation, enforce the output-byte budget inside the existing validation harness, and fail closed when audit persistence fails. Fixture tests cover unapproved agents and audit-persistence failure. CI on this follow-up must be checked before treating it as validated.
+PR #8 (`feat/model-provider-boundary-v1`) and PR #9 (`feat/bounded-reasoning-v1`) are merged. PR #10 (`fix/bounded-reasoning-guardrails-v1`) is the **single active pull request**. PR #11 was superseded and closed after all 19 acceptance implementation/documentation files were consolidated into this branch at commit `10148966a0d5b49567a0ac8683102d8ea2191463`. Continue only on PR #10 and this branch; do not open another PR for the same work. CI passed for the consolidated commit.
 
 The bounded runner remains opt-in via `LLM_BOUNDED_REASONING=1`. The deterministic readiness gate runs before bounded model calls. Final investment analysis proceeds only after both reasoning steps return complete, valid results. Intermediate model outputs remain secondary review context, not primary evidence. Default analysis behavior remains unchanged when the flag is absent.
 
