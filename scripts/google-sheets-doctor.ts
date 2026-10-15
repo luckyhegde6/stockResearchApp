@@ -72,7 +72,7 @@ async function main(): Promise<void> {
   }
 
   const result = payload as Record<string, unknown>;
-  if (result.serviceVersion !== '2') {
+  if (result.serviceVersion !== '3') {
     fail('The deployed Apps Script is outdated or missing serviceVersion 2. Paste the latest integrations/google-sheets/Code.gs into Apps Script, save, deploy a new Web app version, then rerun sheets:doctor.');
   }
   const workbookUrl = typeof result.workbookUrl === 'string' ? result.workbookUrl : '';
