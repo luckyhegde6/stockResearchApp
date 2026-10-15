@@ -131,8 +131,8 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
   if (!options.task.trim()) throw new Error('Task must not be empty');
   if (!Number.isInteger(maxOutputBytes) || maxOutputBytes < 1) throw new Error('maxOutputBytes must be a positive integer');
   if (!Number.isInteger(maxInputBytes) || maxInputBytes < 1) throw new Error('maxInputBytes must be a positive integer');
-  const inputArtifacts = await loadInputArtifacts(options.inputArtifacts ?? [], options.repositoryRoot ?? process.cwd(), maxInputBytes);
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('overallTimeoutMs must be positive and finite');
+  const inputArtifacts = await loadInputArtifacts(options.inputArtifacts ?? [], options.repositoryRoot ?? process.cwd(), maxInputBytes);
 
   const runId = randomUUID();
   const completed: BoundedReasoningStepResult[] = [];
