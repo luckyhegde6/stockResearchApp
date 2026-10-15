@@ -77,6 +77,24 @@ try {
   assert.ok(requests[0].messages[1].content.includes('research/RELIANCE/fixture.json'));
   assert.equal((await readFile(path.join(tempRoot, auditPath), 'utf8')).trim().split('\n').length, 2);
 
+  const requestsBeforeInvalidAgent = requests.length;
+  await assert.rejects(() => runBoundedReasoning({
+    provider, model: 'fixture-model', task: 'reject unapproved agent',
+    steps: [{ id: 'unapproved', agentId: 'arbitrary-agent', instruction: 'Try an unapproved agent.' }],
+    maxSteps: 1, repositoryRoot: tempRoot,
+  }), /not in the bounded reasoning agent allowlist/);
+  assert.equal(requests.length, requestsBeforeInvalidAgent, 'unapproved agent must be rejected before provider invocation');
+
+  const auditFailure = await runBoundedReasoning({
+    provider, model: 'fixture-model', task: 'fail closed when audit cannot be persisted',
+    steps: [plan[0], plan[1]], maxSteps: 2, repositoryRoot: tempRoot,
+    auditPath: path.join(os.tmpdir(), 'stockresearch-audit-outside-root.jsonl'),
+  });
+  assert.equal(auditFailure.status, 'failed');
+  assert.equal(auditFailure.stopReason, 'step_failed');
+  assert.equal(auditFailure.completedSteps, 0);
+  assert.equal(auditFailure.steps[0].failureClass, 'audit_failure');
+
   await assert.rejects(() => runBoundedReasoning({
     provider, model: 'fixture-model', task: 'reject traversal',
     steps: [plan[0]], maxSteps: 1, repositoryRoot: tempRoot,
