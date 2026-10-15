@@ -44,7 +44,7 @@ Source code and contract tests prove the optimizer and receiver guards are imple
 
 1. Deploy latest `integrations/google-sheets/Code.gs` as a new Web App version.
 2. Set Script Properties `SHEET_ID` and `API_TOKEN`; configure matching local `GOOGLE_SHEETS_ID`, `GOOGLE_SHEETS_WEBHOOK_URL`, and `GOOGLE_SHEETS_WEBHOOK_TOKEN`.
-3. Run `npm run sheets:doctor`, expecting `serviceVersion: 2` and the matching workbook ID.
+3. Run `npm run sheets:doctor`, expecting `serviceVersion: 3` and the matching workbook ID.
 4. Run a research export with existing chart screenshots.
 5. Confirm exporter embedded/failed counts and each screenshot row's metadata/status agree.
 6. Run `npm run acceptance:e2e -- HDFCBANK --publish`. It uses the strict export mode, requires at least one eligible upload, per-image receiver outcomes, matching aggregate counts, and successful insertion of every uploaded image. It fails on missing, duplicate, failed or skipped outcomes and writes a pending visibility report only when receiver-side insertion succeeds.
