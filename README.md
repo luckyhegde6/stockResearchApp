@@ -1058,7 +1058,13 @@ LLM_ENDPOINT=https://api.openai.com/v1/chat/completions
 LLM_API_KEY=your_key_here
 LLM_MODEL=gpt-4o
 LLM_TIMEOUT_MS=120000
+
+# Optional: enable the fixed, validated two-step review before final analysis.
+# Default is off; readiness must pass and both steps must validate before final analysis runs.
+LLM_BOUNDED_REASONING=0
 ```
+
+Set `LLM_BOUNDED_REASONING=1` only when you want the additional evidence-auditor and decision-reviewer passes. The mode loads the analysis prompt as a repository-contained artifact, enforces bounded input/output and time budgets, writes `research/<SYMBOL>/normalized/bounded-reasoning.json` plus an audit JSONL file, and fails closed before final analysis if either step is blocked or invalid. It does not add tools, publish, or execute trades.
 
 Never commit the private `.env` file.
 
