@@ -476,9 +476,10 @@ async function analyze(ticker: string) {
   const prompt = await readText(promptPath);
   const skill = await readText(SKILL);
 
+  const boundedReasoningEnabled = process.env.LLM_BOUNDED_REASONING === '1';
   console.log(`→ ANALYZE/LLM: Deterministic gate passed; invoking final reasoning model`);
   let result: string;
-  if (process.env.LLM_BOUNDED_REASONING === '1') {
+  if (boundedReasoningEnabled) {
     const configured = createModelProviderFromEnv();
     console.log(`→ ANALYZE/REASONING: Opt-in bounded reasoning enabled; validating evidence before final synthesis`);
     const bounded = await runBoundedReasoning({
@@ -539,7 +540,9 @@ async function analyze(ticker: string) {
     analyzedAt: new Date().toISOString(),
     ticker: manifest.ticker,
     output: path.relative(ROOT, outputPath),
-    pipeline: ['research','prepare-analysis','llm-analysis'],
+    reasoningMode: boundedReasoningEnabled ? 'bounded-two-step' : 'single-call',
+    boundedReasoningOutput: boundedReasoningEnabled ? path.relative(ROOT, path.join(researchDir, 'normalized', 'bounded-reasoning.json')) : null,
+    pipeline: ['research','prepare-analysis', ...(boundedReasoningEnabled ? ['bounded-reasoning'] : []), 'llm-analysis'],
   }, null, 2));
   console.log(JSON.stringify({ status: 'analyzed', ticker, output: outputPath }, null, 2));
   await publishAfterPipelineRun('analysis', ticker, ROOT);
