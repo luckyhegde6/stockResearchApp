@@ -53,6 +53,10 @@ async function exists(file: string): Promise<boolean> {
   try { return (await stat(file)).isFile(); } catch { return false; }
 }
 
+async function directoryExists(directory: string): Promise<boolean> {
+  try { return (await stat(directory)).isDirectory(); } catch { return false; }
+}
+
 async function readJson(file: string): Promise<any> {
   return JSON.parse(await readFile(file, 'utf8'));
 }
@@ -127,6 +131,10 @@ async function main() {
     if (String(pending.symbol || '').toUpperCase() !== symbol || pending.stages?.publish?.status !== 'receiver_confirmed_insertions') {
       throw new Error('The pending acceptance report does not contain a successful receiver-confirmed publish for this symbol.');
     }
+    const currentManifest = await readJson(manifestPath).catch(() => null);
+    if (!currentManifest || String(currentManifest.generatedAt || '') !== String(pending.stages?.acquisition?.generatedAt || '')) {
+      throw new Error('Research artifacts changed after the pending export. Re-run acceptance and inspect the newest workbook run before confirming visibility.');
+    }
     pending.stages.publish.actualWorkbookVisibility = 'operator_confirmed';
     pending.stages.publish.operatorConfirmedAt = new Date().toISOString();
     pending.stages.publish.note = 'Operator confirmed that the exported screenshot image objects are visible in the workbook UI.';
@@ -156,8 +164,9 @@ async function main() {
   };
 
   const existingManifest = await exists(manifestPath);
-  if ((options.acquire || options.analysis) && existingManifest && !options.replaceExisting) {
-    throw new Error(`Existing research artifacts would be replaced by this command. Re-run with --replace-existing after preserving anything needed: research/${symbol}`);
+  const existingResearchDirectory = await directoryExists(researchDir);
+  if ((options.acquire || options.analysis) && existingResearchDirectory && !options.replaceExisting) {
+    throw new Error(`The research directory would be replaced by this command. Re-run with --replace-existing after preserving anything needed: research/${symbol}`);
   }
   if (!options.acquire && !options.analysis && !existingManifest) {
     throw new Error(`No existing research manifest at research/${symbol}/manifest.json. Use --acquire to create a fresh research run.`);
