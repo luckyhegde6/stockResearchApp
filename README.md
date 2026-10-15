@@ -29,6 +29,26 @@ The repository maintains a Wiki-ready operational and architectural guide for th
 
 These docs describe implementation, design decisions, evidence, Apps Script deployment, screenshot limits and recovery steps. GitHub Wiki is a separate repository; until its one-time initialization and publication are complete, use the source-controlled [documentation index](docs/wiki/README.md) or [GitHub Wiki publishing guide](docs/wiki/GitHub-Wiki-Publishing.md). The source docs distinguish code behavior from live deployment verification.
 
+## End-to-end acceptance
+
+The repository includes an opt-in acceptance runner for the acquisition → evidence quality/readiness → analysis → Google Sheets → screenshot path. It does not claim live publishing or screenshot visibility unless the corresponding steps are explicitly run.
+
+```bash
+# Validate an existing local research run; no acquisition or external writes
+npm run acceptance:e2e -- RELIANCE
+
+# Fresh full acquisition (if research/RELIANCE already exists, add --replace-existing)
+npm run acceptance:e2e -- RELIANCE --acquire
+
+# Fresh acquisition plus model analysis (if research/RELIANCE already exists, add --replace-existing)
+npm run acceptance:e2e -- RELIANCE --analysis
+
+# Publish to the configured workbook; strict receiver-side screenshot insertion required
+npm run acceptance:e2e -- RELIANCE --publish
+```
+
+The publishing run reports per-image receiver outcomes and returns a pending manual-visibility state until the operator opens the workbook and confirms the image objects are visible. `--confirm-visible` records that manual check; it is not an automated visual assertion. Tests use fixtures and do not make live model requests or write to Google Sheets.
+
 ## Google Sheets export
 
 **Decision-ready report contract:** the published workbook is intended to read like an analyst research note, covering the executive view, price action and volume, earnings/financial statements, fundamentals and valuation, technical indicators, upcoming earnings/corporate-action dates, linked news, investment scenarios, risks, source quality and chart screenshots. See [the detailed data contract](docs/wiki/Google-Sheets-Data-Contract.md). Source-backed facts, deterministic calculations and analyst interpretation must remain distinguishable; missing values/events must be marked unavailable rather than inferred.
