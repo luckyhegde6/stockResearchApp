@@ -115,8 +115,8 @@
     "test:agent-harness": "tsx scripts/with-google-sheets-step.ts --name \"test:agent-harness\" --exec \"tsx\" -- scripts/test-agent-harness.ts",
     "agents:audit": "tsx scripts/with-google-sheets-step.ts --name \"agents:audit\" --exec \"tsx\" -- scripts/evidence-auditor.ts",
     "test:evidence-auditor": "tsx scripts/with-google-sheets-step.ts --name \"test:evidence-auditor\" --exec \"tsx\" -- scripts/test-evidence-auditor.ts",
-    "acceptance:e2e": "tsx scripts/research-publishing-acceptance.ts",
-    "test:screenshot-acceptance": "tsx scripts/test-screenshot-acceptance.ts"
+    "acceptance:e2e": "tsx scripts/with-google-sheets-step.ts --name \"acceptance:e2e\" --exec \"tsx\" -- scripts/research-publishing-acceptance.ts",
+    "test:screenshot-acceptance": "tsx scripts/with-google-sheets-step.ts --name \"test:screenshot-acceptance\" --exec \"tsx\" -- scripts/test-screenshot-acceptance.ts"
   },
   "engines": {
     "node": ">=20"
