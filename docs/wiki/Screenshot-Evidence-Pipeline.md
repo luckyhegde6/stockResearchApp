@@ -26,7 +26,7 @@ The row retains original filename, original bytes, optimized bytes, original dim
 
 ## 4. Receiver-side validation
 
-Apps Script checks bytes <= 1,800,000, positive image dimensions, and width × height <= 1,000,000 before insertion. It inserts the image directly into the consolidated tab, sets alt text and preserves aspect ratio; the image is not exposed as a public Drive URL.
+Apps Script checks bytes <= 1,800,000, positive image dimensions, and width × height <= 1,000,000 before insertion. It inserts the image into the run's screenshot-gallery tab, sets alt text and preserves aspect ratio; the image is not exposed as a public Drive URL.
 
 ## 5. Status lifecycle
 
