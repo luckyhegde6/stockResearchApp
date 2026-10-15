@@ -38,7 +38,7 @@ Raw evidence and deterministic artifacts remain canonical. The dashboard, GitHub
 
 - **Implemented baseline:** deterministic source collection/preparation, readiness/evidence artifacts, optional schema-validated analysis, local dashboard, market scans and Google Sheets exporter.
 - **Merged:** read-only result validation/evidence auditing and bounded multi-step reasoning in PRs #7–#9.
-- **Open implementation work:** [PR #10 — bounded reasoning guardrails](https://github.com/luckyhegde6/stockResearchApp/pull/10) and [PR #11 — end-to-end research publishing acceptance](https://github.com/luckyhegde6/stockResearchApp/pull/11).
+- **Open implementation work:** [PR #10 — bounded reasoning guardrails and consolidated acceptance workflow](https://github.com/luckyhegde6/stockResearchApp/pull/10). PR #11 was superseded/closed; continue on PR #10 and do not open a parallel PR for the same work.
 - **Operationally unverified:** current Apps Script deployment, live Google Sheets publishing, and actual workbook screenshot visibility. Automated CI does not replace these checks.
 - **Next evidence-trust priorities:** source freshness thresholds, conflict provenance, longitudinal `What Changed`, event monitoring, peer scorecard, robust backtesting and read-only API.
 
