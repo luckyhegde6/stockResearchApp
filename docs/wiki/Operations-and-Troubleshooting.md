@@ -47,7 +47,7 @@ Publish research and any current analysis artifact to the configured workbook, r
 npm run acceptance:e2e -- RELIANCE --publish
 ```
 
-After the command returns the workbook URL, open it and visually inspect the screenshot rows. Only after confirming images are visible should you mark the operator check:
+After the command returns the workbook URL, open it and visually inspect the screenshot-gallery tab (dataset `visual-evidence`) for the exact exported run. Only after confirming images are visible should you mark the operator check:
 
 ```bash
 npm run acceptance:e2e -- RELIANCE --confirm-visible
