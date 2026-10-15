@@ -521,8 +521,10 @@ async function main() {
   const screenshotAcceptance = parsed.requireScreenshotEmbedding
     ? assessScreenshotEmbedding(result, screenshots.map(item => item.fileName))
     : null;
-  const localSkipped = tabs.flatMap(item => item.rows)
-    .filter(row => row.record_type === 'visual_evidence' && String(row.status || '').startsWith('skipped_'))
+  const screenshotRows = tabs.flatMap(item => item.rows)
+    .filter(row => row.record_type === 'visual_evidence' && String(row.file_name || '').trim());
+  const localSkipped = screenshotRows
+    .filter(row => String(row.status || '').startsWith('skipped_'))
     .map(row => ({ fileName: String(row.file_name || 'unknown'), status: String(row.status), notes: String(row.notes || '') }));
   if (parsed.requireScreenshotEmbedding && localSkipped.length) {
     screenshotAcceptance?.errors.push(...localSkipped.map(item => `Screenshot ${item.fileName} was skipped before upload: ${item.status}${item.notes ? ` (${item.notes})` : ''}.`));
@@ -537,6 +539,8 @@ async function main() {
     spreadsheetUrl: result.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`,
     tabs: tabs.map(item => ({ tabName: item.tabName, dataset: item.dataset, rows: item.rows.length })),
     rowCount: tabs.reduce((sum, item) => sum + item.rows.length, 0),
+    screenshotsDiscovered: screenshotRows.length,
+    screenshotsSkippedBeforeUpload: localSkipped.length,
     screenshotsSent: screenshots.length,
     screenshotsEmbedded: result.screenshotsEmbedded ?? 0,
     screenshotsFailed: result.screenshotsFailed ?? 0,
