@@ -98,7 +98,7 @@ A healthy current deployment should report:
 {
   "ok": true,
   "service": "stock-research-sheet-sink",
-  "serviceVersion": "2",
+  "serviceVersion": "3",
   "spreadsheetIdMatches": true
 }
 ```
