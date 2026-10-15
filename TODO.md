@@ -38,11 +38,15 @@ Target workbook: [StockResearch](https://docs.google.com/spreadsheets/d/1YMKesB9
 - [x] Add read-only evidence inspection commands.
 - [x] Add a deterministic evidence auditor for manifest/pack provenance and readiness parity.
 - [x] Add a machine-readable readiness/source-health summary for agents.
-- [ ] Add an explicit model-provider boundary.
+- [x] Add an explicit model-provider boundary (typed interface, OpenAI-compatible adapter, injectable transport, fixture tests).
 - [ ] Add bounded multi-step reasoning only after the deterministic handoff contract is stable.
 
 ## P2 — research depth
 
+- [ ] Add source registry with terms, free/paid tier, auth/quota, freshness and allowed-use policy (PRD-005).
+- [ ] Evaluate opt-in secondary EOD/corporate-action adapter; preserve primary-source precedence and require parity tests (PRD-005).
+- [ ] Add reproducible point-in-time research snapshots and deterministic “What Changed?” diffs (PRD-005).
+- [ ] Add source-linked corporate event timeline with announcement/effective timestamps and confirmation status (PRD-005).
 - [ ] Expand point-in-time/datewise research coverage.
 - [ ] Improve market-scan quality/history tests.
 - [ ] Add more fixture-backed adapter tests for provider outages.
@@ -124,4 +128,4 @@ Target workbook: [StockResearch](https://docs.google.com/spreadsheets/d/1YMKesB9
 - [ ] Write a separate execution/paper-trading PRD covering kill switch, risk limits, credentials, auditability, and explicit human authorization.
 - [ ] Keep live order placement disabled until the separate PRD and safety review are approved.
 
-Roadmap details and exit criteria: [docs/wiki/Product-Roadmap.md](docs/wiki/Product-Roadmap.md). Product requirements: [docs/prd/004-evidence-first-research-platform.md](docs/prd/004-evidence-first-research-platform.md). Agent contract: [.agents/README.md](.agents/README.md).
+Roadmap details and exit criteria: [docs/wiki/Product-Roadmap.md](docs/wiki/Product-Roadmap.md). Product requirements: [PRD-004](docs/prd/004-evidence-first-research-platform.md) and [PRD-005](docs/prd/005-free-data-and-research-history.md). Source evaluation: [Free Research Data Sources](docs/wiki/Free-Research-Data-Sources.md). GitHub Wiki initialization: [publishing guide](docs/wiki/GitHub-Wiki-Publishing.md). Agent contract: [.agents/README.md](.agents/README.md).

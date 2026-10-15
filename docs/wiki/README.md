@@ -1,53 +1,46 @@
-# StockResearchApp Wiki
 
-## Product and agent documentation
-- [Product Roadmap](./Product-Roadmap.md)
-- [Agent System & Guardrails](./Agent-System-and-Guardrails.md)
-- [PRD-004: Evidence-First Research Platform](../prd/004-evidence-first-research-platform.md)
+# StockResearchApp Documentation Home
 
+The source-controlled documentation is authoritative. The GitHub Wiki is a separate Git repository and may be disabled or empty; use the links below even when `/wiki` is unavailable.
 
-This documentation explains the Google Sheets publishing system, Apps Script receiver, consolidated research-sheet design, screenshot evidence pipeline, and the reasoning behind the architecture.
+- [Project overview and architecture](../../README.md)
+- [Onboarding](../ONBOARDING.md)
+- [Architecture](../ARCHITECTURE.md)
+- [CLI reference](../CLI_REFERENCE.md)
+- [Operating guide](../PIPELINE_OPERATING_GUIDE.md)
+- [Testing and quality](../TESTING_AND_QUALITY.md)
+- [Evidence contract](../EVIDENCE_CONTRACT.md)
+- [Developer/agent guide](../AGENT_GUIDE.md)
+- [Current handoff](../../HANDOFF.md)
+- [Prioritized backlog](../../TODO.md)
+- [PRD index](../PRD.md)
+- [PRD-004: Evidence-first Research Platform](../prd/004-evidence-first-research-platform.md)
+- [PRD-005: Free Data and Research History](../prd/005-free-data-and-research-history.md)
+- [Product roadmap](Product-Roadmap.md)
+- [Agent system and guardrails](Agent-System-and-Guardrails.md)
+- [Free research data sources and feature proposals](Free-Research-Data-Sources.md)
+- [GitHub Wiki publishing guide](GitHub-Wiki-Publishing.md)
+- [Google Sheets setup](Google-Sheets-Setup.md)
+- [Google Sheets architecture and reasoning](Google-Sheets-Architecture-and-Reasoning.md)
+- [Research and reasoning model](Research-and-Reasoning.md)
+- [Screenshot evidence pipeline](Screenshot-Evidence-Pipeline.md)
+- [Operations and troubleshooting](Operations-and-Troubleshooting.md)
+- [Google Sheets data contract](Google-Sheets-Data-Contract.md)
 
-## Documentation map
+## System boundary
 
-| Page | Purpose |
-|---|---|
-| [Google Sheets Setup](Google-Sheets-Setup.md) | End-to-end Google Sheet and Apps Script setup |
-| [Architecture & Reasoning](Google-Sheets-Architecture-and-Reasoning.md) | Why the integration is designed this way |
-| [Research & Reasoning](Research-and-Reasoning.md) | How research evidence, conflicts, quality and reasoning are represented |
-| [Screenshot Evidence](Screenshot-Evidence-Pipeline.md) | Screenshot optimization, embedding and failure handling |
-| [Operations & Troubleshooting](Operations-and-Troubleshooting.md) | Doctor checks, exports, failures and recovery |
-| [Data Contract](Google-Sheets-Data-Contract.md) | Consolidated sheet sections and field semantics |
+`symbol → deterministic acquisition → raw evidence → normalized/canonical evidence → reconciliation → quality/readiness → optional model interpretation → schema validation`
 
-## Current architecture
+Raw evidence and deterministic artifacts remain canonical. The dashboard, GitHub Pages, Google Sheets, and future PDF/API are views and distribution layers.
 
-A research run follows this high-level path:
+## Delivery status (2026-10-15)
 
-`source acquisition → normalized artifacts → deterministic evidence → research findings → consolidated transformer → Apps Script → Google Sheet`
+- **Implemented baseline:** deterministic source collection/preparation, readiness/evidence artifacts, optional schema-validated analysis, local dashboard, market scans and Google Sheets exporter.
+- **Implemented and merged:** read-only result validation, evidence inspection/auditing from PR #7.
+- **In progress:** vendor-neutral model provider adapter and fixture tests in [PR #8](https://github.com/luckyhegde6/stockResearchApp/pull/8).
+- **Operationally unverified:** live Apps Script deployment and real workbook screenshot embedding.
+- **Planned:** bounded multi-step reasoning, Evidence Trust Center, What Changed, source-linked event timeline, monitoring, peer scorecard, robust backtesting and read-only API.
 
-The home/local filesystem remains the source of truth. Google Sheets is a published research/readability surface, not the canonical storage layer.
+## GitHub Wiki availability
 
-## Core principles
-
-1. **One research/analysis run = one consolidated sheet tab.**
-2. **The workbook index is navigation, not a second data warehouse.**
-3. **Local command-run/audit records remain local.**
-4. **Screenshots are visual evidence, not numeric truth.**
-5. **Structured sources and deterministic calculations provide numeric facts.**
-6. **Conflicts are preserved rather than silently resolved.**
-7. **Analysis readiness must not be bypassed merely to make the sheet look complete.**
-8. **Published rows must not contain local filesystem paths.**
-9. **Apps Script validates screenshot payloads defensively even though the Node exporter already optimizes them.**
-10. **A Sheets failure must not invalidate locally saved research.**
-
-## Current implementation status
-
-The implementation is on the `init` branch and covered by PR #1.
-
-Deterministic CI has passed:
-
-- `npm run version:check`
-- `npm run typecheck`
-- `npm run test:all`
-
-The remaining live verification is deployment-specific: the current Apps Script must be redeployed as service version 2, then `npm run sheets:doctor` and a fresh HDFCBANK export should be run.
+If `https://github.com/luckyhegde6/stockResearchApp/wiki` is empty or unavailable, ensure Wiki is enabled in repository Settings → Features. Once GitHub creates the initial Wiki page, its Git repository can be cloned and populated; see [the wiki publishing guide](GitHub-Wiki-Publishing.md). GitHub Wiki content does not automatically sync from this `docs/wiki` directory.

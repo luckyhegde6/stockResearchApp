@@ -11,7 +11,7 @@ It combines official NSE data, Screener, Tijori, TradingView, optional news/Char
 > **Important:** This project produces research evidence and analysis inputs. It is not investment advice.
 
 
-## Google Sheets & Research Wiki
+## Documentation and Google Sheets
 
 The repository maintains a Wiki-ready operational and architectural guide for the Google Sheets publishing system:
 
@@ -22,8 +22,12 @@ The repository maintains a Wiki-ready operational and architectural guide for th
 - [Screenshot evidence pipeline](docs/wiki/Screenshot-Evidence-Pipeline.md)
 - [Operations & troubleshooting](docs/wiki/Operations-and-Troubleshooting.md)
 - [Google Sheets data contract](docs/wiki/Google-Sheets-Data-Contract.md)
+- [Product roadmap](docs/wiki/Product-Roadmap.md)
+- [Free research data sources & feature proposals](docs/wiki/Free-Research-Data-Sources.md)
+- [GitHub Wiki publishing/recovery](docs/wiki/GitHub-Wiki-Publishing.md)
+- [PRD-005: Free data and research history](docs/prd/005-free-data-and-research-history.md)
 
-These documents describe the implementation, design decisions, evidence model, Apps Script deployment, screenshot limits, and operational recovery procedures. They intentionally distinguish source-derived behavior from live deployment verification.
+These docs describe implementation, design decisions, evidence, Apps Script deployment, screenshot limits and recovery steps. GitHub Wiki is a separate repository; until its one-time initialization and publication are complete, use the source-controlled [documentation index](docs/wiki/README.md) or [GitHub Wiki publishing guide](docs/wiki/GitHub-Wiki-Publishing.md). The source docs distinguish code behavior from live deployment verification.
 
 ## Google Sheets export
 

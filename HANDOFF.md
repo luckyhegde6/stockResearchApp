@@ -1,6 +1,10 @@
 # Handoff
 
-Updated: 2026-10-11
+## Current implementation phase
+
+PR #7 was merged to `main` on 2026-10-14 (merge commit `7def14e6ef80e4c80e2a2f50852eca3f85a98e15`). Follow-up work is on `feat/model-provider-boundary-v1`, cut from that merge. This branch begins the explicit vendor-neutral model-provider boundary: typed `ModelProvider` contract, OpenAI-compatible adapter, injectable transport, and fixture tests. The existing `LLM_*` configuration and readiness-first orchestration are preserved. No live model request was made as part of implementation.
+
+Updated: 2026-10-15
 Default branch: `main`
 Investment-report follow-up branch: `feat/investment-report-sheets`
 Previous implementation PR: [#1 — Initialize stock research pipeline](https://github.com/luckyhegde6/stockResearchApp/pull/1) (merged)

@@ -1,26 +1,47 @@
-import { readFile } from 'node:fs/promises';
-import type { ResearchManifest } from '../types/research.js';
 import { writeText } from './fs.js';
+import { createModelProviderFromEnv, type ModelProvider } from './model-provider.js';
 
-export async function runLlmAnalysis(systemPrompt:string, userPrompt:string, outPath:string){
-  const endpoint=process.env.LLM_ENDPOINT;
-  const apiKey=process.env.LLM_API_KEY;
-  const model=process.env.LLM_MODEL;
-  if(!endpoint || !apiKey || !model){
-    throw new Error('LLM analysis is not configured. Set LLM_ENDPOINT, LLM_API_KEY and LLM_MODEL. The research artifacts and analysis-prompt.txt were still generated.');
-  }
-  const controller=new AbortController(); const timeout=setTimeout(()=>controller.abort(),Number(process.env.LLM_TIMEOUT_MS||120000));
-  try{
-    const body={model,messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}],temperature:0.15};
-    const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},body:JSON.stringify(body),signal:controller.signal});
-    const text=await r.text();
-    if(!r.ok) throw new Error(`LLM HTTP ${r.status}: ${text.slice(0,2000)}`);
-    const data=JSON.parse(text);
-    const content=data?.choices?.[0]?.message?.content;
-    if(typeof content!=='string') throw new Error('LLM response did not contain choices[0].message.content');
-    const clean=content.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim();
+export interface RunLlmAnalysisOptions {
+  provider?: ModelProvider;
+  model?: string;
+  timeoutMs?: number;
+}
+
+function stripJsonFence(content: string): string {
+  return content.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+}
+
+export async function runLlmAnalysis(
+  systemPrompt: string,
+  userPrompt: string,
+  outPath: string,
+  options: RunLlmAnalysisOptions = {},
+) {
+  const configured = options.provider ? null : createModelProviderFromEnv();
+  const provider = options.provider ?? configured!.provider;
+  const model = options.model ?? configured!.model;
+  const timeoutMs = options.timeoutMs ?? configured?.timeoutMs ?? 120000;
+  if (!model?.trim()) throw new Error('Model name must not be empty');
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('Model timeout must be a positive finite number');
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await provider.generate({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0.15,
+    }, { signal: controller.signal });
+    const clean = stripJsonFence(response.content);
+    // Syntax validation is a transport-level guard. The authoritative analysis schema is
+    // validated by the caller after this content is returned.
     JSON.parse(clean);
-    await writeText(outPath,clean);
+    await writeText(outPath, clean);
     return clean;
-  }finally{clearTimeout(timeout);}
+  } finally {
+    clearTimeout(timeout);
+  }
 }

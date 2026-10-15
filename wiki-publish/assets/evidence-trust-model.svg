@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="460" viewBox="0 0 900 460" role="img" aria-labelledby="title desc">
+<title id="title">Evidence trust model</title><desc id="desc">Claims are typed as sourced facts, deterministic calculations, interpretations or assumptions. Validation checks provenance and methods before an audit record is created.</desc>
+<defs><style>.bg{fill:#0b1220}.card{fill:#162033;stroke:#6ecdc4;stroke-width:2}.txt{font-family:Inter,Arial,sans-serif;fill:#eff6ff;font-size:19px;font-weight:600}.sub{font-size:14px;font-weight:400;fill:#c0cddd}.line{stroke:#6ecdc4;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}</style><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6ecdc4"/></marker></defs>
+<rect class="bg" width="900" height="460" rx="16"/>
+<g transform="translate(260 24)"><rect class="card" width="380" height="65" rx="12"/><text class="txt" x="190" y="28" text-anchor="middle">Source artifact + provenance</text><text class="sub" x="190" y="49" text-anchor="middle">URL, retrieval time, period, source ID</text></g>
+<path class="line" d="M450 89 V125" marker-end="url(#ar)"/>
+<g transform="translate(30 140)"><rect class="card" width="195" height="86" rx="12"/><text class="txt" x="97" y="31" text-anchor="middle">Sourced fact</text><text class="sub" x="97" y="54" text-anchor="middle">evidence reference</text><text class="sub" x="97" y="72" text-anchor="middle">and as-of time</text></g>
+<g transform="translate(245 140)"><rect class="card" width="195" height="86" rx="12"/><text class="txt" x="97" y="31" text-anchor="middle">Calculation</text><text class="sub" x="97" y="54" text-anchor="middle">method + inputs</text><text class="sub" x="97" y="72" text-anchor="middle">reproducible result</text></g>
+<g transform="translate(460 140)"><rect class="card" width="195" height="86" rx="12"/><text class="txt" x="97" y="31" text-anchor="middle">Interpretation</text><text class="sub" x="97" y="54" text-anchor="middle">supporting evidence</text><text class="sub" x="97" y="72" text-anchor="middle">caveats / uncertainty</text></g>
+<g transform="translate(675 140)"><rect class="card" width="195" height="86" rx="12"/><text class="txt" x="97" y="31" text-anchor="middle">Assumption</text><text class="sub" x="97" y="54" text-anchor="middle">explicit scenario</text><text class="sub" x="97" y="72" text-anchor="middle">and sensitivity</text></g>
+<path class="line" d="M127 226 V255 H450 M342 226 V255 M557 226 V255 M772 226 V255 H450 V285" marker-end="url(#ar)"/>
+<g transform="translate(255 292)"><rect class="card" width="390" height="66" rx="12"/><text class="txt" x="195" y="28" text-anchor="middle">Schema + policy validation</text><text class="sub" x="195" y="49" text-anchor="middle">reject orphan facts or methodless calculations</text></g>
+<path class="line" d="M450 358 V389" marker-end="url(#ar)"/>
+<g transform="translate(330 395)"><rect class="card" width="240" height="48" rx="12"/><text class="txt" x="120" y="29" text-anchor="middle">Audit + downstream use</text></g>
+</svg>

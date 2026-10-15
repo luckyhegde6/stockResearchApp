@@ -1,9 +1,9 @@
 # PRD-004: Evidence-First Research Platform & Agent System
 
-- Status: Proposed
+- Status: Active roadmap; partially implemented (requirements remain open)
 - Owner: Product / Engineering
 - Priority: P0 foundation, then staged P1/P2 delivery
-- Last reviewed: 2026-10-11
+- Last reviewed: 2026-10-15
 - Scope: NSE-first Indian-equity research, agent orchestration, evidence trust, product roadmap
 
 ## 1. Product thesis
