@@ -70,7 +70,7 @@ function validatePlan(steps: BoundedReasoningStep[], maxSteps: number): void {
 }
 
 function stripJsonFence(content: string): string {
-  return content.replace(/^\s*```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  return content.replace(/^\s*`{3}(?:json)?\s*/i, '').replace(/\s*`{3}\s*$/, '').trim();
 }
 
 interface LoadedInputArtifact {
@@ -132,23 +132,41 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
   if (!Number.isInteger(maxOutputBytes) || maxOutputBytes < 1) throw new Error('maxOutputBytes must be a positive integer');
   if (!Number.isInteger(maxInputBytes) || maxInputBytes < 1) throw new Error('maxInputBytes must be a positive integer');
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('overallTimeoutMs must be positive and finite');
-  const inputArtifacts = await loadInputArtifacts(options.inputArtifacts ?? [], options.repositoryRoot ?? process.cwd(), maxInputBytes);
 
   const runId = randomUUID();
+  const startedAt = Date.now();
+  const deadline = startedAt + timeoutMs;
+  const remainingMs = (): number => Math.max(0, deadline - Date.now());
+  const withDeadline = async <T>(work: Promise<T>): Promise<T> => {
+    const remaining = remainingMs();
+    if (remaining <= 0) throw new Error('Bounded reasoning overall timeout exceeded');
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        work,
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('Bounded reasoning overall timeout exceeded')), remaining);
+        }),
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  };
+
   const completed: BoundedReasoningStepResult[] = [];
   let previous: AgentResult | null = null;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  let timedOut = false;
   const controller = new AbortController();
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-      reject(new Error('Bounded reasoning overall timeout exceeded'));
-    }, timeoutMs);
-  });
+  let timedOut = false;
+  const timeoutTimer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
 
   try {
+    const inputArtifacts = await withDeadline(
+      loadInputArtifacts(options.inputArtifacts ?? [], options.repositoryRoot ?? process.cwd(), maxInputBytes),
+    );
+
     for (const step of options.steps) {
       const systemPrompt = [
         'You are one step in a bounded, read-only stock research workflow.',
@@ -176,7 +194,7 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
 
       let content: string;
       try {
-        const generation = options.provider.generate({
+        const response = await withDeadline(options.provider.generate({
           model: options.model,
           messages: [
             { role: 'system', content: systemPrompt },
@@ -184,27 +202,31 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
           ],
           temperature: 0.1,
           maxOutputTokens: 4096,
-        }, { signal: controller.signal });
-        const response = await Promise.race([generation, timeoutPromise]);
+        }, { signal: controller.signal }));
         content = stripJsonFence(response.content);
       } catch {
-        const timedOutNow = timedOut;
-        const failedValidation = await runAgentValidation(null, {
+        const timedOutNow = timedOut || remainingMs() <= 0;
+        const failedValidation = await withDeadline(runAgentValidation(null, {
           repositoryRoot: options.repositoryRoot,
           auditPath: options.auditPath,
           agentId: step.agentId,
           allowedAgentIds: [step.agentId],
+          maxResultBytes: maxOutputBytes,
           taskType: `bounded-reasoning:${step.id}`,
           symbol: options.symbol,
           inputArtifacts: options.inputArtifacts,
           now: options.now,
-        });
+        })).catch(() => null);
         completed.push({
           stepId: step.id,
           agentId: step.agentId,
           status: 'failed',
           result: null,
-          validation: failedValidation.validation,
+          validation: failedValidation?.validation ?? {
+            valid: false,
+            issues: [{ keyword: 'timeout', instancePath: '', message: 'Deadline exhausted before failure audit completed' }],
+            policyIssues: [],
+          },
           failureClass: timedOutNow ? 'timeout' : 'provider_error',
         });
         return {
@@ -215,19 +237,22 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
       }
 
       if (Buffer.byteLength(content, 'utf8') > maxOutputBytes) {
-        const oversized = await runAgentValidation({ oversized_output: true }, {
+        const oversized = await withDeadline(runAgentValidation({ oversized_output: true }, {
           repositoryRoot: options.repositoryRoot,
           auditPath: options.auditPath,
           agentId: step.agentId,
           allowedAgentIds: [step.agentId],
+          maxResultBytes: maxOutputBytes,
           taskType: `bounded-reasoning:${step.id}`,
           symbol: options.symbol,
           inputArtifacts: options.inputArtifacts,
           now: options.now,
-        });
+        })).catch(() => null);
         completed.push({
           stepId: step.id, agentId: step.agentId, status: 'failed', result: null,
-          validation: oversized.validation, failureClass: 'output_limit',
+          validation: oversized?.validation ?? {
+            valid: false, issues: [{ keyword: 'maxBytes', instancePath: '', message: 'Output byte budget exceeded' }], policyIssues: [],
+          }, failureClass: 'output_limit',
         });
         return {
           runId, status: 'failed', completedSteps: completed.filter((x) => x.result !== null).length,
@@ -235,16 +260,27 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
         };
       }
 
-      const validated = await runAgentValidation(content, {
+      const validated = await withDeadline(runAgentValidation(content, {
         repositoryRoot: options.repositoryRoot,
         auditPath: options.auditPath,
         agentId: step.agentId,
         allowedAgentIds: [step.agentId],
+        maxResultBytes: maxOutputBytes,
         taskType: `bounded-reasoning:${step.id}`,
         symbol: options.symbol,
         inputArtifacts: options.inputArtifacts,
         now: options.now,
-      });
+      })).catch(() => null);
+      if (!validated) {
+        return {
+          runId, status: 'failed', completedSteps: completed.filter((x) => x.result !== null).length,
+          steps: [...completed, {
+            stepId: step.id, agentId: step.agentId, status: 'failed' as const, result: null,
+            validation: { valid: false, issues: [{ keyword: 'timeout', instancePath: '', message: 'Deadline exhausted during validation or audit' }], policyIssues: [] },
+            failureClass: 'timeout',
+          }], result: previous, stopReason: 'budget_exhausted',
+        };
+      }
       const result = validated.result;
       const failureClass = validated.validation.valid ? null
         : validated.validation.issues.length > 0 ? 'schema_or_parse_error' : 'policy_violation';
@@ -274,7 +310,24 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
       result: previous,
       stopReason: 'plan_complete',
     };
+  } catch (error) {
+    if (remainingMs() <= 0 || timedOut) {
+      return {
+        runId, status: 'failed', completedSteps: completed.filter((x) => x.result !== null).length,
+        steps: [...completed, {
+          stepId: options.steps[Math.min(completed.length, options.steps.length - 1)]?.id ?? 'timeout',
+          agentId: options.steps[Math.min(completed.length, options.steps.length - 1)]?.agentId ?? 'unknown',
+          status: 'failed', result: null,
+          validation: { valid: false, issues: [{ keyword: 'timeout', instancePath: '', message: 'Bounded reasoning overall timeout exceeded' }], policyIssues: [] },
+          failureClass: 'timeout',
+        }],
+        result: previous,
+        stopReason: 'budget_exhausted',
+      };
+    }
+    throw error;
   } finally {
-    if (timer) clearTimeout(timer);
+    clearTimeout(timeoutTimer);
+    controller.abort();
   }
 }
