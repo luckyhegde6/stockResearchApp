@@ -48,7 +48,7 @@ Source code and contract tests prove the optimizer and receiver guards are imple
 4. Run a research export with existing chart screenshots.
 5. Confirm exporter embedded/failed counts and each screenshot row's metadata/status agree.
 6. Run `npm run acceptance:e2e -- HDFCBANK --publish`. It uses the strict export mode, requires at least one eligible upload, per-image receiver outcomes, matching aggregate counts, and successful insertion of every uploaded image. It fails on missing, duplicate, failed or skipped outcomes and writes a pending visibility report only when receiver-side insertion succeeds.
-7. Open the workbook URL in that report, navigate to the exact run tab, and visually confirm image objects are actually visible and legible.
+7. Open the workbook URL in that report, navigate to the exact run's screenshot-gallery tab (the tab whose dataset is `visual-evidence`), and visually confirm image objects are actually visible and legible.
 8. After inspecting that same run, execute `npm run acceptance:e2e -- HDFCBANK --confirm-visible`. This consumes the pending report without republishing. The flag is an operator attestation; the CLI cannot prove the browser UI rendered the image.
 
 An HTTP success without visible image objects is not sufficient acceptance.
