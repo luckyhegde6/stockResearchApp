@@ -9,7 +9,9 @@ const required = [
   "process.env.LLM_BOUNDED_REASONING === '1'",
   "runBoundedReasoning({",
   "if (bounded.status !== 'complete'",
-  "final investment analysis was not invoked"
+  "final investment analysis was not invoked",
+  "reasoningMode: boundedReasoningEnabled",
+  "boundedReasoningOutput: boundedReasoningEnabled"
 ];
 // BSE is excluded from the production model via the source-classifier
 // exclusion list, not by removing a BSE adapter array entry.
