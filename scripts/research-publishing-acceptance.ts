@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import path from 'node:path';
-import { access, readFile, stat } from 'node:fs/promises';
+import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import type { ResearchManifest } from '../src/types/research.js';
 import { buildEvidenceQuality } from '../src/lib/evidence-quality.js';
@@ -41,8 +41,8 @@ function parseArgs(): Options {
   if (options.replaceExisting && !options.acquire && !options.analysis) {
     throw new Error('--replace-existing is only valid with --acquire or --analysis.');
   }
-  if (options.confirmVisible && !options.publish) {
-    throw new Error('--confirm-visible is only valid with --publish, after inspecting the workbook manually.');
+  if (options.confirmVisible && (options.publish || options.acquire || options.analysis || options.replaceExisting)) {
+    throw new Error('--confirm-visible is a separate, no-publish step. Inspect the workbook from the previous --publish run, then run: npm run acceptance:e2e -- SYMBOL --confirm-visible');
   }
   return options;
 }
@@ -114,7 +114,32 @@ async function main() {
   const researchDir = path.join(ROOT, 'research', symbol);
   const manifestPath = path.join(researchDir, 'manifest.json');
   const analysisPath = path.join(ROOT, 'outputs', `${symbol}-analysis.json`);
+  const acceptanceDir = path.join(ROOT, 'outputs', 'acceptance');
+  const pendingVisibilityPath = path.join(acceptanceDir, `${symbol}-pending-visibility.json`);
+  const latestReportPath = path.join(acceptanceDir, `${symbol}-latest.json`);
   const env: NodeJS.ProcessEnv = { ...process.env, GOOGLE_SHEETS_AUTO_EXPORT: 'false' };
+  if (options.confirmVisible) {
+    let pending: any;
+    try { pending = await readJson(pendingVisibilityPath); }
+    catch { throw new Error(`No pending published acceptance run was found at outputs/acceptance/${symbol}-pending-visibility.json. Run --publish first, then inspect that exact workbook run.`); }
+    if (String(pending.symbol || '').toUpperCase() !== symbol || pending.stages?.publish?.status !== 'receiver_confirmed_insertions') {
+      throw new Error('The pending acceptance report does not contain a successful receiver-confirmed publish for this symbol.');
+    }
+    pending.stages.publish.actualWorkbookVisibility = 'operator_confirmed';
+    pending.stages.publish.operatorConfirmedAt = new Date().toISOString();
+    pending.stages.publish.note = 'Operator confirmed that the exported screenshot image objects are visible in the workbook UI.';
+    pending.stages.acceptance.visibilityPass = true;
+    const allPass = Boolean(pending.stages.acceptance.coreChecksPass && pending.stages.acceptance.analysisPass && pending.stages.acceptance.publishPass && pending.stages.acceptance.commandFailures?.length === 0);
+    pending.stages.acceptance.status = allPass ? (pending.stages.readiness?.recomputedReady && pending.stages.analysis?.exists ? 'PASS_DECISION_READY' : 'PASS_RESEARCH_ONLY_NO_CALL') : 'FAIL';
+    pending.completedAt = new Date().toISOString();
+    await mkdir(acceptanceDir, { recursive: true });
+    await writeFile(latestReportPath, JSON.stringify(pending, null, 2), 'utf8');
+    await rm(pendingVisibilityPath, { force: true });
+    console.log(JSON.stringify(pending, null, 2));
+    if (!allPass) process.exitCode = 1;
+    return;
+  }
+
   const report: Record<string, any> = {
     schema_version: '1.0',
     symbol,
@@ -258,7 +283,7 @@ async function main() {
         publishOk = publishOk && analysisExport.code === 0 && analysisExport.payload?.ok === true;
       }
       report.stages.publish.status = publishOk ? 'receiver_confirmed_insertions' : 'failed';
-      report.stages.publish.actualWorkbookVisibility = options.confirmVisible ? 'operator_confirmed' : 'pending_manual_workbook_inspection';
+      report.stages.publish.actualWorkbookVisibility = 'pending_manual_workbook_inspection';
       report.stages.publish.note = 'Receiver-confirmed insertImage calls are not proof that image objects are visually visible. Open the returned workbook URL and inspect the screenshot rows.';
     }
   } else {
@@ -276,7 +301,7 @@ async function main() {
     report.stages.readiness.matchesSavedReady;
   const analysisPass = !options.analysis || (readiness.ready && report.stages.analysis.exists && report.stages.analysis.currentForResearchRun && report.stages.analysis.hasRecommendation);
   const publishPass = !options.publish || report.stages.publish.status === 'receiver_confirmed_insertions';
-  const visibilityPass = !options.publish || options.confirmVisible;
+  const visibilityPass = !options.publish;
   const allPass = coreChecksPass && analysisPass && publishPass && visibilityPass && commandFailures.length === 0;
   report.stages.acceptance = {
     coreChecksPass,
@@ -284,11 +309,14 @@ async function main() {
     publishPass,
     visibilityPass,
     commandFailures,
-    status: allPass ? (readiness.ready && report.stages.analysis.exists ? 'PASS_DECISION_READY' : 'PASS_RESEARCH_ONLY_NO_CALL') : (options.publish && publishPass && !visibilityPass ? 'PENDING_MANUAL_VISIBILITY_CHECK' : 'FAIL'),
+    status: allPass ? (readiness.ready && report.stages.analysis.exists ? 'PASS_DECISION_READY' : 'PASS_RESEARCH_ONLY_NO_CALL') : (options.publish && publishPass ? 'PENDING_MANUAL_VISIBILITY_CHECK' : 'FAIL'),
   };
   report.completedAt = new Date().toISOString();
+  await mkdir(acceptanceDir, { recursive: true });
+  await writeFile(latestReportPath, JSON.stringify(report, null, 2), 'utf8');
+  if (options.publish && publishPass) await writeFile(pendingVisibilityPath, JSON.stringify(report, null, 2), 'utf8');
   console.log(JSON.stringify(report, null, 2));
-  if (!allPass) process.exitCode = options.publish && publishPass && !visibilityPass ? 2 : 1;
+  if (!allPass) process.exitCode = options.publish && publishPass ? 2 : 1;
 }
 
 main().catch(error => {
