@@ -16,6 +16,7 @@ It combines official NSE data, Screener, Tijori, TradingView, optional news/Char
 The repository maintains a Wiki-ready operational and architectural guide for the Google Sheets publishing system:
 
 - [Wiki index](docs/wiki/README.md)
+- [End-to-end acceptance](docs/END_TO_END_ACCEPTANCE.md)
 - [Google Sheets setup](docs/wiki/Google-Sheets-Setup.md)
 - [Architecture & reasoning](docs/wiki/Google-Sheets-Architecture-and-Reasoning.md)
 - [Research & reasoning](docs/wiki/Research-and-Reasoning.md)
