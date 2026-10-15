@@ -2,6 +2,8 @@ import 'dotenv/config';
 import path from 'node:path';
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
+import { Ajv } from 'ajv';
+import { analysisSchema } from '../src/schema.js';
 import type { ResearchManifest } from '../src/types/research.js';
 import { buildEvidenceQuality } from '../src/lib/evidence-quality.js';
 import { buildAnalysisReadiness } from '../src/lib/analysis-readiness.js';
@@ -235,6 +237,8 @@ async function main() {
 
   let analysis: any = null;
   let analysisIsCurrent = false;
+  let analysisSchemaValid = false;
+  let analysisSchemaErrors: unknown[] = [];
   if (await exists(analysisPath)) {
     try {
       const candidate = await readJson(analysisPath);
@@ -243,8 +247,13 @@ async function main() {
       const fileInfo = await stat(analysisPath);
       const freshForThisRun = !options.analysis || fileInfo.mtimeMs >= analysisCommandStartedAt - 1000;
       if (candidate && Number.isFinite(analysisTimestamp) && Number.isFinite(researchTimestamp) && analysisTimestamp >= researchTimestamp && freshForThisRun) {
-        analysis = candidate;
-        analysisIsCurrent = true;
+        const validate = new Ajv({ allErrors: true }).compile(analysisSchema as any);
+        analysisSchemaValid = Boolean(validate(candidate));
+        analysisSchemaErrors = validate.errors ?? [];
+        if (analysisSchemaValid) {
+          analysis = candidate;
+          analysisIsCurrent = true;
+        }
       }
     } catch {}
   }
@@ -253,6 +262,8 @@ async function main() {
     exists: Boolean(analysis),
     currentForResearchRun: analysisIsCurrent,
     schemaVersion: analysis?.schema_version ?? null,
+    schemaValid: analysisSchemaValid,
+    schemaErrors: analysisSchemaErrors,
     hasRecommendation: Boolean(analysis?.recommendation && typeof analysis.recommendation === 'object'),
     label: analysis?.recommendation?.action ?? 'RESEARCH_ONLY / NO CALL',
     status: analysis ? 'present_for_current_research' : (readiness.ready ? 'not_generated_or_stale' : 'blocked_by_readiness'),
@@ -299,7 +310,7 @@ async function main() {
     report.stages.evidencePack.tickerMatches &&
     report.stages.evidenceQuality.matchesSavedStatus &&
     report.stages.readiness.matchesSavedReady;
-  const analysisPass = !options.analysis || (readiness.ready && report.stages.analysis.exists && report.stages.analysis.currentForResearchRun && report.stages.analysis.hasRecommendation);
+  const analysisPass = !options.analysis || (readiness.ready && report.stages.analysis.exists && report.stages.analysis.currentForResearchRun && report.stages.analysis.schemaValid && report.stages.analysis.hasRecommendation);
   const publishPass = !options.publish || report.stages.publish.status === 'receiver_confirmed_insertions';
   const visibilityPass = !options.publish;
   const allPass = coreChecksPass && analysisPass && publishPass && visibilityPass && commandFailures.length === 0;
