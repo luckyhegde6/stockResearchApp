@@ -136,8 +136,10 @@ async function main() {
     throw new Error(`No existing research manifest at research/${symbol}/manifest.json. Use --acquire to create a fresh research run.`);
   }
 
+  let analysisCommandStartedAt = 0;
   if (options.acquire || options.analysis) {
     const command = options.analysis ? 'analyze' : 'research';
+    if (options.analysis) analysisCommandStartedAt = Date.now();
     const result = await runTsx([command, symbol], env);
     report.stages[command] = summarizeCommand(result);
     if (result.code !== 0 && !(await exists(manifestPath))) {
@@ -207,24 +209,37 @@ async function main() {
   };
 
   let analysis: any = null;
+  let analysisIsCurrent = false;
   if (await exists(analysisPath)) {
-    try { analysis = await readJson(analysisPath); } catch {}
+    try {
+      const candidate = await readJson(analysisPath);
+      const analysisTimestamp = Date.parse(String(candidate?.analysis_meta?.analysis_timestamp || ''));
+      const researchTimestamp = Date.parse(String(manifest.generatedAt || ''));
+      const fileInfo = await stat(analysisPath);
+      const freshForThisRun = !options.analysis || fileInfo.mtimeMs >= analysisCommandStartedAt - 1000;
+      if (candidate && Number.isFinite(analysisTimestamp) && Number.isFinite(researchTimestamp) && analysisTimestamp >= researchTimestamp && freshForThisRun) {
+        analysis = candidate;
+        analysisIsCurrent = true;
+      }
+    } catch {}
   }
   report.stages.analysis = {
     requested: options.analysis,
     exists: Boolean(analysis),
+    currentForResearchRun: analysisIsCurrent,
     schemaVersion: analysis?.schema_version ?? null,
     hasRecommendation: Boolean(analysis?.recommendation && typeof analysis.recommendation === 'object'),
     label: analysis?.recommendation?.action ?? 'RESEARCH_ONLY / NO CALL',
-    status: analysis ? 'present' : (readiness.ready ? 'not_generated' : 'blocked_by_readiness'),
-    note: analysis ? 'Analysis artifact exists; validate against the project schema before relying on its contents.' : 'Absence of a validated analysis is not a recommendation.',
+    status: analysis ? 'present_for_current_research' : (readiness.ready ? 'not_generated_or_stale' : 'blocked_by_readiness'),
+    note: analysis ? 'Analysis artifact timestamp follows this research run; schema validation remains authoritative.' : 'Stale analysis artifacts are not treated as current. Absence of a current validated analysis is not a recommendation.',
   };
 
-  const missingScreenshots = ['tradingview-1d.png', 'tradingview-fullchart-5y.png', 'tradingview-fullchart-all.png']
-    .filter(file => !exists(path.join(researchDir, 'screenshots', file)));
+  const expectedChartFiles = ['tradingview-1d.png', 'tradingview-fullchart-5y.png', 'tradingview-fullchart-all.png'];
+  const missingScreenshots = (await Promise.all(expectedChartFiles.map(async file => ({ file, present: await exists(path.join(researchDir, 'screenshots', file)) }))))
+    .filter(item => !item.present).map(item => item.file);
   // The exact required screenshot set is advisory here; exporter outcome is the acceptance gate.
   report.stages.screenshotInputs = {
-    screenshotDirectoryExists: await exists(path.join(researchDir, 'screenshots', 'tradingview-1d.png')),
+    primaryChartScreenshotExists: await exists(path.join(researchDir, 'screenshots', 'tradingview-1d.png')),
     expectedChartFilesMissing: missingScreenshots,
     note: 'Actual embedding is checked by the strict exporter mode; actual UI visibility still requires a human opening the workbook.',
   };
@@ -259,7 +274,7 @@ async function main() {
     report.stages.evidencePack.tickerMatches &&
     report.stages.evidenceQuality.matchesSavedStatus &&
     report.stages.readiness.matchesSavedReady;
-  const analysisPass = !options.analysis || (readiness.ready && report.stages.analysis.exists && report.stages.analysis.hasRecommendation);
+  const analysisPass = !options.analysis || (readiness.ready && report.stages.analysis.exists && report.stages.analysis.currentForResearchRun && report.stages.analysis.hasRecommendation);
   const publishPass = !options.publish || report.stages.publish.status === 'receiver_confirmed_insertions';
   const visibilityPass = !options.publish || options.confirmVisible;
   const allPass = coreChecksPass && analysisPass && publishPass && visibilityPass && commandFailures.length === 0;
@@ -269,7 +284,7 @@ async function main() {
     publishPass,
     visibilityPass,
     commandFailures,
-    status: allPass ? 'PASS' : (options.publish && publishPass && !visibilityPass ? 'PENDING_MANUAL_VISIBILITY_CHECK' : 'FAIL'),
+    status: allPass ? (readiness.ready && report.stages.analysis.exists ? 'PASS_DECISION_READY' : 'PASS_RESEARCH_ONLY_NO_CALL') : (options.publish && publishPass && !visibilityPass ? 'PENDING_MANUAL_VISIBILITY_CHECK' : 'FAIL'),
   };
   report.completedAt = new Date().toISOString();
   console.log(JSON.stringify(report, null, 2));
