@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { readFile, realpath, stat } from 'node:fs/promises';
+import path from 'node:path';
 import type { ModelProvider } from './model-provider.js';
 import { runAgentValidation, type AgentResult, type AgentStatus, type AgentValidationReport } from './agent-harness.js';
 
@@ -19,6 +21,7 @@ export interface BoundedReasoningOptions {
   inputArtifacts?: string[];
   maxSteps?: number;
   maxOutputBytes?: number;
+  maxInputBytes?: number;
   overallTimeoutMs?: number;
   repositoryRoot?: string;
   auditPath?: string;
@@ -46,6 +49,8 @@ export interface BoundedReasoningResult {
 const DEFAULT_MAX_STEPS = 3;
 const HARD_MAX_STEPS = 4;
 const DEFAULT_MAX_OUTPUT_BYTES = 64 * 1024;
+const DEFAULT_MAX_INPUT_BYTES = 256 * 1024;
+const MAX_INPUT_ARTIFACTS = 16;
 const DEFAULT_TIMEOUT_MS = 120_000;
 
 function validatePlan(steps: BoundedReasoningStep[], maxSteps: number): void {
@@ -68,6 +73,50 @@ function stripJsonFence(content: string): string {
   return content.replace(/^\s*```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
 }
 
+interface LoadedInputArtifact {
+  path: string;
+  content: string;
+}
+
+async function loadInputArtifacts(
+  artifactPaths: string[],
+  repositoryRoot: string,
+  maxInputBytes: number,
+): Promise<LoadedInputArtifact[]> {
+  if (artifactPaths.length > MAX_INPUT_ARTIFACTS) {
+    throw new Error(`At most ${MAX_INPUT_ARTIFACTS} input artifacts are allowed`);
+  }
+  const root = await realpath(path.resolve(repositoryRoot));
+  const loaded: LoadedInputArtifact[] = [];
+  let totalBytes = 0;
+  for (const artifactPath of artifactPaths) {
+    if (!artifactPath.trim() || path.isAbsolute(artifactPath)) {
+      throw new Error(`Input artifact path must be a non-empty repository-relative path: ${artifactPath}`);
+    }
+    const candidate = path.resolve(root, artifactPath);
+    if (!candidate.startsWith(root + path.sep)) {
+      throw new Error(`Input artifact path escapes repository root: ${artifactPath}`);
+    }
+    const resolved = await realpath(candidate);
+    if (!resolved.startsWith(root + path.sep)) {
+      throw new Error(`Input artifact resolves outside repository root: ${artifactPath}`);
+    }
+    const info = await stat(resolved);
+    if (!info.isFile()) throw new Error(`Input artifact is not a regular file: ${artifactPath}`);
+    if (info.size > maxInputBytes || totalBytes + info.size > maxInputBytes) {
+      throw new Error(`Input artifacts exceed the ${maxInputBytes}-byte total input budget`);
+    }
+    const content = await readFile(resolved, 'utf8');
+    const bytes = Buffer.byteLength(content, 'utf8');
+    if (bytes > maxInputBytes || totalBytes + bytes > maxInputBytes) {
+      throw new Error(`Input artifacts exceed the ${maxInputBytes}-byte total input budget`);
+    }
+    totalBytes += bytes;
+    loaded.push({ path: path.relative(root, resolved).split(path.sep).join('/'), content });
+  }
+  return loaded;
+}
+
 /**
  * Executes a caller-defined, finite plan. The model cannot add steps, select tools,
  * change permissions, or bypass the per-step result schema/policy validation.
@@ -76,10 +125,13 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
   const maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
   const maxOutputBytes = options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
   const timeoutMs = options.overallTimeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const maxInputBytes = options.maxInputBytes ?? DEFAULT_MAX_INPUT_BYTES;
   validatePlan(options.steps, maxSteps);
   if (!options.model.trim()) throw new Error('Model name must not be empty');
   if (!options.task.trim()) throw new Error('Task must not be empty');
   if (!Number.isInteger(maxOutputBytes) || maxOutputBytes < 1) throw new Error('maxOutputBytes must be a positive integer');
+  if (!Number.isInteger(maxInputBytes) || maxInputBytes < 1) throw new Error('maxInputBytes must be a positive integer');
+  const inputArtifacts = await loadInputArtifacts(options.inputArtifacts ?? [], options.repositoryRoot ?? process.cwd(), maxInputBytes);
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('overallTimeoutMs must be positive and finite');
 
   const runId = randomUUID();
@@ -112,7 +164,7 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
         task: options.task,
         symbol: options.symbol ?? null,
         step: { id: step.id, agent_id: step.agentId, instruction: step.instruction },
-        input_artifacts: options.inputArtifacts ?? [],
+        input_artifacts: inputArtifacts,
         previous_result: previous,
         output_requirements: {
           schema_version: '1.0',
