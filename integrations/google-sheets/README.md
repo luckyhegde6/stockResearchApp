@@ -8,15 +8,15 @@ The ID in the link matches the default `GOOGLE_SHEETS_ID`. Publishing is optiona
 
 | Export | Published tabs | Contents |
 |---|---|---|
-| `research SYMBOL` | **One** run tab: `SYMBOL-YYYY-MM-DD-HHMMSSmmm-research` | Summary/readiness, canonical facts and calculations, source provenance and URLs, all research findings, quality checks, and screenshots embedded into the same tab |
-| `analysis SYMBOL` | **One** run tab: `SYMBOL-YYYY-MM-DD-HHMMSSmmm-analysis` | Investment summary, findings, scores, risks, catalysts, scenarios, source URLs, reconciliation/calculation audit, and screenshots embedded into the same tab |
+| `research SYMBOL` | One consolidated research data tab plus investor-dashboard and screenshot-gallery tabs for the run | Summary/readiness, canonical facts and calculations, source provenance and URLs, research findings, quality checks, and screenshot metadata/images in the gallery tab |
+| `analysis SYMBOL` | One consolidated analysis data tab plus investor-dashboard and screenshot-gallery tabs for the run | Investment summary, findings, scores, risks, catalysts, scenarios, source URLs, reconciliation/calculation audit, and screenshot metadata/images in the gallery tab |
 | scans/news/custom | One requested dataset tab per export | One record per row with local-path fields removed |
 
 Each research or analysis run is consolidated vertically in a common, filterable table with a `section` column. Sections include `SUMMARY`, `EVIDENCE`, `SOURCES`, `FINDINGS`, `QUALITY`, and `SCREENSHOTS` (analysis also includes scores, risks, catalysts, scenarios and audit). Section-header rows are visually distinguished, and the standard header stays frozen. Source URLs are retained; local filesystem paths are never published.
 
 The `StockResearch` tab remains as a clickable index to the **one data tab for each run**. No `_EXPORT_LOG` or `command-runs-YYYY-MM-DD` tabs are created. Command execution records remain local under `outputs/command-runs/` for diagnostics. After the updated Apps Script is redeployed, the next successful export removes legacy managed split tabs, old command-run tabs, and `_EXPORT_LOG` from previous exports.
 
-Chart screenshots are embedded directly as sheet images in the same consolidated run tab, alongside their screenshot metadata rows. Before upload, Playwright Chromium resizes them to at most 900,000 pixels and re-encodes them as JPEG below the configured per-image size limit, satisfying Apps Script's 1-million-pixel and 2 MB insertion limits. Original source files stay local and are not linked or uploaded as filesystem paths. The exporter prioritizes `tradingview-1d.png`, `tradingview-fullchart-5y.png`, and `tradingview-fullchart-all.png`, then other PNG/JPEG/WebP screenshots. Images that cannot be decoded or compressed receive an explicit `resize_failed` status.
+Chart screenshots are embedded as sheet images in the run's screenshot-gallery tab, alongside their screenshot metadata rows. The consolidated research/analysis data tab remains separate from the dashboard and gallery views. Before upload, Playwright Chromium resizes them to at most 900,000 pixels and re-encodes them as JPEG below the configured per-image size limit, satisfying Apps Script's 1-million-pixel and 2 MB insertion limits. Original source files stay local and are not linked or uploaded as filesystem paths. The exporter prioritizes `tradingview-1d.png`, `tradingview-fullchart-5y.png`, and `tradingview-fullchart-all.png`, then other PNG/JPEG/WebP screenshots. Images that cannot be decoded or compressed receive an explicit `resize_failed` status.
 
 ## Repository files
 
@@ -234,7 +234,7 @@ The exporter prints a JSON result containing the workbook URL, run ID, tab names
 - **scenarios** — one row each for bull, base and bear.
 - **sources** — source ID, source type, link, retrieved/published timestamps, reporting period and artifact provenance.
 - **audit** — facts without a primary source, conflicts, and calculation formulas/inputs.
-- **SCREENSHOTS** — screenshot name/period/size/status and images embedded directly in the consolidated run sheet. Local paths are excluded.
+- **SCREENSHOTS** — screenshot name/period/size/status and images embedded directly in the run's screenshot-gallery tab. Local paths are excluded.
 - **StockResearch** — workbook landing page linking one data tab per run.
 - Command audit artifacts remain local; no `_EXPORT_LOG` or `command-runs-*` sheet tabs are created.
 
@@ -299,7 +299,7 @@ The run sheet records both original/compressed byte sizes and resized dimensions
 
 ### Research data exports, but screenshots show `screenshotsFailed`
 
-The tab and row write can succeed even when individual chart images fail. The Apps Script now returns a `screenshotErrors` array containing the filename and the actual Apps Script exception for each failed image, and the `SCREENSHOTS` section's `embedding_status` column records the same exception.
+The tab and row write can succeed even when individual chart images fail. Apps Script service version 3 returns aggregate counts plus `screenshotResults` for each filename, target tab/row, insertion status and explicit failure/skip reason. `screenshotErrors` retains receiver exceptions, and the gallery row's `value`, `status`, `embedding_status` and notes are synchronized when that row is addressable. Use `npm run sheets:doctor` to verify service version 3.
 
 1. Copy the latest `integrations/google-sheets/Code.gs` from this branch into the Apps Script editor.
 2. Save it, then choose **Deploy → Manage deployments → Edit → New version → Deploy**. A code save alone does not update the running deployment.
