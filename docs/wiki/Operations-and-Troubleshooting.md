@@ -11,7 +11,7 @@ Expected:
 ```text
 ok: true
 service: stock-research-sheet-sink
-serviceVersion: 2
+serviceVersion: 3
 spreadsheetIdMatches: true
 ```
 
