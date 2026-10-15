@@ -57,7 +57,7 @@ The runner disables automatic publishing in its pipeline subprocesses. A Sheets 
 - Apps Script independently rejects images above 1,000,000 pixels or 1,800,000 bytes.
 - Strict mode requires at least one eligible screenshot upload, a unique per-image outcome for every uploaded filename, consistent aggregate counts, and `embedded_in_sheet` for every uploaded image.
 - Failed and skipped images must include a reason; when a row can be addressed, its status fields and notes must reflect that outcome rather than remain `pending_embedding`.
-- A receiver-confirmed `insertImage` call is **not** proof of UI visibility. The acceptance report stays `PENDING_MANUAL_VISIBILITY_CHECK` until the operator opens the workbook, inspects the exact exported run tab, and confirms that image objects are visible and legible.
+- A receiver-confirmed `insertImage` call is **not** proof of UI visibility. The acceptance report stays `PENDING_MANUAL_VISIBILITY_CHECK` until the operator opens the workbook, inspects the run's screenshot-gallery tab (dataset `visual-evidence`), and confirms that image objects are visible and legible. The investor dashboard and consolidated research/analysis data tab are supporting views, not the image-visibility target.
 - The separate `--confirm-visible` invocation consumes the pending report without republishing and refuses confirmation if the research manifest changed after the export.
 
 ## Negative cases that must fail acceptance
