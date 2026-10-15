@@ -295,10 +295,17 @@ async function main() {
     } else {
       const researchExport = await runExporter(['research', symbol, '--require-screenshot-embedding'], env);
       report.stages.publish = { research: researchExport.payload ?? summarizeCommand(researchExport), exitCode: researchExport.code };
+      report.stages.publish.workbookUrl = researchExport.payload?.spreadsheetUrl ?? null;
+      report.stages.publish.researchScreenshotGalleryTab = Array.isArray(researchExport.payload?.tabs)
+        ? researchExport.payload.tabs.find((tab: any) => tab.dataset === 'visual-evidence')?.tabName ?? null
+        : null;
       let publishOk = researchExport.code === 0 && researchExport.payload?.ok === true;
       if (analysis) {
         const analysisExport = await runExporter(['analysis', symbol, '--require-screenshot-embedding'], env);
         report.stages.publish.analysis = analysisExport.payload ?? summarizeCommand(analysisExport);
+        report.stages.publish.analysisScreenshotGalleryTab = Array.isArray(analysisExport.payload?.tabs)
+          ? analysisExport.payload.tabs.find((tab: any) => tab.dataset === 'visual-evidence')?.tabName ?? null
+          : null;
         report.stages.publish.analysisExitCode = analysisExport.code;
         publishOk = publishOk && analysisExport.code === 0 && analysisExport.payload?.ok === true;
       }
