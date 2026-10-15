@@ -47,6 +47,7 @@ Source code and contract tests prove the optimizer and receiver guards are imple
 3. Run `npm run sheets:doctor`, expecting `serviceVersion: 2` and the matching workbook ID.
 4. Run a research export with existing chart screenshots.
 5. Confirm exporter embedded/failed counts and each screenshot row's metadata/status agree.
-6. Open the workbook and visually confirm embedded images.
+6. Run the strict acceptance export: `npm run sheets:export -- research HDFCBANK --require-screenshot-embedding`. It requires at least one eligible upload, per-image receiver outcomes, matching aggregate counts, and successful insertion of every uploaded image. It fails on missing, duplicate, failed or skipped outcomes.
+7. Open the returned workbook URL, navigate to the exported run tab, and visually confirm image objects are actually visible and legible. The CLI cannot prove the browser UI rendered the image; after this human check, use the acceptance runner's `--confirm-visible` flag as an operator attestation.
 
 An HTTP success without visible image objects is not sufficient acceptance.
