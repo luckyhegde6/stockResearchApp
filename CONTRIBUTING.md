@@ -14,7 +14,7 @@ npx playwright install chromium
 
 ## Git workflow
 
-Use a short-lived branch from main.
+Use trunk-based development and short-lived branches from `main`. **Before creating a branch or PR, inspect live repository state and reuse the relevant existing open PR/branch. Do not create a second open PR for the same work or start a competing workstream. Open a new PR only when no existing PR is suitable and the user explicitly authorizes it. Re-check the open PR list before finishing. See `AGENTS.md` for the full mandatory checklist.
 
 Preferred commit format:
 
