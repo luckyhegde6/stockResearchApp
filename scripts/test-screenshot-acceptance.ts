@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { assessScreenshotEmbedding } from '../src/lib/screenshot-acceptance.js';
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -48,4 +50,13 @@ assert(!duplicate.ok && duplicate.errors.some(error => error.includes('multiple 
 const legacyReceiver = assessScreenshotEmbedding({ ok: true, screenshotsEmbedded: 1 }, ['chart.png']);
 assert(!legacyReceiver.ok, 'Old receiver responses without per-image outcomes must fail strict acceptance.');
 
-console.log(JSON.stringify({ ok: true, cases: 5 }, null, 2));
+const root = process.cwd();
+const appsScript = await readFile(path.join(root, 'integrations', 'google-sheets', 'Code.gs'), 'utf8');
+const exporter = await readFile(path.join(root, 'scripts', 'export-to-google-sheets.ts'), 'utf8');
+assert(appsScript.includes('screenshotResults: screenshotResult.items'), 'Apps Script response must expose per-image outcomes.');
+assert(appsScript.includes("status: 'embedded_in_sheet'"), 'Apps Script must report successful insertions per image.');
+assert(appsScript.includes("status: 'skipped'") && appsScript.includes('image_payload_missing'), 'Apps Script must report skipped images with explicit reasons.');
+assert(exporter.includes('--require-screenshot-embedding'), 'Exporter must expose a strict screenshot acceptance mode.');
+assert(exporter.includes('assessScreenshotEmbedding(result'), 'Strict exporter mode must validate the receiver response.');
+
+console.log(JSON.stringify({ ok: true, cases: 10, integrationContracts: 5 }, null, 2));
