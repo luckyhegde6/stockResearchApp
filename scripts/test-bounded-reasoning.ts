@@ -110,6 +110,22 @@ try {
   assert.equal(blocked.completedSteps, 1);
   assert.equal(blocked.stopReason, 'step_blocked');
 
+  const partialProvider: ModelProvider = {
+    id: 'partial-fixture',
+    generate: async (request) => ({
+      content: JSON.stringify(makeResult('evidence-auditor', 'partial')),
+      provider: 'partial-fixture', model: request.model,
+    }),
+  };
+  const partial = await runBoundedReasoning({
+    provider: partialProvider, model: 'fixture', task: 'stop when partial',
+    steps: plan, maxSteps: 2, repositoryRoot: tempRoot, auditPath: 'outputs/agent-runs/partial.jsonl',
+  });
+  assert.equal(partial.status, 'partial');
+  assert.equal(partial.completedSteps, 1);
+  assert.equal(partial.steps.length, 1);
+  assert.equal(partial.stopReason, 'step_partial');
+
   const oversized = await runBoundedReasoning({
     provider, model: 'fixture', task: 'enforce output budget',
     steps: [plan[0]], maxSteps: 1, maxOutputBytes: 8, repositoryRoot: tempRoot,
