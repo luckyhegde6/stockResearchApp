@@ -2,12 +2,12 @@
 
 ## Current implementation phase
 
-PR #8 (`feat/model-provider-boundary-v1`) merged into `main` at `def7a72bb92a2a1a1072334341bf27f73392d986`. PR #9 (`feat/bounded-reasoning-v1`) is the active implementation PR and targets `main`; continue work on this PR/branch and do not open a parallel PR while it remains active.
+PR #8 (`feat/model-provider-boundary-v1`) merged into `main` at `def7a72bb92a2a1a1072334341bf27f73392d986`. PR #9 was merged. PR #10 (`fix/bounded-reasoning-guardrails-v1`) and PR #11 (`feat/e2e-research-publishing-acceptance`) are currently both open by mistake. Consolidate PR #11's end-to-end acceptance work into PR #10's existing head branch `fix/bounded-reasoning-guardrails-v1`; preserve both sets of changes, then close duplicate PR #11. Do not create another PR or branch. From now on follow the trunk-based development and one-open-PR discipline in `AGENTS.md` and `CONTRIBUTING.md`.
 
 The bounded runner is now wired into the stock-analysis CLI as an explicit opt-in: set `LLM_BOUNDED_REASONING=1`. The deterministic readiness gate runs before any bounded model calls. The fixed plan is evidence-auditor then decision-reviewer; the final investment-analysis call proceeds only if both steps are complete and pass the existing schema/policy harness. Otherwise the flow fails closed. Default analysis behavior remains unchanged when the flag is absent.
 
 The runner now loads the content of caller-selected repository-relative input artifacts, validates real paths against repository-root containment, caps input at 16 files / 256 KiB by default, and includes those contents in the step prompt. Tests cover artifact handoff, traversal rejection, input/output budgets, blocked stops, and timeout behavior. No live model calls are used in fixture tests.
-Updated: 2026-10-15
+Updated: 2026-10-16
 Default branch: `main`
 Investment-report follow-up branch: `feat/investment-report-sheets`
 Previous implementation PR: [#1 — Initialize stock research pipeline](https://github.com/luckyhegde6/stockResearchApp/pull/1) (merged)
