@@ -72,7 +72,7 @@ Cause: old Apps Script deployment or invalid payload.
 Fix:
 
 1. redeploy current `Code.gs`
-2. confirm service version 2
+2. confirm service version 3
 3. run doctor
 4. rerun export
 
