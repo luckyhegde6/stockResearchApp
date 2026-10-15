@@ -90,6 +90,7 @@ function doPost(e) {
       screenshotsEmbedded: screenshotResult.embedded,
       screenshotsFailed: screenshotResult.failed,
       screenshotsSkipped: screenshotResult.skipped,
+      screenshotResults: screenshotResult.items,
       screenshotErrors: screenshotResult.errors
     });
   } catch (err) {
@@ -437,11 +438,21 @@ function setScreenshotOutcome_(sheet, rowIndex, headers, status, note) {
 }
 
 function embedScreenshots_(ss, screenshots) {
-  const result = { embedded: 0, failed: 0, skipped: 0, errors: [] };
+  const result = { embedded: 0, failed: 0, skipped: 0, errors: [], items: [] };
   screenshots.forEach(function(item) {
-    const sheet = ss.getSheetByName(sanitizeTabName_(item.tabName || 'visual-evidence'));
+    const fileName = String(item.fileName || 'unknown');
+    const tabName = sanitizeTabName_(item.tabName || 'visual-evidence');
+    const sheet = ss.getSheetByName(tabName);
     if (!sheet || !item.base64 || !item.rowIndex) {
+      const reason = !sheet ? 'target_sheet_missing' : (!item.base64 ? 'image_payload_missing' : 'row_index_missing');
       result.skipped += 1;
+      result.items.push({ fileName: fileName, tabName: tabName, rowIndex: Number(item.rowIndex) || null, status: 'skipped', reason: reason });
+      if (sheet && Number(item.rowIndex) >= 2 && Number(item.rowIndex) <= sheet.getLastRow()) {
+        try {
+          const headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(String);
+          setScreenshotOutcome_(sheet, Number(item.rowIndex), headers, 'skipped_' + reason, 'Screenshot skipped: ' + reason + '.');
+        } catch (ignoredSkipStatusUpdate) {}
+      }
       return;
     }
 
@@ -485,6 +496,7 @@ function embedScreenshots_(ss, screenshots) {
       setScreenshotOutcome_(sheet, rowIndex, headers, 'embedded_in_sheet',
         'Image inserted successfully. Original filename and optimization metadata are retained in this row.');
       result.embedded += 1;
+      result.items.push({ fileName: fileName, tabName: tabName, rowIndex: rowIndex, status: 'embedded_in_sheet' });
     } catch (err) {
       if (insertedImage) {
         try { insertedImage.remove(); } catch (ignoredImageRemove) {}
@@ -492,9 +504,10 @@ function embedScreenshots_(ss, screenshots) {
       result.failed += 1;
       const errorMessage = String(err && err.message ? err.message : err).slice(0, 450);
       result.errors.push({
-        fileName: String(item.fileName || 'unknown'),
+        fileName: fileName,
         message: errorMessage
       });
+      result.items.push({ fileName: fileName, tabName: tabName, rowIndex: rowIndex, status: 'failed', reason: errorMessage });
       try {
         const headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(String);
         setScreenshotOutcome_(sheet, rowIndex, headers, 'embed_failed: ' + errorMessage.slice(0, 240),
