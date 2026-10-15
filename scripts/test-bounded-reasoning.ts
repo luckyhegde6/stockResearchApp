@@ -9,6 +9,8 @@ const repoRoot = process.cwd();
 const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'stockresearch-bounded-reasoning-'));
 try {
   await mkdir(path.join(tempRoot, '.agents', 'harness'), { recursive: true });
+  await mkdir(path.join(tempRoot, 'research', 'RELIANCE'), { recursive: true });
+  await writeFile(path.join(tempRoot, 'research', 'RELIANCE', 'fixture.json'), JSON.stringify({ evidence: 'fixture-only evidence marker' }));
   await cp(
     path.join(repoRoot, '.agents', 'harness', 'agent-result.schema.json'),
     path.join(tempRoot, '.agents', 'harness', 'agent-result.schema.json'),
@@ -62,6 +64,7 @@ try {
   const result = await runBoundedReasoning({
     provider, model: 'fixture-model', task: 'Validate the bounded orchestration contract.',
     symbol: 'RELIANCE', steps: plan, maxSteps: 2, repositoryRoot: tempRoot, auditPath,
+    inputArtifacts: ['research/RELIANCE/fixture.json'],
     now: () => new Date('2026-10-15T00:00:00.000Z'),
   });
   assert.equal(result.status, 'complete');
@@ -70,7 +73,21 @@ try {
   assert.equal(result.result?.agent_id, 'decision-reviewer');
   assert.equal(requests.length, 2);
   assert.match(requests[1].messages[1].content, /evidence-auditor/);
+  assert.match(requests[0].messages[1].content, /fixture-only evidence marker/);
+  assert.match(requests[0].messages[1].content, /research\\/RELIANCE\\/fixture.json|research\\/RELIANCE\\/fixture.json/);
   assert.equal((await readFile(path.join(tempRoot, auditPath), 'utf8')).trim().split('\n').length, 2);
+
+  await assert.rejects(() => runBoundedReasoning({
+    provider, model: 'fixture-model', task: 'reject traversal',
+    steps: [plan[0]], maxSteps: 1, repositoryRoot: tempRoot,
+    inputArtifacts: ['../outside.txt'],
+  }), /escapes repository root/);
+
+  await assert.rejects(() => runBoundedReasoning({
+    provider, model: 'fixture-model', task: 'reject oversized input',
+    steps: [plan[0]], maxSteps: 1, repositoryRoot: tempRoot,
+    inputArtifacts: ['research/RELIANCE/fixture.json'], maxInputBytes: 8,
+  }), /input artifacts exceed the 8-byte total input budget/i);
 
   await assert.rejects(() => runBoundedReasoning({
     provider, model: 'fixture-model', task: 'bad plan',
