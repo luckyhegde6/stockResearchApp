@@ -7,7 +7,7 @@ function doGet() {
   return json_({
     ok: true,
     service: 'stock-research-sheet-sink',
-    serviceVersion: '2',
+    serviceVersion: '3',
     workbookUrl: SHEET_ID ? 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit' : ''
   });
 }
