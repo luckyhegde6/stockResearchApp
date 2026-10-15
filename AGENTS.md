@@ -149,3 +149,20 @@ Canonical homes:
 - Releases: CHANGELOG.md
 
 Do not create duplicate agent instructions, one-off version guides, or pasted logs.
+
+## Trunk-based development and pull-request discipline
+
+**Non-negotiable: one active workstream and no duplicate open PRs.**
+
+Before editing, creating a branch, or opening a pull request:
+
+1. Inspect the live repository state: default branch, existing open PRs, their head branches, and CI/review status. Do not rely on an old handoff alone.
+2. If a relevant PR is already open, continue that exact PR and head branch. Push incremental, small commits to it; do not create a sibling branch or another PR for the same work.
+3. If another open PR exists but is unrelated, prefer finishing/merging/closing it through the agreed workflow before starting a new workstream. Do not silently create concurrent open PRs.
+4. Keep changes small and integrate frequently with `main`. Avoid long-lived feature branches, stacked competing PRs, duplicate implementation, or parallel PRs that touch overlapping files.
+5. Open a new PR only when no existing open PR is suitable and the user explicitly authorizes a new workstream. Creating a branch is not permission to create a PR.
+6. Before finishing, re-check the live open PR list and confirm there is no duplicate or unintended open PR.
+
+If work was accidentally split across PRs, stop adding commits, report the duplication, and consolidate the intended changes into the existing agreed PR. Close the duplicate only after its changes are preserved in the chosen PR and the target branch is verified. Never force-push/reset a shared branch without explicit authorization.
+
+When in doubt, ask one short question before creating another branch/PR; continue the existing branch by default.
