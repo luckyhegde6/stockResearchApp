@@ -52,6 +52,7 @@ const DEFAULT_MAX_OUTPUT_BYTES = 64 * 1024;
 const DEFAULT_MAX_INPUT_BYTES = 256 * 1024;
 const MAX_INPUT_ARTIFACTS = 16;
 const DEFAULT_TIMEOUT_MS = 120_000;
+const ALLOWED_AGENT_IDS = new Set(['evidence-auditor', 'decision-reviewer']);
 
 function validatePlan(steps: BoundedReasoningStep[], maxSteps: number): void {
   if (!Number.isInteger(maxSteps) || maxSteps < 1 || maxSteps > HARD_MAX_STEPS) {
@@ -63,6 +64,7 @@ function validatePlan(steps: BoundedReasoningStep[], maxSteps: number): void {
   for (const step of steps) {
     if (!/^[a-z0-9][a-z0-9._-]{0,63}$/i.test(step.id)) throw new Error(`Invalid step id: ${step.id}`);
     if (!/^[a-z0-9][a-z0-9._-]{0,63}$/i.test(step.agentId)) throw new Error(`Invalid agent id for step ${step.id}`);
+    if (!ALLOWED_AGENT_IDS.has(step.agentId)) throw new Error(`Agent ${step.agentId} is not in the bounded reasoning agent allowlist`);
     if (!step.instruction.trim()) throw new Error(`Step ${step.id} must have an instruction`);
     if (ids.has(step.id)) throw new Error(`Duplicate step id: ${step.id}`);
     ids.add(step.id);
@@ -281,6 +283,34 @@ export async function runBoundedReasoning(options: BoundedReasoningOptions): Pro
           }], result: previous, stopReason: 'budget_exhausted',
         };
       }
+      if (!validated.auditPath) {
+        const validation: AgentValidationReport = {
+          ...validated.validation,
+          valid: false,
+          issues: [...validated.validation.issues, {
+            keyword: 'audit_persistence',
+            instancePath: '',
+            message: 'Audit record could not be persisted; bounded reasoning fails closed',
+          }],
+        };
+        completed.push({
+          stepId: step.id,
+          agentId: step.agentId,
+          status: 'failed',
+          result: null,
+          validation,
+          failureClass: 'audit_failure',
+        });
+        return {
+          runId,
+          status: 'failed',
+          completedSteps: completed.filter((x) => x.result !== null).length,
+          steps: completed,
+          result: previous,
+          stopReason: 'step_failed',
+        };
+      }
+
       const result = validated.result;
       const failureClass = validated.validation.valid ? null
         : validated.validation.issues.length > 0 ? 'schema_or_parse_error' : 'policy_violation';
