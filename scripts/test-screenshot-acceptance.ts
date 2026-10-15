@@ -53,10 +53,14 @@ assert(!legacyReceiver.ok, 'Old receiver responses without per-image outcomes mu
 const root = process.cwd();
 const appsScript = await readFile(path.join(root, 'integrations', 'google-sheets', 'Code.gs'), 'utf8');
 const exporter = await readFile(path.join(root, 'scripts', 'export-to-google-sheets.ts'), 'utf8');
+const publishLifecycle = await readFile(path.join(root, 'src', 'lib', 'google-sheets-publish.ts'), 'utf8');
 assert(appsScript.includes('screenshotResults: screenshotResult.items'), 'Apps Script response must expose per-image outcomes.');
 assert(appsScript.includes("status: 'embedded_in_sheet'"), 'Apps Script must report successful insertions per image.');
 assert(appsScript.includes("status: 'skipped'") && appsScript.includes('image_payload_missing'), 'Apps Script must report skipped images with explicit reasons.');
 assert(exporter.includes('--require-screenshot-embedding'), 'Exporter must expose a strict screenshot acceptance mode.');
 assert(exporter.includes('assessScreenshotEmbedding(result'), 'Strict exporter mode must validate the receiver response.');
+assert(exporter.includes('screenshotsSkippedBeforeUpload'), 'Exporter must count screenshots skipped before upload.');
+assert(publishLifecycle.includes('screenshotStatus'), 'Dashboard publish lifecycle must expose screenshot completeness separately from row-publish success.');
+assert(publishLifecycle.includes('Published ') && publishLifecycle.includes('screenshot embedding is incomplete'), 'Partial screenshot publishing must be surfaced in the run message.');
 
-console.log(JSON.stringify({ ok: true, cases: 10, integrationContracts: 5 }, null, 2));
+console.log(JSON.stringify({ ok: true, cases: 10, integrationContracts: 8 }, null, 2));
