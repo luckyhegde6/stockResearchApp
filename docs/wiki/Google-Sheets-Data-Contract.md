@@ -88,7 +88,7 @@ Quality should show readiness, missing required artifacts, stale data, source he
 
 ## 9. SCREENSHOTS
 
-Each image row includes original filename/size/dimensions, optimized size/dimensions, optimization flag, JPEG quality, final status, embedding status and notes. The image should be attached in the preview column in the same run tab, preserving aspect ratio.
+Each image row includes original filename/size/dimensions, optimized size/dimensions, optimization flag, JPEG quality, final status, embedding status and notes. The image should be attached in the preview column of the run's screenshot-gallery tab, preserving aspect ratio. The investor dashboard and consolidated research/analysis data tab are separate views linked from the `StockResearch` index.
 
 Current implementation limits:
 - client re-encodes as JPEG through Playwright Chromium
@@ -97,7 +97,7 @@ Current implementation limits:
 - total screenshot payload default 5 MB and screenshot count default 8
 - Apps Script independently validates <=1.8 MB and <=1,000,000 pixels
 
-Only `embedded_in_sheet` after receiver insertion indicates success. Verify actual visibility in the workbook; successful upload alone is not acceptance.
+Only `embedded_in_sheet` after receiver insertion indicates receiver-reported success. Service version 3 returns a per-image `screenshotResults` array and aggregate embedded/failed/skipped counts; strict acceptance compares filenames and counts and rejects missing/duplicate outcomes. Verify actual visibility in the workbook screenshot-gallery tab; a successful upload or `insertImage` call alone is not acceptance.
 
 ## 10. Index and operational separation
 
