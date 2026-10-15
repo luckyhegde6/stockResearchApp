@@ -103,7 +103,7 @@ A healthy current deployment should report:
 }
 ```
 
-If the service version is not `2`, redeploy the current Apps Script.
+If the service version is not `3`, redeploy the current Apps Script.
 
 ## 7. Publish a research run
 
