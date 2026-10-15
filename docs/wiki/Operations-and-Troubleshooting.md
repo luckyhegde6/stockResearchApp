@@ -11,7 +11,7 @@ Expected:
 ```text
 ok: true
 service: stock-research-sheet-sink
-serviceVersion: 2
+serviceVersion: 3
 spreadsheetIdMatches: true
 ```
 
@@ -20,6 +20,40 @@ spreadsheetIdMatches: true
 ```bash
 npm run sheets:export -- research HDFCBANK
 ```
+
+## End-to-end acceptance
+
+Inspect an existing local research run without acquiring new data or publishing:
+
+```bash
+npm run acceptance:e2e -- RELIANCE
+```
+
+Run a fresh acquisition (this replaces `research/SYMBOL`; the runner requires explicit acknowledgement when that directory already exists):
+
+```bash
+npm run acceptance:e2e -- RELIANCE --acquire
+```
+
+Run acquisition plus model analysis only when explicitly requested; analysis includes a fresh acquisition and requires a configured model provider:
+
+```bash
+npm run acceptance:e2e -- RELIANCE --analysis
+```
+
+Publish research and any current analysis artifact to the configured workbook, requiring per-image receiver-confirmed insertion:
+
+```bash
+npm run acceptance:e2e -- RELIANCE --publish
+```
+
+After the command returns the workbook URL, open it and visually inspect the screenshot-gallery tab (dataset `visual-evidence`) for the exact exported run. Only after confirming images are visible should you mark the operator check:
+
+```bash
+npm run acceptance:e2e -- RELIANCE --confirm-visible
+```
+
+`--confirm-visible` is a separate invocation that consumes the pending report created by the previous `--publish` run; it does not republish. Do not run another acquisition/export between visual inspection and confirmation. The flag is an operator attestation, not an automated browser check. The acceptance runner disables automatic publishing for its pipeline subprocesses and performs explicit publishing only with `--publish`. It never places trades.
 
 ## Test suite
 
@@ -38,7 +72,7 @@ Cause: old Apps Script deployment or invalid payload.
 Fix:
 
 1. redeploy current `Code.gs`
-2. confirm service version 2
+2. confirm service version 3
 3. run doctor
 4. rerun export
 

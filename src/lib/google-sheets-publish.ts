@@ -36,9 +36,13 @@ export interface GoogleSheetsRun {
   spreadsheetUrl: string;
   tabs?: Array<{ tabName: string; dataset: string; rows: number }>;
   rowCount?: number;
+  screenshotsDiscovered?: number;
+  screenshotsSkippedBeforeUpload?: number;
   screenshotsSent?: number;
   screenshotsEmbedded?: number;
   screenshotsFailed?: number;
+  screenshotsSkipped?: number;
+  screenshotStatus?: 'not_applicable' | 'complete' | 'partial' | 'failed';
   error?: string;
 }
 
@@ -261,9 +265,20 @@ async function executeExport(
       run.message = [`Published ${kind}${symbol ? ` for ${safeId(symbol)}` : ''} to Google Sheets.`, options.contextMessage].filter(Boolean).join(' ');
       run.tabs = Array.isArray(output.tabs) ? output.tabs : [];
       run.rowCount = Number(output.rowCount ?? run.tabs.reduce((sum: number, tab: any) => sum + Number(tab.rows || 0), 0));
+      run.screenshotsDiscovered = Number(output.screenshotsDiscovered ?? output.screenshotsSent ?? 0);
+      run.screenshotsSkippedBeforeUpload = Number(output.screenshotsSkippedBeforeUpload || 0);
       run.screenshotsSent = Number(output.screenshotsSent || 0);
       run.screenshotsEmbedded = Number(output.screenshotsEmbedded || 0);
       run.screenshotsFailed = Number(output.screenshotsFailed || 0);
+      run.screenshotsSkipped = Number(output.screenshotsSkipped || 0);
+      const discovered = run.screenshotsDiscovered || 0;
+      const embedded = run.screenshotsEmbedded || 0;
+      const incomplete = (run.screenshotsSkippedBeforeUpload || 0) > 0 || (run.screenshotsFailed || 0) > 0 ||
+        (run.screenshotsSkipped || 0) > 0 || embedded < discovered;
+      run.screenshotStatus = discovered === 0 ? 'not_applicable' : (!incomplete && embedded === discovered ? 'complete' : (embedded > 0 ? 'partial' : 'failed'));
+      if (incomplete) {
+        run.message = `Published ${kind}${symbol ? ` for ${safeId(symbol)}` : ''}, but screenshot embedding is incomplete (${embedded}/${discovered} embedded, ${run.screenshotsFailed} failed, ${run.screenshotsSkipped} receiver-skipped, ${run.screenshotsSkippedBeforeUpload} skipped before upload).`;
+      }
     } catch (error) {
       run.status = 'failed';
       run.message = 'Exporter completed but its result could not be verified.';

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import path from 'node:path';
 import { chromium, type Browser, type Page } from 'playwright';
 import { readFile, readdir, stat } from 'node:fs/promises';
+import { assessScreenshotEmbedding } from '../src/lib/screenshot-acceptance.js';
 import {
   transformAnalysisToSheets,
   transformResearchToSheets,
@@ -26,11 +27,12 @@ interface ParsedArgs {
   file?: string;
   tab?: string;
   append: boolean;
+  requireScreenshotEmbedding: boolean;
 }
 
 function usage(): never {
   throw new Error(
-    'Usage: npm run sheets:export -- <kind> [SYMBOL] [--file path] [--tab name] [--append]\n' +
+    'Usage: npm run sheets:export -- <kind> [SYMBOL] [--file path] [--tab name] [--append] [--require-screenshot-embedding]\n' +
     'Kinds: research, analysis, fullscan, chartinkScan, nse52w, screenerScan, tijoriScan, news, laya, custom'
   );
 }
@@ -41,11 +43,14 @@ function parseArgs(): ParsedArgs {
   let file: string | undefined;
   let tab: string | undefined;
   let append = false;
+  let requireScreenshotEmbedding = false;
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--append') {
       append = true;
+    } else if (arg === '--require-screenshot-embedding') {
+      requireScreenshotEmbedding = true;
     } else if (arg === '--file') {
       file = argv[++i];
       if (!file) throw new Error('--file requires a path');
@@ -62,7 +67,7 @@ function parseArgs(): ParsedArgs {
   const kind = positional[0] as Kind | undefined;
   const allowed: Kind[] = ['research', 'analysis', 'fullscan', 'chartinkScan', 'nse52w', 'screenerScan', 'tijoriScan', 'news', 'laya', 'custom'];
   if (!kind || !allowed.includes(kind)) usage();
-  return { kind, symbol: positional[1]?.toUpperCase(), file, tab, append };
+  return { kind, symbol: positional[1]?.toUpperCase(), file, tab, append, requireScreenshotEmbedding };
 }
 
 function isoDate() {
@@ -458,6 +463,9 @@ async function main() {
   const parsed = parseArgs();
   const baseTab = parsed.tab || defaultTab(parsed.kind, parsed.symbol);
   const { tabs, screenshots } = await buildExport(parsed, baseTab);
+  if (parsed.requireScreenshotEmbedding && screenshots.length === 0) {
+    throw new Error('Screenshot acceptance requires at least one eligible screenshot upload; export was not sent.');
+  }
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const dataset = parsed.kind;
   const response = await fetch(SHEET_URL, {
@@ -510,19 +518,38 @@ async function main() {
     throw new Error('Google Sheets webhook response did not contain ok: true; verify the deployed Apps Script version.');
   }
 
-  console.log(JSON.stringify({
-    ok: true,
+  const screenshotAcceptance = parsed.requireScreenshotEmbedding
+    ? assessScreenshotEmbedding(result, screenshots.map(item => item.fileName))
+    : null;
+  const screenshotRows = tabs.flatMap(item => item.rows)
+    .filter(row => row.record_type === 'visual_evidence' && String(row.file_name || '').trim());
+  const localSkipped = screenshotRows
+    .filter(row => String(row.status || '').startsWith('skipped_'))
+    .map(row => ({ fileName: String(row.file_name || 'unknown'), status: String(row.status), notes: String(row.notes || '') }));
+  if (parsed.requireScreenshotEmbedding && localSkipped.length) {
+    screenshotAcceptance?.errors.push(...localSkipped.map(item => `Screenshot ${item.fileName} was skipped before upload: ${item.status}${item.notes ? ` (${item.notes})` : ''}.`));
+    if (screenshotAcceptance) screenshotAcceptance.ok = false;
+  }
+  const acceptanceOk = !parsed.requireScreenshotEmbedding || Boolean(screenshotAcceptance?.ok);
+  const output = {
+    ok: acceptanceOk,
     runId,
     kind: dataset,
     symbol: parsed.symbol || '',
     spreadsheetUrl: result.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`,
     tabs: tabs.map(item => ({ tabName: item.tabName, dataset: item.dataset, rows: item.rows.length })),
     rowCount: tabs.reduce((sum, item) => sum + item.rows.length, 0),
+    screenshotsDiscovered: screenshotRows.length,
+    screenshotsSkippedBeforeUpload: localSkipped.length,
     screenshotsSent: screenshots.length,
     screenshotsEmbedded: result.screenshotsEmbedded ?? 0,
     screenshotsFailed: result.screenshotsFailed ?? 0,
+    screenshotsSkipped: result.screenshotsSkipped ?? 0,
+    screenshotAcceptance,
     response: result,
-  }, null, 2));
+  };
+  console.log(JSON.stringify(output, null, 2));
+  if (!acceptanceOk) throw new Error(`Screenshot acceptance failed: ${(screenshotAcceptance?.errors || []).join('; ') || 'receiver did not confirm every screenshot insertion'}`);
 }
 
 main().catch(error => {

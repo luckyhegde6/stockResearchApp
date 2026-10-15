@@ -98,12 +98,12 @@ A healthy current deployment should report:
 {
   "ok": true,
   "service": "stock-research-sheet-sink",
-  "serviceVersion": "2",
+  "serviceVersion": "3",
   "spreadsheetIdMatches": true
 }
 ```
 
-If the service version is not `2`, redeploy the current Apps Script.
+If the service version is not `3`, redeploy the current Apps Script.
 
 ## 7. Publish a research run
 

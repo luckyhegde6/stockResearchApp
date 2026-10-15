@@ -68,7 +68,7 @@ assert(exporter.includes('GOOGLE_SHEETS_MAX_SCREENSHOT_SOURCE_BYTES'), 'Screensh
 assert(exporter.includes("mimeType: 'image/jpeg'"), 'Compressed screenshot attachments must declare JPEG MIME type');
 
 assert(appsScript.includes('screenshotErrors: screenshotResult.errors'), 'Apps Script must return per-image embed errors for screenshot troubleshooting');
-assert(appsScript.includes("result.errors.push({") && appsScript.includes("fileName: String(item.fileName || 'unknown')"), 'Apps Script must identify each screenshot that failed to embed');
+assert(appsScript.includes("result.errors.push({") && appsScript.includes('fileName: fileName'), 'Apps Script must identify each screenshot that failed to embed');
 
 assert(doctor.includes("method: 'GET'") && doctor.includes('stock-research-sheet-sink'), 'Sheets doctor must verify the Apps Script GET health response');
 assert(doctor.includes("parsedUrl.pathname") && doctor.includes("DEPLOYMENT_ID/exec"), 'Sheets doctor must validate the deployed /exec endpoint');
