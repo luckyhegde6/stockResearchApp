@@ -26,6 +26,7 @@ const TEST_SUITES = [
   'scripts/test-analysis-orchestration.ts',
   'scripts/test-investment-reasoning-contract.ts',
   'scripts/test-google-sheets-transformers.ts',
+  'scripts/test-screenshot-acceptance.ts',
   'scripts/test-google-sheets-dashboard.ts',
   'scripts/test-reasoning-readiness-rules.ts',
   'scripts/test-chartink-feature-flag.ts',
