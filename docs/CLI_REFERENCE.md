@@ -65,6 +65,7 @@ The primary CLI entrypoint is `src/index.ts`, invoked via `npm run <command> -- 
 | `LLM_API_KEY` | *None* | `analyze` | API Key for LLM provider. |
 | `LLM_MODEL` | `gpt-4o` | `analyze` | Model string passed to chat completions request. |
 | `LLM_TIMEOUT_MS` | `120000` | `analyze` | Timeout in milliseconds for LLM HTTP call. |
+| `LLM_BOUNDED_REASONING` | `0` | `analyze` | Set to `1` to run the fixed evidence-auditor and decision-reviewer passes after readiness succeeds; any incomplete/invalid step blocks final analysis. |
 | `OPENROUTER_API_KEY` | *None* | OpenRouter | Key for OpenRouter Agent SDK model calls. |
 | `RESEARCH_INCLUDE_CHARTINK`| `false` | `research` | Toggle opt-in Chartink adapter for stock research. |
 | `NSE_TIMEOUT_MS` | `30000` | All | Network timeout for NSE NextAPI requests. |
@@ -75,6 +76,11 @@ The primary CLI entrypoint is `src/index.ts`, invoked via `npm run <command> -- 
 | `ANNUAL_REPORT_LIMIT` | `3` | `research` | Maximum annual report PDFs to download. |
 | `BSE_SCRIPTS_JSON` | `./config/bse-scripts.json` | BSE | JSON mapping file for BSE scrip codes. |
 
+
+
+### Optional bounded reasoning mode
+
+Set `LLM_BOUNDED_REASONING=1` in `.env` before running `npm run analyze -- SYMBOL` to enable a fixed two-step review. The deterministic readiness gate must pass first. The runner supplies the contents of `analysis-prompt.txt` to both roles under a repository-contained path and input budget; the final analysis runs only if both structured results pass the existing harness. With the variable unset or `0`, the existing single-call analysis path is unchanged.
 
 ## TradingView public UI surfaces
 

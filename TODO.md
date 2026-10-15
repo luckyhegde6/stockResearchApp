@@ -39,7 +39,7 @@ Target workbook: [StockResearch](https://docs.google.com/spreadsheets/d/1YMKesB9
 - [x] Add a deterministic evidence auditor for manifest/pack provenance and readiness parity.
 - [x] Add a machine-readable readiness/source-health summary for agents.
 - [x] Add an explicit model-provider boundary (typed interface, OpenAI-compatible adapter, injectable transport, fixture tests).
-- [ ] Add bounded multi-step reasoning only after the deterministic handoff contract is stable.
+- [x] Add an opt-in bounded reasoning runner with a fixed plan, safe repository-relative evidence loading/input budget, hard step cap, timeout/output budgets, per-step validation/audit, and fail-closed stop conditions. The CLI flag is `LLM_BOUNDED_REASONING=1`; deterministic readiness is checked first and final analysis is skipped unless both bounded steps validate (ADR-009).
 
 ## P2 — research depth
 

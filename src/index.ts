@@ -14,6 +14,8 @@ import { ingestResearch } from './lib/ingest.js';
 import { writeManifest } from './lib/manifest.js';
 import { buildAnalysisPrompt } from './lib/prompt.js';
 import { runLlmAnalysis } from './lib/llm.js';
+import { createModelProviderFromEnv } from './lib/model-provider.js';
+import { runBoundedReasoning } from './lib/bounded-reasoning.js';
 import { analysisSchema } from './schema.js';
 import type { ResearchManifest, SourceArtifact } from './types/research.js';
 import { DebugLogger } from './lib/debug.js';
@@ -474,8 +476,59 @@ async function analyze(ticker: string) {
   const prompt = await readText(promptPath);
   const skill = await readText(SKILL);
 
+  const boundedReasoningEnabled = process.env.LLM_BOUNDED_REASONING === '1';
   console.log(`→ ANALYZE/LLM: Deterministic gate passed; invoking final reasoning model`);
-  const result = await runLlmAnalysis(skill, prompt, outputPath);
+  let result: string;
+  if (boundedReasoningEnabled) {
+    const configured = createModelProviderFromEnv();
+    console.log(`→ ANALYZE/REASONING: Opt-in bounded reasoning enabled; validating evidence before final synthesis`);
+    const bounded = await runBoundedReasoning({
+      provider: configured.provider,
+      model: configured.model,
+      task: `Review the supplied evidence and analysis prompt for ${ticker}. First audit provenance, gaps, and conflicts; then review the evidence-auditor result and produce a decision-reviewer synthesis. Do not invent facts or treat intermediate model claims as primary evidence.`,
+      symbol: ticker,
+      steps: [
+        {
+          id: 'evidence-audit',
+          agentId: 'evidence-auditor',
+          instruction: 'Audit the supplied analysis prompt for evidence provenance, unsupported claims, stale or conflicting values, missing data, and readiness risks. Return a structured agent result. Do not make an investment recommendation.',
+        },
+        {
+          id: 'decision-review',
+          agentId: 'decision-reviewer',
+          instruction: 'Review the previous validated evidence-auditor result against the same supplied evidence. Separate sourced facts, calculations, interpretations, assumptions, risks, counter-thesis, and missing inputs. Do not invent data or claim that intermediate outputs override source evidence.',
+        },
+      ],
+      inputArtifacts: [path.relative(ROOT, promptPath)],
+      maxSteps: 2,
+      overallTimeoutMs: configured.timeoutMs,
+      repositoryRoot: ROOT,
+      auditPath: path.join('outputs', 'agent-runs', `${ticker}-bounded-reasoning.jsonl`),
+    });
+    await writeFile(
+      path.join(researchDir, 'normalized', 'bounded-reasoning.json'),
+      JSON.stringify(bounded, null, 2),
+      'utf8',
+    );
+    if (bounded.status !== 'complete' || bounded.steps.length !== 2 || bounded.steps.some(step => !step.validation.valid || step.status !== 'complete')) {
+      throw new Error(`Bounded reasoning failed closed; final investment analysis was not invoked: ${JSON.stringify({ status: bounded.status, stopReason: bounded.stopReason, completedSteps: bounded.completedSteps })}`);
+    }
+    const intermediateResults = bounded.steps.map(step => step.result);
+    const enrichedPrompt = [
+      prompt,
+      '',
+      '## Validated bounded-reasoning review (secondary model output, not primary evidence)',
+      'Use this only as a review aid. Re-check every factual claim against the evidence above; preserve missing data, conflicts, and uncertainty. Do not treat intermediate model output as a source.',
+      JSON.stringify(intermediateResults, null, 2),
+    ].join('\n');
+    result = await runLlmAnalysis(skill, enrichedPrompt, outputPath, {
+      provider: configured.provider,
+      model: configured.model,
+      timeoutMs: configured.timeoutMs,
+    });
+  } else {
+    result = await runLlmAnalysis(skill, prompt, outputPath);
+  }
   const parsed = JSON.parse(result);
   const ajv = new Ajv({ allErrors: true });
   const valid = ajv.compile(analysisSchema as any)(parsed);
@@ -487,7 +540,9 @@ async function analyze(ticker: string) {
     analyzedAt: new Date().toISOString(),
     ticker: manifest.ticker,
     output: path.relative(ROOT, outputPath),
-    pipeline: ['research','prepare-analysis','llm-analysis'],
+    reasoningMode: boundedReasoningEnabled ? 'bounded-two-step' : 'single-call',
+    boundedReasoningOutput: boundedReasoningEnabled ? path.relative(ROOT, path.join(researchDir, 'normalized', 'bounded-reasoning.json')) : null,
+    pipeline: ['research','prepare-analysis', ...(boundedReasoningEnabled ? ['bounded-reasoning'] : []), 'llm-analysis'],
   }, null, 2));
   console.log(JSON.stringify({ status: 'analyzed', ticker, output: outputPath }, null, 2));
   await publishAfterPipelineRun('analysis', ticker, ROOT);

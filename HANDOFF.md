@@ -2,8 +2,11 @@
 
 ## Current implementation phase
 
-PR #7 was merged to `main` on 2026-10-14 (merge commit `7def14e6ef80e4c80e2a2f50852eca3f85a98e15`). Follow-up work is on `feat/model-provider-boundary-v1`, cut from that merge. This branch begins the explicit vendor-neutral model-provider boundary: typed `ModelProvider` contract, OpenAI-compatible adapter, injectable transport, and fixture tests. The existing `LLM_*` configuration and readiness-first orchestration are preserved. No live model request was made as part of implementation.
+PR #8 (`feat/model-provider-boundary-v1`) merged into `main` at `def7a72bb92a2a1a1072334341bf27f73392d986`. PR #9 (`feat/bounded-reasoning-v1`) is the active implementation PR and targets `main`; continue work on this PR/branch and do not open a parallel PR while it remains active.
 
+The bounded runner is now wired into the stock-analysis CLI as an explicit opt-in: set `LLM_BOUNDED_REASONING=1`. The deterministic readiness gate runs before any bounded model calls. The fixed plan is evidence-auditor then decision-reviewer; the final investment-analysis call proceeds only if both steps are complete and pass the existing schema/policy harness. Otherwise the flow fails closed. Default analysis behavior remains unchanged when the flag is absent.
+
+The runner now loads the content of caller-selected repository-relative input artifacts, validates real paths against repository-root containment, caps input at 16 files / 256 KiB by default, and includes those contents in the step prompt. Tests cover artifact handoff, traversal rejection, input/output budgets, blocked stops, and timeout behavior. No live model calls are used in fixture tests.
 Updated: 2026-10-15
 Default branch: `main`
 Investment-report follow-up branch: `feat/investment-report-sheets`
