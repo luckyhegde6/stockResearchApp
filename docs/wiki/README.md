@@ -25,6 +25,7 @@ The source-controlled documentation is authoritative. The GitHub Wiki is a separ
 - [Research and reasoning model](Research-and-Reasoning.md)
 - [Screenshot evidence pipeline](Screenshot-Evidence-Pipeline.md)
 - [Operations and troubleshooting](Operations-and-Troubleshooting.md)
+- [End-to-end research and publishing acceptance](../END_TO_END_ACCEPTANCE.md)
 - [Google Sheets data contract](Google-Sheets-Data-Contract.md)
 
 ## System boundary
@@ -33,13 +34,13 @@ The source-controlled documentation is authoritative. The GitHub Wiki is a separ
 
 Raw evidence and deterministic artifacts remain canonical. The dashboard, GitHub Pages, Google Sheets, and future PDF/API are views and distribution layers.
 
-## Delivery status (2026-10-15)
+## Delivery status (2026-10-16)
 
 - **Implemented baseline:** deterministic source collection/preparation, readiness/evidence artifacts, optional schema-validated analysis, local dashboard, market scans and Google Sheets exporter.
-- **Implemented and merged:** read-only result validation, evidence inspection/auditing from PR #7.
-- **In progress:** vendor-neutral model provider adapter and fixture tests in [PR #8](https://github.com/luckyhegde6/stockResearchApp/pull/8).
-- **Operationally unverified:** live Apps Script deployment and real workbook screenshot embedding.
-- **Planned:** bounded multi-step reasoning, Evidence Trust Center, What Changed, source-linked event timeline, monitoring, peer scorecard, robust backtesting and read-only API.
+- **Merged:** read-only result validation/evidence auditing and bounded multi-step reasoning in PRs #7–#9.
+- **Open implementation work:** [PR #10 — bounded reasoning guardrails](https://github.com/luckyhegde6/stockResearchApp/pull/10) and [PR #11 — end-to-end research publishing acceptance](https://github.com/luckyhegde6/stockResearchApp/pull/11).
+- **Operationally unverified:** current Apps Script deployment, live Google Sheets publishing, and actual workbook screenshot visibility. Automated CI does not replace these checks.
+- **Next evidence-trust priorities:** source freshness thresholds, conflict provenance, longitudinal `What Changed`, event monitoring, peer scorecard, robust backtesting and read-only API.
 
 ## GitHub Wiki availability
 
