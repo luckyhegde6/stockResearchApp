@@ -21,6 +21,40 @@ spreadsheetIdMatches: true
 npm run sheets:export -- research HDFCBANK
 ```
 
+## End-to-end acceptance
+
+Inspect an existing local research run without acquiring new data or publishing:
+
+```bash
+npm run acceptance:e2e -- RELIANCE
+```
+
+Run a fresh acquisition (this replaces `research/SYMBOL`; the runner requires explicit acknowledgement when that directory already exists):
+
+```bash
+npm run acceptance:e2e -- RELIANCE --acquire
+```
+
+Run acquisition plus model analysis only when explicitly requested; analysis includes a fresh acquisition and requires a configured model provider:
+
+```bash
+npm run acceptance:e2e -- RELIANCE --analysis
+```
+
+Publish research and any current analysis artifact to the configured workbook, requiring per-image receiver-confirmed insertion:
+
+```bash
+npm run acceptance:e2e -- RELIANCE --publish
+```
+
+After the command returns the workbook URL, open it and visually inspect the screenshot rows. Only after confirming images are visible should you mark the operator check:
+
+```bash
+npm run acceptance:e2e -- RELIANCE --publish --confirm-visible
+```
+
+`--confirm-visible` is an operator attestation, not an automated browser check. The acceptance runner disables automatic publishing for its pipeline subprocesses and performs explicit publishing only with `--publish`. It never places trades.
+
 ## Test suite
 
 ```bash
