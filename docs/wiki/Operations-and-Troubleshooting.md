@@ -50,10 +50,10 @@ npm run acceptance:e2e -- RELIANCE --publish
 After the command returns the workbook URL, open it and visually inspect the screenshot rows. Only after confirming images are visible should you mark the operator check:
 
 ```bash
-npm run acceptance:e2e -- RELIANCE --publish --confirm-visible
+npm run acceptance:e2e -- RELIANCE --confirm-visible
 ```
 
-`--confirm-visible` is an operator attestation, not an automated browser check. The acceptance runner disables automatic publishing for its pipeline subprocesses and performs explicit publishing only with `--publish`. It never places trades.
+`--confirm-visible` is a separate invocation that consumes the pending report created by the previous `--publish` run; it does not republish. Do not run another acquisition/export between visual inspection and confirmation. The flag is an operator attestation, not an automated browser check. The acceptance runner disables automatic publishing for its pipeline subprocesses and performs explicit publishing only with `--publish`. It never places trades.
 
 ## Test suite
 
