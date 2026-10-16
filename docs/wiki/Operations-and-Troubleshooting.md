@@ -172,6 +172,33 @@ Check for `normalized/analysis-evidence-pack.json`. The exporter can fall back t
 
 Do not bypass readiness merely to make the workbook look complete. Inspect missing required artifacts, source warnings, unresolved conflicts, data freshness and acquisition failures. A blocked readiness result should remain research-only/no-call.
 
+## MarkItDown document ingestion
+
+The deterministic ingestion step uses Microsoft's MarkItDown CLI to convert PDF, Word, Excel, PowerPoint, HTML, text and CSV files into Markdown. MarkItDown is a Python dependency; installing the Node dependencies alone does not install it. A missing package can leave an individual document unconverted while the rest of ingestion continues, so inspect the ingestion report rather than assuming every document was parsed.
+
+Install the repository's declared format-specific dependency into the Python environment used by the pipeline. From the repository root in PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-markitdown.txt
+.\.venv\Scripts\python.exe -m pip show markitdown
+markitdown --version
+npm run markitdown:doctor
+```
+
+The requirements file pins MarkItDown and includes PDF, DOCX, PPTX, XLSX and XLS format extras without installing unrelated optional integrations. The currently supported package release accepts Python 3.10–3.14. If the project's Python environment is different, create or select a supported virtual environment and ensure its `Scripts` directory appears first on `PATH`.
+
+If the doctor fails, check which executable PowerShell resolves and whether it belongs to the intended environment:
+
+```powershell
+Get-Command python, py, markitdown -ErrorAction SilentlyContinue |
+  Select-Object Name, Source
+.\.venv\Scripts\python.exe -m pip show markitdown
+```
+
+Do not rerun a full stock acquisition just to test installation. First get `npm run markitdown:doctor` passing. Then test conversion of one existing PDF to a temporary Markdown file and inspect the resulting text. Finally, rerun only the affected deterministic preparation/ingestion step and confirm the annual-report conversion failure is gone in its report. Preserve the existing `research/SYMBOL` source artifacts; do not use `--replace-existing` for this repair.
+
+The current `markitdown:doctor` uses a temporary text file to verify CLI invocation and basic conversion. Passing it proves the executable works for text; a separate PDF conversion test is still required to prove the PDF extra is available.
+
 ## Local-path leakage
 
 Published rows must never expose local filesystem paths. The sanitizer handles path-valued fields and paths embedded in strings/serialized data. If a path appears in the workbook, treat it as a publishing bug and add a regression test before changing the sanitizer.
