@@ -105,6 +105,9 @@ assert(packlessSection('SUMMARY').some(row => row.field === 'evidence_facts' && 
 assert(packlessSection('SUMMARY').some(row => row.field === 'calculated_metrics' && row.value === 1), 'Research summary metric counts must match canonical fallback rows');
 
 
+const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+
 const briefArtifacts = {
   manifest: {
     ticker: 'EXAMPLE',
@@ -131,7 +134,7 @@ const briefArtifacts = {
     },
     technicals: { latest: { date: '2026-10-10', close: 180, ema50: 175, ema200: 160, rsi14: 61 }, signals: { priceVsEma50: true, priceVsEma200: true, rsiState: 'neutral' } },
     financials: { nsePeriods: [{ period: 'Sep-2026', metrics: { revenue: 1000, profit_after_tax: 120, eps: 4.2 } }] },
-    catalysts: { items: [{ type: 'announcement', date: '2026-10-09', title: 'Board meeting update' }, { type: 'board_meeting', date: '2026-10-15', title: 'Quarterly results' }] },
+    catalysts: { items: [{ type: 'announcement', date: yesterday, title: 'Board meeting update' }, { type: 'board_meeting', date: tomorrow, title: 'Quarterly results' }] },
   },
   news: {
     summary: { headlineCount: 2, label: 'NEUTRAL', weightedScore: 0.01 },
@@ -145,6 +148,7 @@ assert(briefTabs[0]?.rows.some(row => row.section === 'TODAY MARKET' && row.fiel
 assert(briefTabs[0]?.rows.some(row => row.section === 'LATEST EARNINGS' && row.field === 'profit_after_tax' && row.value === 120), 'Investor brief must expose latest earnings metrics');
 assert(briefTabs[0]?.rows.some(row => row.section === 'NEWS' && row.value === 'Example order update'), 'Investor brief must expose latest news headlines');
 assert(briefTabs[0]?.rows.some(row => row.section === 'UPCOMING EVENTS' && row.value === 'Quarterly results'), 'Investor brief must expose upcoming events');
+assert(!briefTabs[0]?.rows.some(row => row.section === 'UPCOMING EVENTS' && row.value === 'Board meeting update'), 'Investor brief must exclude past events from upcoming events');
 const screenshotTab = buildScreenshotTab('EXAMPLE', [{
   fileName: 'tradingview-1d.png',
   relativePath: '',
