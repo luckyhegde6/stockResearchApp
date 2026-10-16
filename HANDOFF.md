@@ -2,21 +2,18 @@
 
 ## Current implementation phase
 
-PR #8 (`feat/model-provider-boundary-v1`) merged into `main` at `def7a72bb92a2a1a1072334341bf27f73392d986`. PR #9 (`feat/bounded-reasoning-v1`) is the active implementation PR and targets `main`; continue work on this PR/branch and do not open a parallel PR while it remains active.
+PR #8 (`feat/model-provider-boundary-v1`) and PR #9 (`feat/bounded-reasoning-v1`) are merged. PR #10 (`fix/bounded-reasoning-guardrails-v1`) is the **single active pull request**. PR #11 was superseded and closed after all 19 acceptance implementation/documentation files were consolidated into this branch at commit `10148966a0d5b49567a0ac8683102d8ea2191463`. Continue only on PR #10 and this branch; do not open another PR for the same work. CI passed for the consolidated commit.
 
-The bounded runner is now wired into the stock-analysis CLI as an explicit opt-in: set `LLM_BOUNDED_REASONING=1`. The deterministic readiness gate runs before any bounded model calls. The fixed plan is evidence-auditor then decision-reviewer; the final investment-analysis call proceeds only if both steps are complete and pass the existing schema/policy harness. Otherwise the flow fails closed. Default analysis behavior remains unchanged when the flag is absent.
+The bounded runner remains opt-in via `LLM_BOUNDED_REASONING=1`. The deterministic readiness gate runs before bounded model calls. Final investment analysis proceeds only after both reasoning steps return complete, valid results. Intermediate model outputs remain secondary review context, not primary evidence. Default analysis behavior remains unchanged when the flag is absent.
 
-The runner now loads the content of caller-selected repository-relative input artifacts, validates real paths against repository-root containment, caps input at 16 files / 256 KiB by default, and includes those contents in the step prompt. Tests cover artifact handoff, traversal rejection, input/output budgets, blocked stops, and timeout behavior. No live model calls are used in fixture tests.
-Updated: 2026-10-15
+Updated: 2026-10-16
 Default branch: `main`
-Investment-report follow-up branch: `feat/investment-report-sheets`
+Follow-up branch: `fix/bounded-reasoning-guardrails-v1`
 Previous implementation PR: [#1 — Initialize stock research pipeline](https://github.com/luckyhegde6/stockResearchApp/pull/1) (merged)
 
 ## Current state
 
-The Google Sheets publishing implementation is in `main`. The old `fix/sheets-screenshot-evidence` branch points to the same commit as `main`; compare returns `identical` with 0 commits ahead, 0 behind, and no changed files. The comparison page is empty for that reason, not because it has a valid diff that is being hidden.
-
-The follow-up branch `feat/investment-report-sheets` documents the intended decision-ready reporting contract. Keep raw findings/evidence distinct from a validated investment view.
+The Google Sheets publishing implementation is in `main`. Keep raw findings/evidence distinct from a validated investment view. Historical follow-up branch names in older notes may no longer exist; verify current refs before relying on them.
 
 ## Current Sheets implementation
 
@@ -43,7 +40,7 @@ Separate sourced facts, deterministic calculations and analyst interpretation. N
 
 ## Verification and blockers
 
-- Previous GitHub Actions run #388 passed `npm run version:check`, `npm run typecheck` and `npm run test:all` on implementation commit `e072f10c269cc457317837617947ca43c1ad9b5a`. This is historical CI, not proof of a fresh run on current main.
+- PR #9's pre-merge head `5b1a69ab0a8757f83979b1dbfb4a9bf3effe781b` passed GitHub Actions CI run #508. The follow-up hardening branch still requires its own CI validation; do not transfer the old run's success claim to the new commits.
 - Live workbook contents and actual screenshot visibility are unverified.
 - GitHub source changes do not deploy Apps Script automatically.
 - The Apps Script health check should report `ok: true`, `service: stock-research-sheet-sink`, `serviceVersion: 2`, and the expected workbook ID.

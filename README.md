@@ -16,6 +16,7 @@ It combines official NSE data, Screener, Tijori, TradingView, optional news/Char
 The repository maintains a Wiki-ready operational and architectural guide for the Google Sheets publishing system:
 
 - [Wiki index](docs/wiki/README.md)
+- [End-to-end acceptance](docs/END_TO_END_ACCEPTANCE.md)
 - [Google Sheets setup](docs/wiki/Google-Sheets-Setup.md)
 - [Architecture & reasoning](docs/wiki/Google-Sheets-Architecture-and-Reasoning.md)
 - [Research & reasoning](docs/wiki/Research-and-Reasoning.md)
@@ -28,6 +29,26 @@ The repository maintains a Wiki-ready operational and architectural guide for th
 - [PRD-005: Free data and research history](docs/prd/005-free-data-and-research-history.md)
 
 These docs describe implementation, design decisions, evidence, Apps Script deployment, screenshot limits and recovery steps. GitHub Wiki is a separate repository; until its one-time initialization and publication are complete, use the source-controlled [documentation index](docs/wiki/README.md) or [GitHub Wiki publishing guide](docs/wiki/GitHub-Wiki-Publishing.md). The source docs distinguish code behavior from live deployment verification.
+
+## End-to-end acceptance
+
+The repository includes an opt-in acceptance runner for the acquisition → evidence quality/readiness → analysis → Google Sheets → screenshot path. It does not claim live publishing or screenshot visibility unless the corresponding steps are explicitly run.
+
+```bash
+# Validate an existing local research run; no acquisition or external writes
+npm run acceptance:e2e -- RELIANCE
+
+# Fresh full acquisition (if research/RELIANCE already exists, add --replace-existing)
+npm run acceptance:e2e -- RELIANCE --acquire
+
+# Fresh acquisition plus model analysis (if research/RELIANCE already exists, add --replace-existing)
+npm run acceptance:e2e -- RELIANCE --analysis
+
+# Publish to the configured workbook; strict receiver-side screenshot insertion required
+npm run acceptance:e2e -- RELIANCE --publish
+```
+
+The publishing run reports per-image receiver outcomes and returns a pending manual-visibility state until the operator opens the workbook and confirms the image objects are visible. `--confirm-visible` records that manual check; it is not an automated visual assertion. Tests use fixtures and do not make live model requests or write to Google Sheets.
 
 ## Google Sheets export
 
@@ -73,7 +94,7 @@ ITC-YYYY-MM-DD-HHMMSSmmm-news
 ITC-YYYY-MM-DD-HHMMSSmmm-laya
 ```
 
-When `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are configured, standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands publish their results automatically after local output is generated; supported dataset commands publish their data where available. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable automatic publishing; manual exports remain available. The `StockResearch` tab is the workbook's clickable index. Command audits remain local; no `_EXPORT_LOG` or `command-runs-*` sheet is created. Screenshot rows include original and optimized image metadata, and the deployed Apps Script enforces byte/pixel limits and reports insertion status consistently. Run `npm run sheets:doctor` after deploying the current Apps Script; a `serviceVersion` of `2` is required. A Sheets outage never invalidates locally saved research or analysis. See [Google Sheets Export](integrations/google-sheets/README.md).
+When `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_WEBHOOK_TOKEN` are configured, standard `npm run research -- SYMBOL` and `npm run analyze -- SYMBOL` commands publish their results automatically after local output is generated; supported dataset commands publish their data where available. Set `GOOGLE_SHEETS_AUTO_EXPORT=false` to disable automatic publishing; manual exports remain available. The `StockResearch` tab is the workbook's clickable index. Command audits remain local; no `_EXPORT_LOG` or `command-runs-*` sheet is created. Screenshot rows include original and optimized image metadata, and the deployed Apps Script enforces byte/pixel limits and reports insertion status consistently. Run `npm run sheets:doctor` after deploying the current Apps Script; a `serviceVersion` of `3` is required for per-screenshot outcomes. A Sheets outage never invalidates locally saved research or analysis. See [Google Sheets Export](integrations/google-sheets/README.md).
 
 ## Developer & Agent Operating System
 
