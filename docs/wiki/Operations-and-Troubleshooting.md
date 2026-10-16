@@ -197,7 +197,22 @@ Get-Command python, py, markitdown -ErrorAction SilentlyContinue |
 
 Do not rerun a full stock acquisition just to test installation. First get `npm run markitdown:doctor` passing. Then test conversion of one existing PDF to a temporary Markdown file and inspect the resulting text. Finally, rerun only the affected deterministic preparation/ingestion step and confirm the annual-report conversion failure is gone in its report. Preserve the existing `research/SYMBOL` source artifacts; do not use `--replace-existing` for this repair.
 
-The current `markitdown:doctor` uses a temporary text file to verify CLI invocation and basic conversion. Passing it proves the executable works for text; a separate PDF conversion test is still required to prove the PDF extra is available.
+The current `markitdown:doctor` converts a temporary text file and verifies that representative Unicode characters survive a UTF-8 round trip. It also converts a small synthetic PDF and checks for expected extracted text. Passing the doctor verifies the configured CLI and PDF extra, but a real report should still be spot-checked before relying on its extracted financial tables.
+
+#### Windows CMD: test one existing PDF without touching research artifacts
+
+Run from the repository root and replace the example `PDF` value with the path to an existing PDF. The output is written to the Windows temporary directory.
+
+```bat
+set "PDF=%CD%\\research\\SYMBOL\\raw\\path\\report.pdf"
+set "OUT=%TEMP%\\markitdown-report-test.md"
+..venv\Scripts\python.exe -m markitdown "%PDF%" -o "%OUT%"
+if errorlevel 1 exit /b %ERRORLEVEL%
+dir "%OUT%"
+powershell -NoProfile -Command "$p=$env:TEMP+'\\markitdown-report-test.md'; $s=[IO.File]::ReadAllText($p,[Text.Encoding]::UTF8); 'Characters: '+$s.Length; 'Replacement characters: '+([regex]::Matches($s,[char]0xFFFD)).Count; $s.Substring(0,[Math]::Min(500,$s.Length))"
+```
+
+A zero replacement-character count and readable text are useful encoding checks, not proof that every page or table was extracted accurately. Search for expected statement headings and validate important values, reporting periods and units separately. Do not rerun acquisition solely to test conversion.
 
 ## Local-path leakage
 
