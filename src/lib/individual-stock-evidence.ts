@@ -4,7 +4,7 @@ import { ensureDir } from './fs.js';
 import { loadNseEquityUniverse, resolveNseSecurity } from './nse-securities.js';
 import { readJson, numberValue, cleanText, findKeyDeep, type CanonicalValue } from './canonical.js';
 import type { ResearchManifest, SourceArtifact } from '../types/research.js';
-import { sourcePriority } from './source-precedence.js';
+import { buildEvidenceReconciliation } from './evidence-reconciliation.js';
 import { addNseNextApiEvidence } from './nse-nextapi-evidence.js';
 import { RESEARCH_CONFIG } from './research-config.js';
 
@@ -462,10 +462,7 @@ export async function buildIndividualStockEvidence(researchDir:string, manifest:
   const catalystsOut={schema_version:'1.2',ticker:manifest.ticker,items:finalCatalysts.slice(0,150),counts:{announcements:finalCatalysts.filter(x=>x.type==='announcement').length,corporateActions:finalCatalysts.filter(x=>x.type==='corporate_action').length,boardMeetings:finalCatalysts.filter(x=>x.type==='board_meeting').length,events:finalCatalysts.filter(x=>x.type==='corporate_event').length,tijoriUpcoming:finalCatalysts.filter(x=>x.type==='tijori_upcoming_event').length,tijoriIdeas:finalCatalysts.filter(x=>x.type==='tijori_idea').length},deterministic:true};
 
   const all=[...facts,...metrics];
-  const groups=new Map<string,CanonicalValue[]>(); for(const v of all){ const key=['last_price','current_price'].includes(v.field)?'current_price':v.field; const list=groups.get(key)??[]; list.push(v); groups.set(key,list); }
-  const reconciliation:any={schema_version:'1.2',ticker:manifest.ticker,generatedAt:new Date().toISOString(),conflicts:[],resolved:{}};
-  for(const [field,vals] of groups){ const nums=vals.filter(v=>typeof v.value==='number'); if(nums.length<2) continue; const min=Math.min(...nums.map(v=>Number(v.value))), max=Math.max(...nums.map(v=>Number(v.value))); const spread=min===0?Infinity:Math.abs((max-min)/min)*100; if(spread<=Number(process.env.EVIDENCE_CONFLICT_THRESHOLD_PCT||1.5)){ const best=[...vals].sort((a,b)=>sourcePriority(b.source,b.field)-sourcePriority(a.source,a.field))[0]; reconciliation.resolved[field]=best; } else { reconciliation.conflicts.push({field,values:nums,spreadPct:spread,resolution:'unresolved'}); }}
-  reconciliation.conflictCount=reconciliation.conflicts.length;
+  const reconciliation:any={...buildEvidenceReconciliation(all),ticker:manifest.ticker,generatedAt:new Date().toISOString()};
 
   const evidence={schema_version:'1.2',ticker:manifest.ticker,generatedAt:new Date().toISOString(),identity:security,market:marketOut,financials:financialOut,financialPeriods,ownership:ownershipOut,technicals:technicalsOut,screening:screeningOut,catalysts:catalystsOut,valuation:valuationOut,canonicalValues,reconciliation,deterministic:true,llmUsed:false};
 
