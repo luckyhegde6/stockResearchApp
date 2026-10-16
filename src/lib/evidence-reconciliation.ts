@@ -22,7 +22,7 @@ function normalizedField(field: string): string {
   return ['last_price', 'current_price'].includes(field) ? 'current_price' : field;
 }
 
-function comparableUnit(field: string, unit: unknown, value: number): { unit: string; value: number } {
+function comparableUnit(unit: unknown, value: number): { unit: string; value: number } {
   const raw = String(unit ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
   const aliases: Record<string, string> = {
     'inr crores': 'inr crore',
@@ -70,7 +70,7 @@ export function buildEvidenceReconciliation(
     if (typeof item.value !== 'number' || !Number.isFinite(item.value)) continue;
     const field = normalizedField(item.field);
     const period = normalizePeriod(item.period);
-    const normalized = comparableUnit(field, item.unit, item.value);
+    const normalized = comparableUnit(item.unit, item.value);
     const key = [field, period, normalized.unit].join('|');
     const entries = groups.get(key) ?? [];
     entries.push({ evidence: item, value: normalized.value });
@@ -89,7 +89,7 @@ export function buildEvidenceReconciliation(
     const originalValues = entries.map(entry => entry.evidence);
     if (spreadPct <= thresholdPct) {
       const best = [...entries].sort((a, b) => sourcePriority(b.evidence.source, field) - sourcePriority(a.evidence.source, field))[0];
-      resolved[field + (period === 'undated' ? '' : `@${period}')] = best.evidence;
+      resolved[field + (period === 'undated' ? '' : `@${period}`)] = best.evidence;
     } else {
       conflicts.push({
         id: `conflict-${field}-${period}`,
