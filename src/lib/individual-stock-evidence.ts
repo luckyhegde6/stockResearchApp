@@ -4,7 +4,7 @@ import { ensureDir } from './fs.js';
 import { loadNseEquityUniverse, resolveNseSecurity } from './nse-securities.js';
 import { readJson, numberValue, cleanText, findKeyDeep, type CanonicalValue } from './canonical.js';
 import type { ResearchManifest, SourceArtifact } from '../types/research.js';
-import { sourcePriority } from './source-precedence.js';
+import { buildEvidenceReconciliation } from './evidence-reconciliation.js';
 import { addNseNextApiEvidence } from './nse-nextapi-evidence.js';
 import { RESEARCH_CONFIG } from './research-config.js';
 
@@ -178,8 +178,9 @@ async function extractScreener(researchDir:string, manifest:ResearchManifest, fa
     const r=screenerMetric(primarySnap,labels); if(r.value===null) continue;
     const fact=sourceFact(`screener-${field}`,field,r.value,'Screener',a,r.period,unit==='price'?'price':unit);
     facts.push(fact);
-    if(domain==='valuation') valuation[field]={value:r.value,unit,period:r.period,source:'Screener',artifact:a?.id};
-    if(domain==='fundamental'||domain==='growth') fundamentals.metrics[field]={value:r.value,unit,period:r.period,source:'Screener',artifact:a?.id};
+    // Period-labelled table cells are historical evidence, not current headline metrics.
+    if(domain==='valuation' && !r.period) valuation[field]={value:r.value,unit,period:null,source:'Screener',artifact:a?.id};
+    if((domain==='fundamental'||domain==='growth') && !r.period) fundamentals.metrics[field]={value:r.value,unit,period:null,source:'Screener',artifact:a?.id};
   }
   // Text fallback for common Screener header cards that are not represented as table rows.
   const rawText=String(primarySnap?.text ?? '');
@@ -197,8 +198,8 @@ async function extractScreener(researchDir:string, manifest:ResearchManifest, fa
     const r=screenerMetric({text:rawText,tables:[]},labels);
     if(r.value!==null){
       const fact=sourceFact(`screener-${field}`,field,r.value,'Screener',a,r.period,unit==='price'?'price':unit,'Extracted from captured Screener page text.'); facts.push(fact);
-      if(domain==='valuation') valuation[field]={value:r.value,unit,period:r.period,source:'Screener',artifact:a?.id};
-      if(domain==='fundamental') fundamentals.metrics[field]={value:r.value,unit,period:r.period,source:'Screener',artifact:a?.id};
+      if(domain==='valuation' && !r.period) valuation[field]={value:r.value,unit,period:null,source:'Screener',artifact:a?.id};
+      if(domain==='fundamental' && !r.period) fundamentals.metrics[field]={value:r.value,unit,period:null,source:'Screener',artifact:a?.id};
     }
   }
   const companyCandidates=[cleanText(pickKey(primarySnap,['companyName','company_name'])),cleanText(primarySnap?.title)];
@@ -298,7 +299,15 @@ async function extractTijori(researchDir:string, manifest:ResearchManifest, fact
   for(const [field,patterns,unit] of defs){
     let value:null|number=null;
     for(const p of patterns){ const m=p.exec(raw); if(m){ const tail=raw.slice((m.index??0)+m[0].length, (m.index??0)+m[0].length+100); const n=/(-?\d[\d,]*(?:\.\d+)?)/.exec(tail); if(n){value=num(n[1]);break;} } }
-    if(value!==null){ facts.push(sourceFact(`tijori-${field}`,field,value,'Tijori',a,null,unit)); if(['pe_ratio','market_cap'].includes(field)) valuation[`tijori_${field}`]={value,unit,source:'Tijori',artifact:a?.id}; }
+    if(value!==null){
+      facts.push(sourceFact(`tijori-${field}`,field,value,'Tijori',a,null,unit));
+      if(['pe_ratio','market_cap'].includes(field)) {
+        valuation[`tijori_${field}`]={value,unit,period:null,source:'Tijori',artifact:a?.id};
+        // Use a current, undated Tijori observation when no current Screener metric was extracted.
+        if(!valuation[field]) valuation[field]={value,unit,period:null,source:'Tijori',artifact:a?.id};
+      }
+      if(['roe','roce','sales_growth','profit_growth'].includes(field) && !fundamentals.metrics[field]) fundamentals.metrics[field]={value,unit,period:null,source:'Tijori',artifact:a?.id};
+    }
   }
   fundamentals.tijoriAvailable=true; return {available:true,text:raw};
 }
@@ -462,10 +471,7 @@ export async function buildIndividualStockEvidence(researchDir:string, manifest:
   const catalystsOut={schema_version:'1.2',ticker:manifest.ticker,items:finalCatalysts.slice(0,150),counts:{announcements:finalCatalysts.filter(x=>x.type==='announcement').length,corporateActions:finalCatalysts.filter(x=>x.type==='corporate_action').length,boardMeetings:finalCatalysts.filter(x=>x.type==='board_meeting').length,events:finalCatalysts.filter(x=>x.type==='corporate_event').length,tijoriUpcoming:finalCatalysts.filter(x=>x.type==='tijori_upcoming_event').length,tijoriIdeas:finalCatalysts.filter(x=>x.type==='tijori_idea').length},deterministic:true};
 
   const all=[...facts,...metrics];
-  const groups=new Map<string,CanonicalValue[]>(); for(const v of all){ const key=['last_price','current_price'].includes(v.field)?'current_price':v.field; const list=groups.get(key)??[]; list.push(v); groups.set(key,list); }
-  const reconciliation:any={schema_version:'1.2',ticker:manifest.ticker,generatedAt:new Date().toISOString(),conflicts:[],resolved:{}};
-  for(const [field,vals] of groups){ const nums=vals.filter(v=>typeof v.value==='number'); if(nums.length<2) continue; const min=Math.min(...nums.map(v=>Number(v.value))), max=Math.max(...nums.map(v=>Number(v.value))); const spread=min===0?Infinity:Math.abs((max-min)/min)*100; if(spread<=Number(process.env.EVIDENCE_CONFLICT_THRESHOLD_PCT||1.5)){ const best=[...vals].sort((a,b)=>sourcePriority(b.source,b.field)-sourcePriority(a.source,a.field))[0]; reconciliation.resolved[field]=best; } else { reconciliation.conflicts.push({field,values:nums,spreadPct:spread,resolution:'unresolved'}); }}
-  reconciliation.conflictCount=reconciliation.conflicts.length;
+  const reconciliation:any={...buildEvidenceReconciliation(all),ticker:manifest.ticker,generatedAt:new Date().toISOString()};
 
   const evidence={schema_version:'1.2',ticker:manifest.ticker,generatedAt:new Date().toISOString(),identity:security,market:marketOut,financials:financialOut,financialPeriods,ownership:ownershipOut,technicals:technicalsOut,screening:screeningOut,catalysts:catalystsOut,valuation:valuationOut,canonicalValues,reconciliation,deterministic:true,llmUsed:false};
 
