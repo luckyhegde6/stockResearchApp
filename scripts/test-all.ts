@@ -15,6 +15,7 @@ const TEST_SUITES = [
   'scripts/test-symbol-agnostic.ts',
   'scripts/test-source-classifier.ts',
   'scripts/test-source-precedence.ts',
+  'scripts/test-evidence-reconciliation.ts',
   'scripts/test-canonical-evidence.ts',
   'scripts/test-analysis-readiness.ts',
   'scripts/test-evidence-readiness.ts',
