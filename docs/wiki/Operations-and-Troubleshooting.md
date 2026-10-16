@@ -214,6 +214,12 @@ powershell -NoProfile -Command "$p=$env:TEMP+'\markitdown-report-test.md'; $s=[I
 
 A zero replacement-character count and readable text are useful encoding checks, not proof that every page or table was extracted accurately. Search for expected statement headings and validate important values, reporting periods and units separately. Do not rerun acquisition solely to test conversion.
 
+## Evidence reconciliation and reporting periods
+
+Reconciliation compares numeric evidence only when the field, reporting period, and units are comparable. Quarterly financial values from different periods are not source conflicts merely because their amounts differ. Currency totals are normalized to INR crore for comparison; incompatible units are not compared. A historical period-labelled Screener table cell must remain historical evidence and must not populate a current headline valuation field. Undated comparable values that materially disagree remain explicit unresolved conflicts; do not silently choose a winner.
+
+When reviewing a conflict report, inspect `field`, `period`, `unit`, each value's source/artifact/as-of metadata, and normalized values before changing thresholds or precedence. A lower conflict count is not by itself proof of better evidence quality.
+
 ## Local-path leakage
 
 Published rows must never expose local filesystem paths. The sanitizer handles path-valued fields and paths embedded in strings/serialized data. If a path appears in the workbook, treat it as a publishing bug and add a regression test before changing the sanitizer.
