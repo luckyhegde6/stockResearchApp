@@ -178,8 +178,9 @@ async function extractScreener(researchDir:string, manifest:ResearchManifest, fa
     const r=screenerMetric(primarySnap,labels); if(r.value===null) continue;
     const fact=sourceFact(`screener-${field}`,field,r.value,'Screener',a,r.period,unit==='price'?'price':unit);
     facts.push(fact);
-    if(domain==='valuation') valuation[field]={value:r.value,unit,period:r.period,source:'Screener',artifact:a?.id};
-    if(domain==='fundamental'||domain==='growth') fundamentals.metrics[field]={value:r.value,unit,period:r.period,source:'Screener',artifact:a?.id};
+    // Period-labelled table cells are historical evidence, not current headline metrics.
+    if(domain==='valuation' && !r.period) valuation[field]={value:r.value,unit,period:null,source:'Screener',artifact:a?.id};
+    if((domain==='fundamental'||domain==='growth') && !r.period) fundamentals.metrics[field]={value:r.value,unit,period:null,source:'Screener',artifact:a?.id};
   }
   // Text fallback for common Screener header cards that are not represented as table rows.
   const rawText=String(primarySnap?.text ?? '');
@@ -197,8 +198,8 @@ async function extractScreener(researchDir:string, manifest:ResearchManifest, fa
     const r=screenerMetric({text:rawText,tables:[]},labels);
     if(r.value!==null){
       const fact=sourceFact(`screener-${field}`,field,r.value,'Screener',a,r.period,unit==='price'?'price':unit,'Extracted from captured Screener page text.'); facts.push(fact);
-      if(domain==='valuation') valuation[field]={value:r.value,unit,period:r.period,source:'Screener',artifact:a?.id};
-      if(domain==='fundamental') fundamentals.metrics[field]={value:r.value,unit,period:r.period,source:'Screener',artifact:a?.id};
+      if(domain==='valuation' && !r.period) valuation[field]={value:r.value,unit,period:null,source:'Screener',artifact:a?.id};
+      if(domain==='fundamental' && !r.period) fundamentals.metrics[field]={value:r.value,unit,period:null,source:'Screener',artifact:a?.id};
     }
   }
   const companyCandidates=[cleanText(pickKey(primarySnap,['companyName','company_name'])),cleanText(primarySnap?.title)];
@@ -298,7 +299,15 @@ async function extractTijori(researchDir:string, manifest:ResearchManifest, fact
   for(const [field,patterns,unit] of defs){
     let value:null|number=null;
     for(const p of patterns){ const m=p.exec(raw); if(m){ const tail=raw.slice((m.index??0)+m[0].length, (m.index??0)+m[0].length+100); const n=/(-?\d[\d,]*(?:\.\d+)?)/.exec(tail); if(n){value=num(n[1]);break;} } }
-    if(value!==null){ facts.push(sourceFact(`tijori-${field}`,field,value,'Tijori',a,null,unit)); if(['pe_ratio','market_cap'].includes(field)) valuation[`tijori_${field}`]={value,unit,source:'Tijori',artifact:a?.id}; }
+    if(value!==null){
+      facts.push(sourceFact(`tijori-${field}`,field,value,'Tijori',a,null,unit));
+      if(['pe_ratio','market_cap'].includes(field)) {
+        valuation[`tijori_${field}`]={value,unit,period:null,source:'Tijori',artifact:a?.id};
+        // Use a current, undated Tijori observation when no current Screener metric was extracted.
+        if(!valuation[field]) valuation[field]={value,unit,period:null,source:'Tijori',artifact:a?.id};
+      }
+      if(['roe','roce','sales_growth','profit_growth'].includes(field) && !fundamentals.metrics[field]) fundamentals.metrics[field]={value,unit,period:null,source:'Tijori',artifact:a?.id};
+    }
   }
   fundamentals.tijoriAvailable=true; return {available:true,text:raw};
 }
