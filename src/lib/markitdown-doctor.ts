@@ -3,8 +3,7 @@ import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-function createPdf(text: string): string {
-  const stream = `BT /F1 18 Tf 72 720 Td (${text.replace(/[()\\\\]/g, '\\\\async function main() {
+async function main() {
 ')}) Tj ET\\n`;
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
@@ -49,7 +48,7 @@ async function main() {
     console.log(`bytes=${Buffer.byteLength(text,'utf8')}`);
 
     const expectedPdfText = 'PDF ingestion smoke test';
-    await writeFile(pdfInput, createPdf(expectedPdfText), 'ascii');
+    await writeFile(pdfInput, Buffer.from('JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNTYgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBERiBpbmdlc3Rpb24gc21va2UgdGVzdCkgVGogRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDEgMDAwMDAgbiAKMDAwMDAwMDMxMSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDYgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjQxNgolJUVPRgo=', 'base64'));
     const pdfResult = await runMarkItDown(pdfInput, pdfOutput, process.cwd(), 60_000);
     if (pdfResult.code !== 0) {
       throw new Error(`PDF conversion failed: ${(pdfResult.stderr || pdfResult.stdout).slice(-2000)}`);
