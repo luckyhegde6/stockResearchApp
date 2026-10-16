@@ -204,12 +204,12 @@ The current `markitdown:doctor` converts a temporary text file and verifies that
 Run from the repository root and replace the example `PDF` value with the path to an existing PDF. The output is written to the Windows temporary directory.
 
 ```bat
-set "PDF=%CD%\\research\\SYMBOL\\raw\\path\\report.pdf"
-set "OUT=%TEMP%\\markitdown-report-test.md"
-..venv\Scripts\python.exe -m markitdown "%PDF%" -o "%OUT%"
+set "PDF=%CD%\research\SYMBOL\raw\path\report.pdf"
+set "OUT=%TEMP%\markitdown-report-test.md"
+.\.venv\Scripts\python.exe -m markitdown "%PDF%" -o "%OUT%"
 if errorlevel 1 exit /b %ERRORLEVEL%
 dir "%OUT%"
-powershell -NoProfile -Command "$p=$env:TEMP+'\\markitdown-report-test.md'; $s=[IO.File]::ReadAllText($p,[Text.Encoding]::UTF8); 'Characters: '+$s.Length; 'Replacement characters: '+([regex]::Matches($s,[char]0xFFFD)).Count; $s.Substring(0,[Math]::Min(500,$s.Length))"
+powershell -NoProfile -Command "$p=$env:TEMP+'\markitdown-report-test.md'; $s=[IO.File]::ReadAllText($p,[Text.Encoding]::UTF8); 'Characters: '+$s.Length; 'Replacement characters: '+([regex]::Matches($s,[char]0xFFFD)).Count; $s.Substring(0,[Math]::Min(500,$s.Length))"
 ```
 
 A zero replacement-character count and readable text are useful encoding checks, not proof that every page or table was extracted accurately. Search for expected statement headings and validate important values, reporting periods and units separately. Do not rerun acquisition solely to test conversion.
