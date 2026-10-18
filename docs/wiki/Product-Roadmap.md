@@ -9,7 +9,7 @@
 
 StockResearchApp is an evidence-first research platform for Indian equities. Local artifacts are canonical; the dashboard, Google Sheets, PDF, and future API are consumption surfaces.
 
-## Current baseline (2026-10-15)
+## Current baseline (2026-10-19)
 
 - **Implemented:** deterministic acquisition/preparation, canonical artifacts, reconciliation, quality/readiness gates, optional schema-validated analysis, local dashboard, market scans, Google Sheets export code.
 - **Implemented and merged:** read-only agent result validation, evidence inspection, and deterministic evidence audit from PR #7.

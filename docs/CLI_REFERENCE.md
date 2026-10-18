@@ -42,6 +42,8 @@ The primary CLI entrypoint is `src/index.ts`, invoked via `npm run <command> -- 
 ```json
 "scripts": {
   "test:all": "tsx scripts/test-all.ts",
+  "health:check": "tsx scripts/local-health-check.ts",
+  "test:local-health-check": "tsx scripts/test-local-health-check.ts",
   "research": "tsx src/index.ts research",
   "analyze": "tsx src/index.ts analyze",
   "research:full": "tsx src/index.ts research",
