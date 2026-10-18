@@ -29,6 +29,14 @@ The primary CLI entrypoint is `src/index.ts`, invoked via `npm run <command> -- 
 
 ---
 
+## Local diagnostics
+
+| Command | Usage | Behavior |
+| :--- | :--- | :--- |
+| `health:check` | `npm run health:check` | Local-only prerequisite/configuration check for Node.js, Playwright Chromium, MarkItDown, repository files, test readiness, and optional integration configuration. No acquisition, network navigation, model calls, or publishing. |
+| `markitdown:doctor` | `npm run markitdown:doctor` | Runs temporary text and PDF conversion smoke tests. |
+| `playwright:doctor` | `npm run playwright:doctor` | Runs browser and NSE navigation checks; unlike `health:check`, this command accesses the network. |
+
 ## 📜 All `package.json` NPM Scripts
 
 ```json

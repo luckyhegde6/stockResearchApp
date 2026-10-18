@@ -2,14 +2,15 @@
 
 ## Current implementation phase
 
-PR #8 (`feat/model-provider-boundary-v1`) and PR #9 (`feat/bounded-reasoning-v1`) are merged. PR #10 (`fix/bounded-reasoning-guardrails-v1`) is the **single active pull request**. PR #11 was superseded and closed after all 19 acceptance implementation/documentation files were consolidated into this branch at commit `10148966a0d5b49567a0ac8683102d8ea2191463`. Continue only on PR #10 and this branch; do not open another PR for the same work. CI passed for the consolidated commit.
+PR #8 (model-provider boundary), PR #9 (bounded reasoning), PR #10 (bounded-reasoning guardrails), PR #12 (event-date regression), and PR #13 (MarkItDown dependency + period-aware reconciliation) are merged into `main`. PR #13's latest recorded CI run passed dependency installation, version check, typecheck, MarkItDown text/PDF doctor, and `npm run test:all`.
 
-The bounded runner remains opt-in via `LLM_BOUNDED_REASONING=1`. The deterministic readiness gate runs before bounded model calls. Final investment analysis proceeds only after both reasoning steps return complete, valid results. Intermediate model outputs remain secondary review context, not primary evidence. Default analysis behavior remains unchanged when the flag is absent.
+The only open PR observed on 2026-10-19 is unrelated Dependabot PR #2 for `fast-uri`. Follow the repository's one-feature-PR-at-a-time policy: implementation is being prepared on `feat/local-health-check-post-pr13`; do not open a second feature PR until the unrelated open PR is closed or merged. Do not merge without explicit instruction.
 
-Updated: 2026-10-16
+Updated: 2026-10-19
 Default branch: `main`
-Follow-up branch: `fix/bounded-reasoning-guardrails-v1`
-Previous implementation PR: [#1 — Initialize stock research pipeline](https://github.com/luckyhegde6/stockResearchApp/pull/1) (merged)
+Current implementation branch: `feat/local-health-check-post-pr13`
+
+The bounded runner remains opt-in via `LLM_BOUNDED_REASONING=1`. Deterministic readiness runs before bounded model calls. Final investment analysis proceeds only after both reasoning steps return complete, valid results. Intermediate model outputs remain secondary review context, not primary evidence. Default analysis behavior remains unchanged when the flag is absent.
 
 ## Current state
 
@@ -40,10 +41,10 @@ Separate sourced facts, deterministic calculations and analyst interpretation. N
 
 ## Verification and blockers
 
-- PR #9's pre-merge head `5b1a69ab0a8757f83979b1dbfb4a9bf3effe781b` passed GitHub Actions CI run #508. The follow-up hardening branch still requires its own CI validation; do not transfer the old run's success claim to the new commits.
+- PR #13's latest recorded GitHub Actions run #555 passed. The new `feat/local-health-check-post-pr13` branch still requires its own CI validation; do not transfer prior CI success to this branch.
 - Live workbook contents and actual screenshot visibility are unverified.
 - GitHub source changes do not deploy Apps Script automatically.
-- The Apps Script health check should report `ok: true`, `service: stock-research-sheet-sink`, `serviceVersion: 2`, and the expected workbook ID.
+- The deployed Apps Script health check should report `ok: true`, `service: stock-research-sheet-sink`, `serviceVersion: 3`, and the expected workbook ID.
 - Missing `GOOGLE_SHEETS_WEBHOOK_URL` or `GOOGLE_SHEETS_WEBHOOK_TOKEN` means publication is not configured; local research should remain valid.
 
 ## Local end-to-end acceptance

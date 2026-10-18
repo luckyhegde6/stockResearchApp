@@ -30,6 +30,18 @@ The repository maintains a Wiki-ready operational and architectural guide for th
 
 These docs describe implementation, design decisions, evidence, Apps Script deployment, screenshot limits and recovery steps. GitHub Wiki is a separate repository; until its one-time initialization and publication are complete, use the source-controlled [documentation index](docs/wiki/README.md) or [GitHub Wiki publishing guide](docs/wiki/GitHub-Wiki-Publishing.md). The source docs distinguish code behavior from live deployment verification.
 
+## Local health check
+
+Run a fast, local-only environment check before debugging a pipeline run:
+
+```bash
+npm run health:check
+```
+
+It checks Node.js 20+, the installed Playwright Chromium executable, the pinned MarkItDown Python package, repository configuration files, required test-suite files, and whether optional LLM/Google Sheets environment-variable pairs are consistently configured. It reports only configuration presence, never secret values.
+
+This command does not navigate to external sites, acquire stock data, run model inference, write research artifacts, or publish to Google Sheets. A warning means an optional integration is not configured; a failed check means a required local prerequisite is missing or inconsistent. For conversion smoke tests, run `npm run markitdown:doctor`; for browser navigation, run `npm run playwright:doctor` separately.
+
 ## End-to-end acceptance
 
 The repository includes an opt-in acceptance runner for the acquisition → evidence quality/readiness → analysis → Google Sheets → screenshot path. It does not claim live publishing or screenshot visibility unless the corresponding steps are explicitly run.
