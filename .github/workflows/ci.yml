@@ -9,9 +9,15 @@ on:
 jobs:
   deterministic:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+          cache: pip
+          cache-dependency-path: requirements-markitdown.txt
+      - run: python -m pip install -r requirements-markitdown.txt
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -19,4 +25,5 @@ jobs:
       - run: npm ci
       - run: npm run version:check
       - run: npm run typecheck
+      - run: npm run markitdown:doctor
       - run: npm run test:all

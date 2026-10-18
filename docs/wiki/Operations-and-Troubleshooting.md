@@ -172,6 +172,54 @@ Check for `normalized/analysis-evidence-pack.json`. The exporter can fall back t
 
 Do not bypass readiness merely to make the workbook look complete. Inspect missing required artifacts, source warnings, unresolved conflicts, data freshness and acquisition failures. A blocked readiness result should remain research-only/no-call.
 
+## MarkItDown document ingestion
+
+The deterministic ingestion step uses Microsoft's MarkItDown CLI to convert PDF, Word, Excel, PowerPoint, HTML, text and CSV files into Markdown. MarkItDown is a Python dependency; installing the Node dependencies alone does not install it. A missing package can leave an individual document unconverted while the rest of ingestion continues, so inspect the ingestion report rather than assuming every document was parsed.
+
+Install the repository's declared format-specific dependency into the Python environment used by the pipeline. From the repository root in PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-markitdown.txt
+.\.venv\Scripts\python.exe -m pip show markitdown
+markitdown --version
+npm run markitdown:doctor
+```
+
+The requirements file pins MarkItDown and includes PDF, DOCX, PPTX, XLSX and XLS format extras without installing unrelated optional integrations. The currently supported package release accepts Python 3.10–3.14. If the project's Python environment is different, create or select a supported virtual environment and ensure its `Scripts` directory appears first on `PATH`.
+
+If the doctor fails, check which executable PowerShell resolves and whether it belongs to the intended environment:
+
+```powershell
+Get-Command python, py, markitdown -ErrorAction SilentlyContinue |
+  Select-Object Name, Source
+.\.venv\Scripts\python.exe -m pip show markitdown
+```
+
+Do not rerun a full stock acquisition just to test installation. First get `npm run markitdown:doctor` passing. Then test conversion of one existing PDF to a temporary Markdown file and inspect the resulting text. Finally, rerun only the affected deterministic preparation/ingestion step and confirm the annual-report conversion failure is gone in its report. Preserve the existing `research/SYMBOL` source artifacts; do not use `--replace-existing` for this repair.
+
+The current `markitdown:doctor` converts a temporary text file and verifies that representative Unicode characters survive a UTF-8 round trip. It also converts a small synthetic PDF and checks for expected extracted text. Passing the doctor verifies the configured CLI and PDF extra, but a real report should still be spot-checked before relying on its extracted financial tables.
+
+#### Windows CMD: test one existing PDF without touching research artifacts
+
+Run from the repository root and replace the example `PDF` value with the path to an existing PDF. The output is written to the Windows temporary directory.
+
+```bat
+set "PDF=%CD%\research\SYMBOL\raw\path\report.pdf"
+set "OUT=%TEMP%\markitdown-report-test.md"
+.\.venv\Scripts\python.exe -m markitdown "%PDF%" -o "%OUT%"
+if errorlevel 1 exit /b %ERRORLEVEL%
+dir "%OUT%"
+powershell -NoProfile -Command "$p=$env:TEMP+'\markitdown-report-test.md'; $s=[IO.File]::ReadAllText($p,[Text.Encoding]::UTF8); 'Characters: '+$s.Length; 'Replacement characters: '+([regex]::Matches($s,[char]0xFFFD)).Count; $s.Substring(0,[Math]::Min(500,$s.Length))"
+```
+
+A zero replacement-character count and readable text are useful encoding checks, not proof that every page or table was extracted accurately. Search for expected statement headings and validate important values, reporting periods and units separately. Do not rerun acquisition solely to test conversion.
+
+## Evidence reconciliation and reporting periods
+
+Reconciliation compares numeric evidence only when the field, reporting period, and units are comparable. Quarterly financial values from different periods are not source conflicts merely because their amounts differ. Currency totals are normalized to INR crore for comparison; incompatible units are not compared. A historical period-labelled Screener table cell must remain historical evidence and must not populate a current headline valuation field. Undated comparable values that materially disagree remain explicit unresolved conflicts; do not silently choose a winner.
+
+When reviewing a conflict report, inspect `field`, `period`, `unit`, each value's source/artifact/as-of metadata, and normalized values before changing thresholds or precedence. A lower conflict count is not by itself proof of better evidence quality.
+
 ## Local-path leakage
 
 Published rows must never expose local filesystem paths. The sanitizer handles path-valued fields and paths embedded in strings/serialized data. If a path appears in the workbook, treat it as a publishing bug and add a regression test before changing the sanitizer.
