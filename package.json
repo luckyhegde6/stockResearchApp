@@ -118,8 +118,8 @@
     "acceptance:e2e": "tsx scripts/with-google-sheets-step.ts --name \"acceptance:e2e\" --exec \"tsx\" -- scripts/research-publishing-acceptance.ts",
     "test:screenshot-acceptance": "tsx scripts/with-google-sheets-step.ts --name \"test:screenshot-acceptance\" --exec \"tsx\" -- scripts/test-screenshot-acceptance.ts",
     "test:evidence-reconciliation": "tsx scripts/with-google-sheets-step.ts --name \"test:evidence-reconciliation\" --exec \"tsx\" -- scripts/test-evidence-reconciliation.ts",
-    "health:check": "tsx scripts/local-health-check.ts",
-    "test:local-health-check": "tsx scripts/test-local-health-check.ts"
+    "health:check": "tsx scripts/with-google-sheets-step.ts --name \"health:check\" --no-publish-audit --exec \"tsx\" -- scripts/local-health-check.ts",
+    "test:local-health-check": "tsx scripts/with-google-sheets-step.ts --name \"test:local-health-check\" --no-publish-audit --exec \"tsx\" -- scripts/test-local-health-check.ts"
   },
   "engines": {
     "node": ">=20"
