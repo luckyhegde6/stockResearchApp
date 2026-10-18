@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add a local-only health check for Node.js, Playwright Chromium, MarkItDown, repository configuration, test-suite readiness, and optional LLM/Google Sheets configuration.
+- Add fixture tests for health status aggregation, optional configuration pairs, and test-suite discovery.
+- Refresh post-PR #13 handoff and CLI guidance; distinguish local checks from networked browser and live Google Sheets verification.
+
+
 Canonical release history for repository behavior. Older detail remains in docs/RELEASES_AND_CHANGELOG.md.
 
 ## [Unreleased]

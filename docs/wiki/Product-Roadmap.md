@@ -13,9 +13,9 @@ StockResearchApp is an evidence-first research platform for Indian equities. Loc
 
 - **Implemented:** deterministic acquisition/preparation, canonical artifacts, reconciliation, quality/readiness gates, optional schema-validated analysis, local dashboard, market scans, Google Sheets export code.
 - **Implemented and merged:** read-only agent result validation, evidence inspection, and deterministic evidence audit from PR #7.
-- **In progress:** vendor-neutral model provider adapter and fixture tests in [PR #8](https://github.com/luckyhegde6/stockResearchApp/pull/8).
+- **Merged:** vendor-neutral model provider adapter (PR #8), bounded reasoning (PR #9), guardrail hardening (PR #10), event-date regression coverage (PR #12), and MarkItDown/document-ingestion plus period-aware reconciliation (PR #13).
 - **Operational verification pending:** live Apps Script deployment and actual workbook screenshot insertion.
-- **Planned:** bounded model reasoning, Evidence Trust Center, What Changed, source-linked event timeline, monitoring, peer scorecard, robust backtesting and read-only API.
+- **Implemented on the current follow-up branch:** local-only `health:check` command; branch CI validation is pending.\n- **Planned:** Evidence Trust Center, What Changed, source-linked event timeline, monitoring, peer scorecard, robust backtesting and read-only API.
 
 ## Release 1 — Trust Layer (P0; partially implemented)
 
