@@ -6,7 +6,7 @@ Prioritized backlog. Items are not claims of existing functionality.
 
 - [x] Add CI for version:check and test:all.
 - [ ] Keep CLI/operating docs synchronized with package.json; the new local health-check command is documented in `docs/CLI_REFERENCE.md`.
-- [ ] Expand regression coverage for readiness edge cases.
+- [x] Expand regression coverage for readiness edge cases: complete evidence, missing core files, advisory vs blocking gaps, optional-source warnings, actionable warnings, and empty-contract guard.
 - [ ] Keep TradingView route tests synchronized with configured surfaces.
 
 ## P1 — data export / reporting

@@ -63,7 +63,7 @@ Research API consumers and potential paper trading only after explicit design re
 
 ## Immediate next tasks
 
-1. Complete readiness edge-case regression coverage and keep CLI/operating docs synchronized with `package.json`.
+1. Run CI for the new readiness regression suite and health-check command, then finish CLI/operating documentation synchronization with `package.json`.
 2. Add remaining harness schema/policy tests and a redacted deterministic agent audit record.
 3. Add dashboard “why not ready?” and provenance drill-down.
 4. Verify Apps Script deployment and live export behavior; add payload preflight, idempotent retries and mock-receiver end-to-end tests.
