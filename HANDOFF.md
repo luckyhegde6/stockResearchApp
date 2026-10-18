@@ -4,7 +4,7 @@
 
 PR #8 (model-provider boundary), PR #9 (bounded reasoning), PR #10 (bounded-reasoning guardrails), PR #12 (event-date regression), and PR #13 (MarkItDown dependency + period-aware reconciliation) are merged into `main`. PR #13's latest recorded CI run passed dependency installation, version check, typecheck, MarkItDown text/PDF doctor, and `npm run test:all`.
 
-The only open PR observed on 2026-10-19 is unrelated Dependabot PR #2 for `fast-uri`. Follow the repository's one-feature-PR-at-a-time policy: implementation is being prepared on `feat/local-health-check-post-pr13`; do not open a second feature PR until the unrelated open PR is closed or merged. Do not merge without explicit instruction.
+The only open PR observed on 2026-10-19 is unrelated Dependabot PR #2 for `fast-uri`. Follow the repository's one-feature-PR-at-a-time policy: implementation is committed on `feat/local-health-check-post-pr13` and awaits validation; do not open a second feature PR until the unrelated open PR is closed or merged. Do not merge without explicit instruction.
 
 Updated: 2026-10-19
 Default branch: `main`
