@@ -12,10 +12,13 @@ export function summarizeHealthChecks(checks:HealthCheck[]) {
   for(const check of checks) counts[check.status]++;
   return {status:counts.fail?'fail':counts.warn?'warn':'pass',counts,checks} as const;
 }
-export function optionalPairCheck(name:string,a:boolean,b:boolean):HealthCheck {
+export function optionalPairCheck(name:string,a:boolean,b:boolean,firstLabel='first setting',secondLabel='second setting'):HealthCheck {
   if(a&&b) return {name,status:'pass',detail:'Both settings are configured; values were not displayed.'};
   if(!a&&!b) return {name,status:'warn',detail:'Not configured; this integration is optional and local research remains available.'};
-  return {name,status:'fail',detail:'Only one setting is configured. Configure both or remove both.'};
+  const detail = a
+    ? `${firstLabel} is set but ${secondLabel} is missing. Configure both or remove ${firstLabel}.`
+    : `${secondLabel} is set but ${firstLabel} is missing. Configure both or remove ${secondLabel}.`;
+  return {name,status:'fail',detail};
 }
 export function parseTestSuitePaths(source:string):string[] {
   const paths=new Set<string>();
@@ -70,8 +73,8 @@ export async function runLocalHealthCheck(){
   for(const f of required) if(!(await exists(path.join(ROOT,f)))) missing.push(f);
   checks.push(missing.length?{name:'Repository configuration',status:'fail',detail:'Missing: '+missing.join(', ')}:{name:'Repository configuration',status:'pass',detail:'Required package, env template, dependency manifest and test runner files exist.'});
   checks.push(await testReadiness());
-  checks.push(optionalPairCheck('LLM configuration (optional)',Boolean(process.env.LLM_ENDPOINT?.trim()),Boolean(process.env.LLM_API_KEY?.trim()||process.env.OPENROUTER_API_KEY?.trim())));
-  checks.push(optionalPairCheck('Google Sheets publishing (optional)',Boolean(process.env.GOOGLE_SHEETS_WEBHOOK_URL?.trim()),Boolean(process.env.GOOGLE_SHEETS_WEBHOOK_TOKEN?.trim())));
+  checks.push(optionalPairCheck('LLM configuration (optional)',Boolean(process.env.LLM_ENDPOINT?.trim()),Boolean(process.env.LLM_API_KEY?.trim()||process.env.OPENROUTER_API_KEY?.trim()),'LLM_ENDPOINT','LLM_API_KEY or OPENROUTER_API_KEY'));
+  checks.push(optionalPairCheck('Google Sheets publishing (optional)',Boolean(process.env.GOOGLE_SHEETS_WEBHOOK_URL?.trim()),Boolean(process.env.GOOGLE_SHEETS_WEBHOOK_TOKEN?.trim()),'GOOGLE_SHEETS_WEBHOOK_URL','GOOGLE_SHEETS_WEBHOOK_TOKEN'));
   const summary=summarizeHealthChecks(checks);
   console.log(JSON.stringify({schema_version:'1.0',generatedAt:new Date().toISOString(),scope:'local-only; no stock acquisition, external navigation, model inference, research writes, or Google Sheets publishing',...summary},null,2));
   return summary.status==='fail'?1:0;
