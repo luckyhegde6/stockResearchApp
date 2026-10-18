@@ -63,10 +63,10 @@ Research API consumers and potential paper trading only after explicit design re
 
 ## Immediate next tasks
 
-1. Review/merge PR #8 only with passing CI.
+1. Complete readiness edge-case regression coverage and keep CLI/operating docs synchronized with `package.json`.
 2. Add remaining harness schema/policy tests and a redacted deterministic agent audit record.
 3. Add dashboard “why not ready?” and provenance drill-down.
-4. Verify Apps Script deployment and live export behavior.
+4. Verify Apps Script deployment and live export behavior; add payload preflight, idempotent retries and mock-receiver end-to-end tests.
 5. Add source terms registry, then evaluate a secondary EOD/corporate-actions source.
 6. Add point-in-time snapshot comparison, event timeline, peer scorecard, then leakage-aware backtesting.
 
